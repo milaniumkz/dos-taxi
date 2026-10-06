@@ -69,12 +69,14 @@ describe('NotificationsService', () => {
       find: jest.fn(),
     } as unknown as jest.Mocked<Repository<NotificationTemplateEntity>>;
     deviceTokensRepository = {
+      update: jest.fn(),
       find: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn((value) => value as NotificationDeviceTokenEntity),
       save: jest.fn(),
     } as unknown as jest.Mocked<Repository<NotificationDeviceTokenEntity>>;
     queueService = {
+      setInvalidPushTokenHandler: jest.fn(),
       enqueuePush: jest.fn(),
       enqueueSms: jest.fn(),
       getBufferedNotifications: jest.fn().mockReturnValue([]),
@@ -86,6 +88,15 @@ describe('NotificationsService', () => {
       deviceTokensRepository,
       new NotificationTemplateRenderer(),
       queueService,
+    );
+  });
+
+  it('deactivates tokens reported invalid by the push queue', async () => {
+    const handler = queueService.setInvalidPushTokenHandler.mock.calls[0][0];
+    await handler('invalid-test-token');
+    expect(deviceTokensRepository.update).toHaveBeenCalledWith(
+      { token: 'invalid-test-token' },
+      { isActive: false },
     );
   });
 
@@ -138,7 +149,7 @@ describe('NotificationsService', () => {
     expect(queueService.enqueueSms).not.toHaveBeenCalled();
   });
 
-  it('falls back to sms when no device tokens exist', async () => {
+  it('does not send non-OTP SMS when no device tokens exist', async () => {
     usersRepository.findOne.mockResolvedValue({
       id: 'user-1',
       phone: '+77010000000',
@@ -165,12 +176,30 @@ describe('NotificationsService', () => {
       'ru',
     );
 
-    expect(queueService.enqueueSms).toHaveBeenCalledWith(
-      expect.objectContaining({
-        phone: '+77010000000',
-        body: 'Доставка №order-42 вручена (Dana).',
-      }),
-    );
+    expect(queueService.enqueuePush).not.toHaveBeenCalled();
+    expect(queueService.enqueueSms).not.toHaveBeenCalled();
+  });
+
+  it('sends rendered OTP SMS through the explicit SMS path', async () => {
+    templatesRepository.find.mockResolvedValue([
+      { type: 'auth_otp', channel: 'sms', lang: 'ru', subject: null,
+        body: 'Code {{code}}', isActive: true },
+    ] as NotificationTemplateEntity[]);
+    await notificationsService.sendSms('+77010000000', 'auth_otp', { code: '123456' }, 'ru');
+    expect(templatesRepository.find).toHaveBeenCalledWith({
+      where: { type: 'auth_otp', channel: 'sms', lang: 'ru', isActive: true },
+    });
+    expect(queueService.enqueueSms).toHaveBeenCalledWith({
+      phone: '+77010000000', subject: null, body: 'Code 123456', type: 'auth_otp', lang: 'ru',
+    });
+    expect(queueService.enqueuePush).not.toHaveBeenCalled();
+  });
+
+  it('rejects OTP delivery when its active SMS template is missing', async () => {
+    templatesRepository.find.mockResolvedValue([]);
+    await expect(notificationsService.sendSms('+77010000000', 'auth_otp', { code: '123456' }, 'ru'))
+      .rejects.toThrow('Active OTP SMS template is missing');
+    expect(queueService.enqueueSms).not.toHaveBeenCalled();
   });
 
   it('updates existing device token registration', async () => {

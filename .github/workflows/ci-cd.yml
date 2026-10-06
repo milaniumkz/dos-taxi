@@ -98,22 +98,31 @@ jobs:
 
   mobile:
     name: Flutter checks
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && fromJSON('["milanium-mac-arm64", "repo-dos-taxi"]') || fromJSON('["ubuntu-latest"]') }}
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           ref: ${{ inputs.deploy_ref || github.ref }}
 
       - name: Setup Flutter
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
+      - name: Select existing Mac Flutter 3.41.1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo /Volumes/PD1000/job/flutter/bin >> "$GITHUB_PATH"
+          /Volumes/PD1000/job/flutter/bin/flutter --version --machine | python3 -c 'import json,sys; assert json.load(sys.stdin)["frameworkVersion"] == "3.41.1"'
+
       - name: Install mobile dependencies
         working-directory: apps/mobile
-        run: flutter pub get
+        run: flutter pub get ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '--enforce-lockfile' || '' }}
 
       - name: Generate localizations
         working-directory: apps/mobile
@@ -269,3 +278,31 @@ jobs:
           command = shlex.join(["bash", f"{incoming}/deploy/vps/scripts/ci-promote-release.sh", incoming, path, sha, "--runtime-config-stdin"])
           subprocess.run(["ssh", "-p", os.environ.get("VPS_PORT") or "22", f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}', command], input=json.dumps(settings), text=True, check=True)
           PY
+
+  native-node:
+    if: github.repository == 'milaniumkz/dos-taxi' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [milanium-mac-arm64, repo-dos-taxi]
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      DATABASE_URL: ''
+      REDIS_URL: ''
+      PROMO_TEST_DATABASE_URL: ''
+      COREPACK_ENABLE_NETWORK: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select existing Node 20
+        run: |
+          echo /opt/homebrew/opt/node@20/bin >> "$GITHUB_PATH"
+          test "$(/opt/homebrew/opt/node@20/bin/node -p 'process.versions.node.split(".")[0]')" = 20
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @dos/shared-types build
+      - run: corepack pnpm lint
+      - run: corepack pnpm --filter @dos/api test:unit
+      - run: python3 -m unittest discover -s deploy/vps/scripts -p 'test_*.py'
+      - run: corepack pnpm --filter @dos/api typecheck
+      - run: corepack pnpm --filter @dos/admin typecheck
+      - run: corepack pnpm --filter @dos/api build
+      - run: corepack pnpm --filter @dos/admin build

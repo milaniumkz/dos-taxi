@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -30,6 +31,17 @@ class PromotionTests(unittest.TestCase):
                 "#!/usr/bin/env python3\nimport sys, shutil\n"
                 "shutil.copytree(sys.argv[-2], sys.argv[-1], dirs_exist_ok=True)\n"
             )
+            if sys.platform == "darwin" and shutil.which("flock") is None:
+                # macOS has flock(2), but no flock command. Keep real locking
+                # for this fixture; production and Linux still use their CLI.
+                (binaries / "flock").write_text(
+                    f"#!{sys.executable}\nimport fcntl, sys\n"
+                    "assert len(sys.argv) == 3 and sys.argv[1] == '-n'\n"
+                    "try:\n"
+                    "    fcntl.flock(int(sys.argv[2]), fcntl.LOCK_EX | fcntl.LOCK_NB)\n"
+                    "except BlockingIOError:\n"
+                    "    sys.exit(1)\n"
+                )
             for binary in binaries.iterdir():
                 binary.chmod(0o755)
             credentials = {"SMSC_LOGIN": "test account", "SMSC_PASSWORD": "test$password!"}
