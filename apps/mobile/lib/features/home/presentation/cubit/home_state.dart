@@ -9,6 +9,10 @@ class HomeState extends Equatable {
     this.nearbyExecutors = const [],
     this.routePoints = const [],
     this.currentAddress,
+    this.pickupAddress,
+    this.useCustomPickup = false,
+    this.pickupQuery = '',
+    this.searchingPickup = false,
     this.selectedAddress,
     this.isSearching = false,
     this.isLoadingNearby = false,
@@ -27,6 +31,12 @@ class HomeState extends Equatable {
   final List<NearbyExecutor> nearbyExecutors;
   final List<LatLng> routePoints;
   final AddressSuggestion? currentAddress;
+  final AddressSuggestion? pickupAddress;
+  final bool useCustomPickup;
+  final String pickupQuery;
+  final bool searchingPickup;
+  AddressSuggestion? get effectivePickup =>
+      useCustomPickup ? pickupAddress : currentAddress;
   final AddressSuggestion? selectedAddress;
   final bool isSearching;
   final bool isLoadingNearby;
@@ -45,6 +55,10 @@ class HomeState extends Equatable {
     List<NearbyExecutor>? nearbyExecutors,
     List<LatLng>? routePoints,
     Object? currentAddress = _unset,
+    Object? pickupAddress = _unset,
+    bool? useCustomPickup,
+    String? pickupQuery,
+    bool? searchingPickup,
     Object? selectedAddress = _unset,
     bool? isSearching,
     bool? isLoadingNearby,
@@ -65,6 +79,12 @@ class HomeState extends Equatable {
       currentAddress: currentAddress == _unset
           ? this.currentAddress
           : currentAddress as AddressSuggestion?,
+      pickupAddress: pickupAddress == _unset
+          ? this.pickupAddress
+          : pickupAddress as AddressSuggestion?,
+      useCustomPickup: useCustomPickup ?? this.useCustomPickup,
+      pickupQuery: pickupQuery ?? this.pickupQuery,
+      searchingPickup: searchingPickup ?? this.searchingPickup,
       selectedAddress: selectedAddress == _unset
           ? this.selectedAddress
           : selectedAddress as AddressSuggestion?,
@@ -92,6 +112,10 @@ class HomeState extends Equatable {
     nearbyExecutors,
     routePoints,
     currentAddress,
+    pickupAddress,
+    useCustomPickup,
+    pickupQuery,
+    searchingPickup,
     selectedAddress,
     isSearching,
     isLoadingNearby,

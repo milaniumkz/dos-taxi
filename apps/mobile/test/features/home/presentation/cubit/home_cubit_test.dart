@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dos_mobile/core/errors/failure.dart';
@@ -8,6 +9,7 @@ import 'package:dos_mobile/features/active_order/domain/repositories/active_orde
 import 'package:dos_mobile/features/home/domain/entities/address_suggestion.dart';
 import 'package:dos_mobile/features/home/domain/repositories/home_repository.dart';
 import 'package:dos_mobile/features/taxi/domain/repositories/taxi_repository.dart';
+import 'package:dos_mobile/features/taxi/domain/entities/taxi_route.dart';
 import 'package:dos_mobile/features/home/presentation/cubit/home_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -36,6 +38,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(LatLng(0, 0));
+    registerFallbackValue(currentAddress);
   });
 
   setUp(() {
@@ -274,4 +277,137 @@ void main() {
       ),
     ],
   );
+  final otherPickup = AddressSuggestion(
+    title: 'Адрес другого человека',
+    subtitle: 'Алматы',
+    location: LatLng(43.27, 76.95),
+  );
+  final destination = AddressSuggestion(
+    title: 'Куда отвезти',
+    subtitle: 'Алматы',
+    location: LatLng(43.29, 76.97),
+  );
+  void stubRoutes() {
+    when(
+      () => taxiRepository.buildRoute(
+        pickup: any(named: 'pickup'),
+        destination: any(named: 'destination'),
+      ),
+    ).thenAnswer((invocation) async {
+      final from = invocation.namedArguments[#pickup] as AddressSuggestion;
+      final to = invocation.namedArguments[#destination] as AddressSuggestion;
+      return Right(
+        TaxiRoute(
+          polylinePoints: [from.location, LatLng(43.28, 76.96), to.location],
+          distanceMeters: 2000,
+          durationSeconds: 300,
+        ),
+      );
+    });
+  }
+
+  test(
+    'manual pickup controls route and nearby drivers while retaining GPS',
+    () async {
+      stubRoutes();
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.resolveCurrentLocation();
+      await cubit.selectAddress(destination);
+      await cubit.selectPickup(otherPickup);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.effectivePickup, otherPickup);
+      expect(cubit.state.currentAddress, currentAddress);
+      expect(cubit.state.currentLocation, currentLocation);
+      expect(cubit.state.selectedAddress, destination);
+      expect(cubit.state.routePoints.first, otherPickup.location);
+      verify(
+        () => homeRepository.fetchNearbyExecutors(
+          location: otherPickup.location,
+          serviceType: any(named: 'serviceType'),
+        ),
+      ).called(1);
+    },
+  );
+
+  test('late GPS resolution preserves manual pickup and map center', () async {
+    final pending = Completer<Either<Failure, LatLng>>();
+    when(
+      () => locationService.currentLocation(),
+    ).thenAnswer((_) => pending.future);
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    final resolving = cubit.resolveCurrentLocation();
+    await cubit.selectPickup(otherPickup);
+    pending.complete(Right(currentLocation));
+    await resolving;
+    expect(cubit.state.effectivePickup, otherPickup);
+    expect(cubit.state.currentLocation, currentLocation);
+    expect(cubit.state.mapCenter, otherPickup.location);
+  });
+
+  test(
+    'editing pickup invalidates old coordinates instead of falling back to GPS',
+    () async {
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.resolveCurrentLocation();
+      await cubit.selectPickup(otherPickup);
+      cubit.onPickupQueryChanged('');
+      expect(cubit.state.effectivePickup, isNull);
+      expect(cubit.state.useCustomPickup, isTrue);
+      expect(cubit.state.currentAddress, currentAddress);
+    },
+  );
+
+  test(
+    'map selection edits the focused pickup and preserves destination',
+    () async {
+      stubRoutes();
+      when(
+        () => homeRepository.reverseGeocode(location: otherPickup.location),
+      ).thenAnswer((_) async => Right(otherPickup));
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.resolveCurrentLocation();
+      await cubit.selectAddress(destination);
+      cubit.activatePickupSearch();
+      await cubit.selectRoutePointFromMap(otherPickup.location);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.effectivePickup, otherPickup);
+      expect(cubit.state.selectedAddress, destination);
+      expect(cubit.state.routePoints.first, otherPickup.location);
+    },
+  );
+
+  test('current location button explicitly restores GPS pickup', () async {
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    await cubit.resolveCurrentLocation();
+    await cubit.selectPickup(otherPickup);
+    await cubit.useCurrentPickup();
+    expect(cubit.state.useCustomPickup, isFalse);
+    expect(cubit.state.effectivePickup, currentAddress);
+  });
+
+  test('switching fields discards pending pickup search results', () async {
+    final pending = Completer<Either<Failure, List<AddressSuggestion>>>();
+    when(
+      () => homeRepository.searchAddresses(
+        query: 'pickup',
+        cityId: any(named: 'cityId'),
+        locationBias: any(named: 'locationBias'),
+        radiusKm: any(named: 'radiusKm'),
+      ),
+    ).thenAnswer((_) => pending.future);
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    cubit.onPickupQueryChanged('pickup');
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    cubit.activateDestinationSearch();
+    pending.complete(Right([otherPickup]));
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.searchingPickup, isFalse);
+    expect(cubit.state.searchResults, isEmpty);
+  });
 }
