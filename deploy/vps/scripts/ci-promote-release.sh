@@ -10,6 +10,13 @@ if [[ -n "$runtime_mode" && "$runtime_mode" != "--runtime-config-stdin" ]]; then
   exit 1
 fi
 
+# Capture SSH stdin before Docker's interactive exec can consume the payload.
+# Keep credentials in this non-exported shell variable, never in CLI arguments.
+runtime_settings=""
+if [[ "$runtime_mode" == "--runtime-config-stdin" ]]; then
+  runtime_settings="$(cat)"
+fi
+
 lock_file="/tmp/dos-production-deploy.lock"
 exec 9>"$lock_file"
 if ! flock -n 9; then
@@ -93,7 +100,8 @@ rsync -a --delete \
 cd "$target_dir/deploy/vps"
 
 if [[ "$runtime_mode" == "--runtime-config-stdin" ]]; then
-  python3 scripts/configure-smsc.py .env
+  printf '%s' "$runtime_settings" | python3 scripts/configure-smsc.py .env
+  unset runtime_settings
 fi
 
 docker compose --env-file .env -f docker-compose.yml build api admin
