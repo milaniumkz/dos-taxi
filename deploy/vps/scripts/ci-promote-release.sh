@@ -20,17 +20,14 @@ compose_dir="$target_dir/deploy/vps"
 if [[ -f "$compose_dir/.env" && -f "$compose_dir/docker-compose.yml" ]]; then
   (
     cd "$compose_dir"
-    set -a
-    source .env
-    set +a
     docker compose --env-file .env -f docker-compose.yml exec -T postgres \
-      pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom \
+      sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' \
       > "$backup_dir/platform_db.dump"
 
-    redis_volume="${COMPOSE_PROJECT_NAME:-dos}_redis_data"
-    if docker volume inspect "$redis_volume" >/dev/null 2>&1; then
+    redis_container="$(docker compose --env-file .env -f docker-compose.yml ps -q redis || true)"
+    if [[ -n "$redis_container" ]]; then
       docker run --rm \
-        -v "$redis_volume:/data:ro" \
+        --volumes-from "$redis_container:ro" \
         -v "$backup_dir:/backup" \
         alpine:3.20 sh -c 'cd /data && tar czf /backup/redis_data.tar.gz .'
     fi
@@ -85,7 +82,8 @@ rsync -a --delete \
 cd "$target_dir/deploy/vps"
 
 docker compose --env-file .env -f docker-compose.yml build api admin
-if [[ "${RUN_DB_MIGRATIONS:-true}" == "true" ]]; then
+run_db_migrations="$(awk -F= '$1 == "RUN_DB_MIGRATIONS" { print $2 }' .env 2>/dev/null | tail -n 1 | tr -d '\r\"' | tr -d "'")"
+if [[ "${run_db_migrations:-true}" == "true" ]]; then
   scripts/migrate.sh
 fi
 docker compose --env-file .env -f docker-compose.yml up -d api admin nginx
