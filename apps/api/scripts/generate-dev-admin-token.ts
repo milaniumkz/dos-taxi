@@ -6,6 +6,9 @@ const allowedRoles = [
   UserRole.OPERATOR,
   UserRole.SUPPORT,
   UserRole.FINANCE,
+  // Non-staff fixtures let local smoke tests verify admin access is denied.
+  UserRole.CLIENT,
+  UserRole.EXECUTOR,
 ] as const;
 
 type AllowedAdminRole = (typeof allowedRoles)[number];

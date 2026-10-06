@@ -1,3 +1,4 @@
+import { getCreationLabels } from "../lib/creation-i18n";
 import { AppFrame } from "../components/app-frame";
 import { FlashBanner } from "../components/flash-banner";
 import { MetricCard } from "../components/metric-card";
@@ -89,6 +90,7 @@ export default async function TariffsPage({ searchParams }: TariffsPageProps) {
       dictionary={dictionary}
     >
       <main className="admin-shell">
+          <a className="action-button" href={`/tariffs/new?lang=${locale}&cityId=${selectedCityId}`}>{getCreationLabels(locale).newTariff}</a>
         <FlashBanner notice={notice} error={error} />
 
         <section className="metrics-grid">

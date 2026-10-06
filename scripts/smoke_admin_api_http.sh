@@ -548,24 +548,25 @@ if api_host="$(extract_url_host "$ADMIN_API_BASE_URL")" && is_local_host "$api_h
     }
   ' "$support_orders_payload" || fail "Support token did not receive readable admin orders payload: ${support_orders_payload}"
 
-  support_write_headers_file="$(mktemp "${TMPDIR:-/tmp}/dos-admin-api-headers.XXXXXX")"
-  support_write_body_file="$(mktemp "${TMPDIR:-/tmp}/dos-admin-api-body.XXXXXX")"
-  support_write_status="$(curl -s --max-time 5 \
-    -D "$support_write_headers_file" \
-    -o "$support_write_body_file" \
+  CLIENT_API_TOKEN="$(cd "$ROOT_DIR/apps/api" && ADMIN_TOKEN_ROLE=client ./node_modules/.bin/ts-node --project tsconfig.json scripts/generate-dev-admin-token.ts)"
+  client_write_headers_file="$(mktemp "${TMPDIR:-/tmp}/dos-admin-api-headers.XXXXXX")"
+  client_write_body_file="$(mktemp "${TMPDIR:-/tmp}/dos-admin-api-body.XXXXXX")"
+  client_write_status="$(curl -s --max-time 5 \
+    -D "$client_write_headers_file" \
+    -o "$client_write_body_file" \
     -w "%{http_code}" \
     -X POST "${ADMIN_API_BASE_URL}/admin/notes" \
-    -H "Authorization: Bearer ${SUPPORT_API_TOKEN}" \
+    -H "Authorization: Bearer ${CLIENT_API_TOKEN}" \
     -H 'content-type: application/json' \
-    -H 'x-trace-id: smoke-admin-support-forbidden-trace' \
+    -H 'x-trace-id: smoke-admin-client-forbidden-trace' \
     -d "{\"entityType\":\"order\",\"entityId\":\"${DEV_ORDER_ID:-00000000-0000-4000-8000-000000000031}\",\"body\":\"should be forbidden\"}")"
-  [[ "$support_write_status" == "403" ]] || fail "Support write probe returned unexpected status=${support_write_status}"
-  support_write_payload="$(cat "$support_write_body_file")"
-  support_write_trace_id="$(extract_header_value "$support_write_headers_file" "x-trace-id")" || fail "Support write response did not include x-trace-id"
-  [[ "$support_write_trace_id" == "smoke-admin-support-forbidden-trace" ]] || fail "Support write response did not preserve inbound trace id"
-  assert_json_field_equals "$support_write_payload" "code" "FORBIDDEN"
-  assert_json_field_equals "$support_write_payload" "traceId" "smoke-admin-support-forbidden-trace"
-  rm -f "$support_write_headers_file" "$support_write_body_file"
+  [[ "$client_write_status" == "403" ]] || fail "Client write probe returned unexpected status=${client_write_status}"
+  client_write_payload="$(cat "$client_write_body_file")"
+  client_write_trace_id="$(extract_header_value "$client_write_headers_file" "x-trace-id")" || fail "Client write response did not include x-trace-id"
+  [[ "$client_write_trace_id" == "smoke-admin-client-forbidden-trace" ]] || fail "Client write response did not preserve inbound trace id"
+  assert_json_field_equals "$client_write_payload" "code" "FORBIDDEN"
+  assert_json_field_equals "$client_write_payload" "traceId" "smoke-admin-client-forbidden-trace"
+  rm -f "$client_write_headers_file" "$client_write_body_file"
 
   if ! OPERATOR_API_TOKEN="$(generate_operator_token)"; then
     fail "Unable to generate operator token for local admin API role smoke"

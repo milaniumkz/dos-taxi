@@ -1,5 +1,5 @@
 import { UserRole } from '@dos/shared-types';
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -108,6 +108,10 @@ export class NotificationsService {
         isActive: true,
       },
     });
+
+    if (templates.length === 0) {
+      throw new ServiceUnavailableException("Active OTP SMS template is missing");
+    }
 
     for (const template of templates) {
       const body = this.templateRenderer.render(template.body, payload);

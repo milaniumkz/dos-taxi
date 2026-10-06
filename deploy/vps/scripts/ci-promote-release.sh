@@ -4,6 +4,11 @@ set -euo pipefail
 incoming_dir="${1:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
 target_dir="${2:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
 commit_sha="${3:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
+runtime_mode="${4:-}"
+if [[ -n "$runtime_mode" && "$runtime_mode" != "--runtime-config-stdin" ]]; then
+  echo "Unsupported runtime configuration mode"
+  exit 1
+fi
 
 lock_file="/tmp/dos-production-deploy.lock"
 exec 9>"$lock_file"
@@ -81,6 +86,10 @@ rsync -a --delete \
   "$incoming_dir/" "$target_dir/"
 
 cd "$target_dir/deploy/vps"
+
+if [[ "$runtime_mode" == "--runtime-config-stdin" ]]; then
+  python3 scripts/configure-smsc.py .env
+fi
 
 docker compose --env-file .env -f docker-compose.yml build api admin
 run_db_migrations="$(awk -F= '$1 == "RUN_DB_MIGRATIONS" { print $2 }' .env 2>/dev/null | tail -n 1 | tr -d '\r\"' | tr -d "'")"

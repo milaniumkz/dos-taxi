@@ -233,6 +233,23 @@ export function validateEnvironment(env: RawEnv): Record<string, string> {
     validatedEnv.WAPPI_PROFILE_ID = readRequiredString(env, "WAPPI_PROFILE_ID");
   }
 
+  if (validatedEnv.NOTIFICATIONS_SMS_PROVIDER.toLowerCase() === "smsc") {
+    if (validatedEnv.NOTIFICATIONS_SMS_STUB !== "true") {
+      validatedEnv.SMSC_LOGIN = readRequiredString(env, "SMSC_LOGIN");
+      validatedEnv.SMSC_PASSWORD = readRequiredString(env, "SMSC_PASSWORD");
+      if (
+        validatedEnv.OTP_DEV_BYPASS === "true" ||
+        validatedEnv.OTP_DEBUG_RESPONSE_ENABLED === "true"
+      ) {
+        throw new Error(
+          "Live SMSC requires OTP_DEV_BYPASS=false and OTP_DEBUG_RESPONSE_ENABLED=false",
+        );
+      }
+    }
+    const sender = readString(env, "SMSC_SENDER");
+    if (sender) validatedEnv.SMSC_SENDER = sender;
+  }
+
   if (isProduction) {
     if (validatedEnv.JWT_SECRET === DEFAULTS.JWT_SECRET) {
       throw new Error(

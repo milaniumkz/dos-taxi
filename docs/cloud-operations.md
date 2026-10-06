@@ -44,8 +44,16 @@ Production deploy needs these repository or environment secrets:
 - `VPS_PATH`: project path on server, currently `/opt/dos`.
 - `VPS_KNOWN_HOSTS`: output of `ssh-keyscan -H <host>`.
 - `VPS_SSH_PRIVATE_KEY`: private deploy key with access only to this VPS.
+- `SMSC_LOGIN` and `SMSC_PASSWORD`: optional SMSC credentials used to switch the
+  production OTP provider during deployment. Configure both together.
 
 Runtime application secrets stay only on the VPS in `deploy/vps/.env`.
+The two SMSC deployment secrets are transmitted over SSH stdin, never as command
+arguments or release files. The promotion script backs up the existing runtime
+configuration before applying them, preserves other variables and writes the
+updated `.env` with mode `600`. Existing SMSC credentials on the VPS may also be
+used. When neither source has credentials, deployment preserves the current SMS
+configuration and reports that SMSC is not configured.
 
 ## VPS Deployment
 
@@ -68,6 +76,11 @@ Then `deploy/vps/scripts/ci-promote-release.sh`:
 6. Restarts API/admin/nginx.
 7. Verifies API health.
 8. Writes `deploy/vps/DEPLOYED_VERSION`.
+
+Manual deployments record the actual checked-out release commit, including when
+`deploy_ref` differs from the workflow's own commit. The `health` operation also
+checks admin connectivity, API readiness and SMS provider configuration without
+printing credentials.
 
 ## Manual Production Operations
 

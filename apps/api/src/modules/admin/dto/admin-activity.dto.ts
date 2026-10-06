@@ -17,6 +17,8 @@ export const adminActivityActions = [
   "city.updated",
   "tariff.created",
   "tariff.updated",
+  "order.created",
+  "order.creation_requested",
   "order.assigned",
   "order.status_updated",
   "order.dispatch_retried",

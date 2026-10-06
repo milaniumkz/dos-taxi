@@ -1,3 +1,4 @@
+import { getCreationLabels } from "../lib/creation-i18n";
 import { AppFrame } from '../components/app-frame';
 import { FlashBanner } from '../components/flash-banner';
 import { MetricCard } from '../components/metric-card';
@@ -64,6 +65,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
       dictionary={dictionary}
     >
       <main className="admin-shell">
+          <a className="action-button" href={`/orders/new?lang=${locale}&cityId=${selectedCityId}`}>{getCreationLabels(locale).newOrder}</a>
         <FlashBanner notice={notice} error={error} />
 
         <section className="metrics-grid">

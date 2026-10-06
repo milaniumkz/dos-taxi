@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -186,6 +187,9 @@ export async function createTariffAction(formData: FormData) {
   try {
     await adminApiRequest("admin/tariffs", {
       method: "POST",
+      headers: {
+        "X-Idempotency-Key": getString(formData, "requestKey") || randomUUID(),
+      },
       body: JSON.stringify({
         cityId: getString(formData, "cityId"),
         serviceType: getString(formData, "serviceType"),
@@ -206,15 +210,15 @@ export async function createTariffAction(formData: FormData) {
         isActive: getBoolean(formData, "isActive"),
       }),
     });
-    revalidateReturnPath(returnPath);
-    redirectWithFlash(
-      returnPath,
-      "notice",
-      successMessage(locale, "tariffCreated"),
-    );
   } catch (error) {
     redirectWithFlash(returnPath, "error", failureMessage(locale, error));
   }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(
+    returnPath,
+    "notice",
+    successMessage(locale, "tariffCreated"),
+  );
 }
 
 export async function toggleTariffActiveAction(formData: FormData) {
@@ -229,15 +233,15 @@ export async function toggleTariffActiveAction(formData: FormData) {
         isActive: getString(formData, "isActive") === "true",
       }),
     });
-    revalidateReturnPath(returnPath);
-    redirectWithFlash(
-      returnPath,
-      "notice",
-      successMessage(locale, "tariffUpdated"),
-    );
   } catch (error) {
     redirectWithFlash(returnPath, "error", failureMessage(locale, error));
   }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(
+    returnPath,
+    "notice",
+    successMessage(locale, "tariffUpdated"),
+  );
 }
 
 export async function updateTariffAction(formData: FormData) {
@@ -283,15 +287,15 @@ export async function updateTariffAction(formData: FormData) {
       method: "PATCH",
       body: JSON.stringify(payload),
     });
-    revalidateReturnPath(returnPath);
-    redirectWithFlash(
-      returnPath,
-      "notice",
-      successMessage(locale, "tariffUpdated"),
-    );
   } catch (error) {
     redirectWithFlash(returnPath, "error", failureMessage(locale, error));
   }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(
+    returnPath,
+    "notice",
+    successMessage(locale, "tariffUpdated"),
+  );
 }
 
 export async function createPromoCodeAction(formData: FormData) {

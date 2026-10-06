@@ -7,8 +7,10 @@ import {
   OnModuleInit,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Job, Queue, Worker } from "bullmq";
+import { Job, Queue, QueueEvents, UnrecoverableError, Worker } from "bullmq";
 import IORedis from "ioredis";
+
+import { sendSmscSms } from "./smsc.provider";
 
 export type NotificationType =
   | "auth_otp"
@@ -42,6 +44,7 @@ export type BufferedNotification = {
   subject: string | null;
   body: string;
   provider: string;
+  providerMessageId?: number;
 };
 
 type PushNotificationJob = {
@@ -61,6 +64,7 @@ type SmsNotificationJob = {
   body: string;
   type: NotificationType;
   lang: NotificationLanguage;
+  expiresAt?: number;
 };
 
 type NotificationJobPayload = PushNotificationJob | SmsNotificationJob;
@@ -77,6 +81,7 @@ export class NotificationsQueueService
   private readonly timers = new Set<ReturnType<typeof setTimeout>>();
   private queue: Queue<NotificationJobPayload> | null = null;
   private worker: Worker<NotificationJobPayload> | null = null;
+  private queueEvents: QueueEvents | null = null;
   private connection: IORedis | null = null;
   private pushAccessToken: {
     token: string;
@@ -104,6 +109,11 @@ export class NotificationsQueueService
       this.queue = new Queue<NotificationJobPayload>("notifications-queue", {
         connection: this.connection,
       });
+      if (this.isLiveSmscEnabled()) {
+        this.queueEvents = new QueueEvents("notifications-queue", {
+          connection: this.connection,
+        });
+      }
       this.worker = new Worker<NotificationJobPayload>(
         "notifications-queue",
         async (job) => this.processJob(job),
@@ -113,10 +123,14 @@ export class NotificationsQueueService
       );
     } catch {
       this.logger.warn("Notifications queue fell back to in-memory scheduling");
+      await this.worker?.close();
+      await this.queueEvents?.close();
+      await this.queue?.close();
       await this.connection?.quit();
       this.connection = null;
       this.queue = null;
       this.worker = null;
+      this.queueEvents = null;
     }
   }
 
@@ -127,6 +141,7 @@ export class NotificationsQueueService
     this.timers.clear();
 
     await this.worker?.close();
+    await this.queueEvents?.close();
     await this.queue?.close();
     await this.connection?.quit();
   }
@@ -139,6 +154,41 @@ export class NotificationsQueueService
   }
 
   async enqueueSms(job: Omit<SmsNotificationJob, "channel">): Promise<void> {
+    if (this.isLiveSmscEnabled()) {
+      if (!this.queue || !this.queueEvents) {
+        throw new Error(
+          "Redis notifications queue is required for SMSC delivery",
+        );
+      }
+      await this.queueEvents.waitUntilReady();
+      const queued = await this.queue.add(
+        "notification-sms",
+        {
+          ...job,
+          channel: "sms",
+          expiresAt:
+            job.type === "auth_otp"
+              ? Date.now() +
+                Number(this.configService.get("OTP_TTL_SECONDS") ?? 300) * 1000
+              : undefined,
+        },
+        {
+          // Automatic retries after an ambiguous timeout can bill duplicate SMS.
+          attempts: 1,
+          removeOnComplete: { age: 300, count: 100 },
+          removeOnFail: { age: 300, count: 100 },
+        },
+      );
+      try {
+        // Delivery runs in the worker; OTP HTTP returns success only on acceptance.
+        await queued.waitUntilFinished(this.queueEvents, 20_000);
+      } catch (error) {
+        // Remove a waiting job so a timed-out OTP is not sent later.
+        await queued.remove().catch(() => undefined);
+        throw error;
+      }
+      return;
+    }
     if (this.shouldDeliverSmsSynchronously()) {
       await this.deliverSms({
         ...job,
@@ -186,6 +236,9 @@ export class NotificationsQueueService
       );
       if (job.channel === "push" && this.isInvalidPushTokenError(message)) {
         await this.invalidPushTokenHandler?.(job.token);
+      }
+      if (job.channel === "sms" && this.isLiveSmscEnabled()) {
+        throw new UnrecoverableError(message);
       }
     }
   }
@@ -318,6 +371,27 @@ export class NotificationsQueueService
       return;
     }
 
+    if (provider === "smsc") {
+      if (job.expiresAt !== undefined && job.expiresAt <= Date.now()) {
+        throw new Error("OTP expired before SMSC delivery");
+      }
+      const result = await sendSmscSms(this.configService, job.phone, job.body);
+      this.recordBufferedNotification({
+        channel: "sms",
+        target: job.phone,
+        type: job.type,
+        lang: job.lang,
+        subject: job.subject,
+        body: job.type === "auth_otp" ? "[redacted OTP]" : job.body,
+        provider: "smsc",
+        providerMessageId: result.id,
+      });
+      this.logger.log(
+        `smsc:${job.type} -> ${this.maskPhone(job.phone)} accepted id=${result.id}`,
+      );
+      return;
+    }
+
     const providerUrl = this.configService.get<string>(
       "NOTIFICATIONS_SMS_PROVIDER_URL",
     );
@@ -425,6 +499,15 @@ export class NotificationsQueueService
       "stub";
 
     return !smsStubEnabled && provider === "wappi";
+  }
+
+  private isLiveSmscEnabled(): boolean {
+    return (
+      this.configService.get<string>("NOTIFICATIONS_SMS_STUB") !== "true" &&
+      this.configService
+        .get<string>("NOTIFICATIONS_SMS_PROVIDER")
+        ?.toLowerCase() === "smsc"
+    );
   }
 
   private normalizeWappiRecipient(phone: string): string {

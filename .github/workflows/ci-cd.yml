@@ -20,6 +20,16 @@ jobs:
   node:
     name: API/Admin checks
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-bookworm
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,6 +51,22 @@ jobs:
 
       - name: Build shared types
         run: pnpm --filter @dos/shared-types build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test OTP and administrative access
+        run: >-
+          pnpm --filter @dos/api exec jest --runInBand
+          test/integration/admin-creation.integration.spec.ts
+          test/integration/admin.integration.spec.ts
+          test/integration/smsc-otp.integration.spec.ts
+          src/modules/notifications/smsc.provider.spec.ts
+          test/unit/env.validation.spec.ts
+          src/modules/auth/auth.spec.ts
+
+      - name: Test runtime configuration
+        run: python3 -m unittest discover -s deploy/vps/scripts -p 'test_*.py'
 
       - name: Typecheck API
         run: pnpm --filter @dos/api typecheck
@@ -102,6 +128,10 @@ jobs:
         with:
           ref: ${{ inputs.deploy_ref || github.sha }}
 
+      - name: Resolve release commit
+        id: release
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Install SSH tools
         run: sudo apt-get update && sudo apt-get install -y rsync openssh-client
 
@@ -123,9 +153,10 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
         run: |
           set -euo pipefail
-          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${GITHUB_SHA}'"
+          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${RELEASE_SHA}'"
           rsync -az --delete \
             --exclude='.git/' \
             --exclude='node_modules/' \
@@ -152,7 +183,7 @@ jobs:
             --exclude='apps/mobile/android/*.keystore' \
             --exclude='apps/mobile/android/key.properties' \
             -e "ssh -p ${VPS_PORT:-22}" \
-            ./ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${GITHUB_SHA}/"
+            ./ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/"
 
       - name: Promote release
         env:
@@ -160,6 +191,19 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+          SMSC_LOGIN: ${{ secrets.SMSC_LOGIN }}
+          SMSC_PASSWORD: ${{ secrets.SMSC_PASSWORD }}
         run: |
-          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
-            "bash '$VPS_PATH/_incoming/${GITHUB_SHA}/deploy/vps/scripts/ci-promote-release.sh' '$VPS_PATH/_incoming/${GITHUB_SHA}' '$VPS_PATH' '${GITHUB_SHA}'"
+          python3 - <<'PY'
+          import json, os, shlex, subprocess
+          login = os.environ.get("SMSC_LOGIN", "")
+          password = os.environ.get("SMSC_PASSWORD", "")
+          if bool(login) != bool(password):
+              raise SystemExit("Configure both SMSC_LOGIN and SMSC_PASSWORD secrets")
+          settings = {"SMSC_LOGIN": login, "SMSC_PASSWORD": password} if login else {}
+          path, sha = os.environ["VPS_PATH"], os.environ["RELEASE_SHA"]
+          incoming = f"{path}/_incoming/{sha}"
+          command = shlex.join(["bash", f"{incoming}/deploy/vps/scripts/ci-promote-release.sh", incoming, path, sha, "--runtime-config-stdin"])
+          subprocess.run(["ssh", "-p", os.environ.get("VPS_PORT") or "22", f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}', command], input=json.dumps(settings), text=True, check=True)
+          PY

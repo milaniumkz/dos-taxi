@@ -6,6 +6,7 @@ import {
   IsIn,
   IsNotEmpty,
   IsNumber,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
@@ -58,7 +59,7 @@ export class CreateTariffDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(0)
   freeWaitingSeconds?: number;
 

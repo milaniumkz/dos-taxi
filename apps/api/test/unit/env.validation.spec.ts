@@ -71,6 +71,33 @@ describe("validateEnvironment", () => {
     expect(validated.WAPPI_PROFILE_ID).toBe("profile");
   });
 
+  it("requires SMSC credentials and rejects settings that skip real OTP SMS", () => {
+    const enabled = { NOTIFICATIONS_SMS_PROVIDER: "smsc" };
+    expect(() => validateEnvironment(enabled)).toThrow(
+      "SMSC_LOGIN is required",
+    );
+    expect(() =>
+      validateEnvironment({ ...enabled, SMSC_LOGIN: "test" }),
+    ).toThrow("SMSC_PASSWORD is required");
+    const configured = {
+      ...enabled,
+      SMSC_LOGIN: "test",
+      SMSC_PASSWORD: "test",
+    };
+    expect(validateEnvironment(configured).SMSC_LOGIN).toBe("test");
+    for (const setting of ["OTP_DEV_BYPASS", "OTP_DEBUG_RESPONSE_ENABLED"]) {
+      expect(() =>
+        validateEnvironment({ ...configured, [setting]: "true" }),
+      ).toThrow(
+        "Live SMSC requires OTP_DEV_BYPASS=false and OTP_DEBUG_RESPONSE_ENABLED=false",
+      );
+    }
+    expect(
+      validateEnvironment({ ...enabled, NOTIFICATIONS_SMS_STUB: "true" })
+        .NOTIFICATIONS_SMS_STUB,
+    ).toBe("true");
+  });
+
   it("requires secure runtime secrets and storage config in production", () => {
     expect(() =>
       validateEnvironment({

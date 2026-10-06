@@ -20,6 +20,8 @@ import { UserEntity } from "../users/entities/user.entity";
 
 import { AdminController } from "./admin.controller";
 import { AdminService } from "./admin.service";
+import { AdminBookingService } from "./admin-booking.service";
+import { AdminCreationController } from "./admin-creation.controller";
 import { AdminActivityLogEntity } from "./entities/admin-activity-log.entity";
 import { AdminNoteEntity } from "./entities/admin-note.entity";
 import { CityEntity } from "./entities/city.entity";
@@ -50,7 +52,7 @@ import { TariffEntity } from "./entities/tariff.entity";
       PaymentEntity,
     ]),
   ],
-  controllers: [AdminController],
-  providers: [AdminService],
+  controllers: [AdminController, AdminCreationController],
+  providers: [AdminService, AdminBookingService],
 })
 export class AdminModule {}

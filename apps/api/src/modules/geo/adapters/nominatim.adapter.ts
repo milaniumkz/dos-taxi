@@ -1,5 +1,6 @@
 import { BadGatewayException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { fetchWithProxy } from '../../../shared/http/fetch-with-proxy';
 
 import { GeoAddressSuggestion } from "../interfaces/geo.types";
 
@@ -112,7 +113,7 @@ export class NominatimAdapter {
   }
 
   private async requestJson<T>(url: URL): Promise<T> {
-    const response = await fetch(url, {
+    const response = await fetchWithProxy(url, {
       headers: {
         Accept: "application/json",
         "Accept-Language": "ru",

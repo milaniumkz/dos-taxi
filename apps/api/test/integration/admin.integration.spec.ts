@@ -589,10 +589,10 @@ describe('AdminController roles integration', () => {
       .expect(200);
   });
 
-  it('forbids support from creating cities', async () => {
+  it('forbids clients from creating cities', async () => {
     await request(app.getHttpAdapter().getInstance())
       .post('/api/v1/admin/cities')
-      .set('x-test-role', UserRole.SUPPORT)
+      .set('x-test-role', UserRole.CLIENT)
       .send({
         nameRu: 'Алматы',
         nameKk: 'Алматы',
@@ -603,43 +603,43 @@ describe('AdminController roles integration', () => {
       .expect(403);
   });
 
-  it('forbids support from refunding payments', async () => {
+  it('forbids clients from refunding payments', async () => {
     await request(app.getHttpAdapter().getInstance())
       .post('/api/v1/admin/payments/payment-1/refund')
-      .set('x-test-role', UserRole.SUPPORT)
+      .set('x-test-role', UserRole.CLIENT)
       .send({})
       .expect(403);
   });
 
-  it('forbids support from cancelling payments', async () => {
+  it('forbids clients from cancelling payments', async () => {
     await request(app.getHttpAdapter().getInstance())
       .post('/api/v1/admin/payments/payment-1/cancel')
-      .set('x-test-role', UserRole.SUPPORT)
+      .set('x-test-role', UserRole.CLIENT)
       .send({})
       .expect(403);
   });
 
-  it('forbids support from changing order status', async () => {
+  it('forbids clients from changing order status', async () => {
     await request(app.getHttpAdapter().getInstance())
       .patch('/api/v1/admin/orders/order-1/status')
-      .set('x-test-role', UserRole.SUPPORT)
+      .set('x-test-role', UserRole.CLIENT)
       .send({
         status: 'failed',
       })
       .expect(403);
   });
 
-  it('forbids support from restarting dispatch', async () => {
+  it('forbids clients from restarting dispatch', async () => {
     await request(app.getHttpAdapter().getInstance())
       .post('/api/v1/admin/orders/order-1/dispatch/retry')
-      .set('x-test-role', UserRole.SUPPORT)
+      .set('x-test-role', UserRole.CLIENT)
       .expect(403);
   });
 
-  it('forbids support from creating internal notes', async () => {
+  it('forbids clients from creating internal notes', async () => {
     await request(app.getHttpAdapter().getInstance())
       .post('/api/v1/admin/notes')
-      .set('x-test-role', UserRole.SUPPORT)
+      .set('x-test-role', UserRole.CLIENT)
       .send({
         entityType: 'order',
         entityId: '11111111-1111-4111-8111-111111111111',
@@ -648,10 +648,10 @@ describe('AdminController roles integration', () => {
       .expect(403);
   });
 
-  it('forbids support from updating internal notes', async () => {
+  it('forbids clients from updating internal notes', async () => {
     await request(app.getHttpAdapter().getInstance())
       .patch('/api/v1/admin/notes/note-1')
-      .set('x-test-role', UserRole.SUPPORT)
+      .set('x-test-role', UserRole.CLIENT)
       .send({
         state: 'resolved',
       })
