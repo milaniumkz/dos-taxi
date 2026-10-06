@@ -14,6 +14,7 @@ class MapWidget extends StatefulWidget {
     required this.nearbyExecutors,
     this.routePoints = const [],
     this.selectedLocation,
+    this.pickupLocation,
     this.onTap,
     this.isLoading = false,
     super.key,
@@ -25,6 +26,7 @@ class MapWidget extends StatefulWidget {
   final List<NearbyExecutor> nearbyExecutors;
   final List<LatLng> routePoints;
   final LatLng? selectedLocation;
+  final LatLng? pickupLocation;
   final ValueChanged<LatLng>? onTap;
   final bool isLoading;
 
@@ -104,6 +106,17 @@ class _MapWidgetState extends State<MapWidget> {
                     width: 52,
                     height: 52,
                     child: const _SelectedAddressMarker(),
+                  ),
+                if (widget.pickupLocation != null)
+                  Marker(
+                    point: widget.pickupLocation!,
+                    width: 48,
+                    height: 48,
+                    child: const Icon(
+                      Icons.trip_origin_rounded,
+                      color: AppColors.primaryDark,
+                      size: 36,
+                    ),
                   ),
                 ...widget.nearbyExecutors.map(
                   (executor) => Marker(

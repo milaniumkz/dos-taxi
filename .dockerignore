@@ -17,7 +17,14 @@ Design.zip
 **/build
 **/dist
 **/coverage
+**/__pycache__
+
+.env
+**/.env
+**/.env.*
 
 deploy/.env.*.yaml
 *.log
 .DS_Store
+
+_web/

@@ -1,5 +1,6 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { fetchWithProxy } from '../../../shared/http/fetch-with-proxy';
 
 import { GeoPoint, GeoRouteResult } from '../interfaces/geo.types';
 
@@ -56,7 +57,7 @@ export class OsrmAdapter {
   }
 
   private async requestJson<T>(url: URL): Promise<T> {
-    const response = await fetch(url, {
+    const response = await fetchWithProxy(url, {
       headers: {
         Accept: 'application/json',
         'User-Agent': 'DOSPlatform/1.0 (+https://dos.local)',

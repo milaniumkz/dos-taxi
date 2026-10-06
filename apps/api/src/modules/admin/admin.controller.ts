@@ -96,7 +96,7 @@ export class AdminController {
   }
 
   @Patch("settings/dispatch")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update dispatch radius and ranking settings" })
   @ApiOkResponse({ type: DispatchSettingsDto })
   updateDispatchSettings(
@@ -114,7 +114,7 @@ export class AdminController {
   }
 
   @Patch("settings/driver-bonus")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update driver completion bonus settings" })
   @ApiOkResponse({ type: DriverBonusSettingsDto })
   updateDriverBonusSettings(
@@ -140,7 +140,7 @@ export class AdminController {
   }
 
   @Post("cities")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Create city for admin backoffice" })
   @ApiOkResponse({ type: CityEntity })
   createCity(
@@ -151,7 +151,7 @@ export class AdminController {
   }
 
   @Patch("cities/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update city and activation state" })
   @ApiOkResponse({ type: CityEntity })
   updateCity(
@@ -179,7 +179,7 @@ export class AdminController {
   }
 
   @Patch("tariffs/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update tariff with versioning" })
   @ApiOkResponse({ type: TariffEntity })
   updateTariff(
@@ -209,7 +209,7 @@ export class AdminController {
   }
 
   @Patch("orders/:id/assign")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Manually assign executor to searching order" })
   @ApiOkResponse({ type: AdminOrderSummaryDto })
   assignOrder(
@@ -222,7 +222,7 @@ export class AdminController {
 
   @Post("orders/:id/dispatch/retry")
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({
     summary: "Restart dispatch for searching order from admin backoffice",
   })
@@ -235,7 +235,7 @@ export class AdminController {
   }
 
   @Patch("orders/:id/status")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({
     summary: "Force allowed terminal order status from admin backoffice",
   })
@@ -270,7 +270,7 @@ export class AdminController {
   }
 
   @Post("notes")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({
     summary: "Create internal admin note with handoff or escalation marker",
   })
@@ -283,7 +283,7 @@ export class AdminController {
   }
 
   @Patch("notes/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({
     summary: "Update internal admin note lifecycle, assignee and priority",
   })
@@ -313,7 +313,7 @@ export class AdminController {
   }
 
   @Patch("users/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update or block user through admin backoffice" })
   @ApiOkResponse({ type: UserEntity })
   updateUser(
@@ -343,7 +343,7 @@ export class AdminController {
   }
 
   @Patch("executors/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update executor profile from admin backoffice" })
   @ApiOkResponse({ type: ExecutorEntity })
   updateExecutor(
@@ -355,7 +355,7 @@ export class AdminController {
   }
 
   @Patch("executors/:id/verify")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Verify executor through admin panel" })
   @ApiOkResponse({ type: ExecutorEntity })
   verifyExecutorLegacy(
@@ -367,7 +367,7 @@ export class AdminController {
   }
 
   @Post("executors/:id/verify")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Verify executor through admin API" })
   @ApiOkResponse({ type: ExecutorEntity })
   verifyExecutor(
@@ -379,7 +379,7 @@ export class AdminController {
   }
 
   @Post("executors/:id/block")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Block or unblock executor through admin API" })
   @ApiOkResponse({ type: ExecutorEntity })
   blockExecutor(
@@ -405,7 +405,7 @@ export class AdminController {
   }
 
   @Patch("executor-balance-topups/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update executor balance top-up request" })
   @ApiOkResponse({ type: ExecutorBalanceTopUpEntity })
   updateExecutorBalanceTopUp(
@@ -427,7 +427,7 @@ export class AdminController {
   }
 
   @Post("executor-payouts")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Create executor payout request" })
   @ApiOkResponse({ type: ExecutorPayoutEntity })
   createExecutorPayout(
@@ -438,7 +438,7 @@ export class AdminController {
   }
 
   @Patch("executor-payouts/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update executor payout request" })
   @ApiOkResponse({ type: ExecutorPayoutEntity })
   updateExecutorPayout(
@@ -477,7 +477,7 @@ export class AdminController {
   }
 
   @Post("promo-codes")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Create promo code" })
   @ApiOkResponse({ type: PromoCodeEntity })
   createPromoCode(
@@ -488,7 +488,7 @@ export class AdminController {
   }
 
   @Patch("promo-codes/:id")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Update promo code" })
   @ApiOkResponse({ type: PromoCodeEntity })
   updatePromoCode(
@@ -501,7 +501,7 @@ export class AdminController {
 
   @Post("payments/:id/refund")
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Refund payment through admin API" })
   @ApiOkResponse({ type: PaymentResponseDto })
   refundPayment(
@@ -514,7 +514,7 @@ export class AdminController {
 
   @Post("payments/:id/cancel")
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Cancel authorized payment through admin API" })
   @ApiOkResponse({ type: PaymentResponseDto })
   cancelPayment(
@@ -526,7 +526,7 @@ export class AdminController {
   }
 
   @Get("reports/financial")
-  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
   @ApiOperation({ summary: "Get financial report for backoffice" })
   @ApiOkResponse({ type: FinancialReportDto })
   getFinancialReport(

@@ -5,6 +5,7 @@ node_modules
 .firebase
 dist
 coverage
+__pycache__/
 .DS_Store
 artifacts
 builds

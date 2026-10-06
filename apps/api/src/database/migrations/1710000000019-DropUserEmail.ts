@@ -9,7 +9,7 @@ export class DropUserEmail1710000000019 implements MigrationInterface {
     );
   }
 
-  async down(_queryRunner: QueryRunner): Promise<void> {
+  async down(): Promise<void> {
     return;
   }
 }

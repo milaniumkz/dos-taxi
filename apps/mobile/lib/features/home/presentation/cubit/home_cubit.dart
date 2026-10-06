@@ -48,6 +48,8 @@ class HomeCubit extends Cubit<HomeState> {
   Timer? _debounceTimer;
   int _searchRequestId = 0;
   int _routeRequestId = 0;
+  int _mapRequestId = 0;
+  int _nearbyRequestId = 0;
 
   Future<void> initialize() async {
     await resolveCurrentLocation();
@@ -124,9 +126,10 @@ class HomeCubit extends Cubit<HomeState> {
         emit(
           state.copyWith(
             currentLocation: location,
-            mapCenter: location,
+            mapCenter: state.useCustomPickup ? state.mapCenter : location,
             isResolvingCurrentLocation: true,
-            recenterRequestId: state.recenterRequestId + 1,
+            recenterRequestId:
+                state.recenterRequestId + (state.useCustomPickup ? 0 : 1),
             errorMessage: null,
           ),
         );
@@ -153,14 +156,15 @@ class HomeCubit extends Cubit<HomeState> {
           (address) => emit(
             state.copyWith(
               currentLocation: location,
-              mapCenter: location,
+              mapCenter: state.useCustomPickup ? state.mapCenter : location,
               currentAddress: AddressSuggestion(
                 title: address.title,
                 subtitle: address.subtitle,
                 location: location,
               ),
               isResolvingCurrentLocation: false,
-              recenterRequestId: state.recenterRequestId + 1,
+              recenterRequestId:
+                  state.recenterRequestId + (state.useCustomPickup ? 0 : 1),
               errorMessage: null,
             ),
           ),
@@ -170,36 +174,60 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   void onSearchQueryChanged(String query) {
+    _searchQueryChanged(query, isPickup: false);
+  }
+
+  void onPickupQueryChanged(String query) {
+    _searchQueryChanged(query, isPickup: true);
+  }
+
+  void activatePickupSearch() => _activateSearch(true);
+  void activateDestinationSearch() => _activateSearch(false);
+
+  void _activateSearch(bool isPickup) {
+    if (state.searchingPickup == isPickup) return;
     _debounceTimer?.cancel();
-    final trimmed = query.trim();
-
-    if (trimmed.isEmpty) {
-      emit(
-        state.copyWith(
-          selectedAddress: null,
-          routePoints: const [],
-          searchResults: const [],
-          isSearching: false,
-          query: '',
-        ),
-      );
-      return;
-    }
-
+    ++_searchRequestId;
+    ++_mapRequestId;
     emit(
       state.copyWith(
-        selectedAddress: null,
-        routePoints: const [],
-        query: trimmed,
-        isSearching: true,
+        searchingPickup: isPickup,
+        searchResults: const [],
+        isSearching: false,
+        isResolvingMapAddress: false,
       ),
     );
+  }
 
+  void _searchQueryChanged(String query, {required bool isPickup}) {
+    _debounceTimer?.cancel();
     final requestId = ++_searchRequestId;
+    ++_routeRequestId;
+    ++_mapRequestId;
+    final trimmed = query.trim();
+    if (isPickup) ++_nearbyRequestId;
+    emit(
+      state.copyWith(
+        selectedAddress: isPickup ? _unset : null,
+        pickupAddress: isPickup ? null : _unset,
+        useCustomPickup: isPickup ? true : null,
+        pickupQuery: isPickup ? trimmed : null,
+        nearbyExecutors: isPickup ? const [] : null,
+        isLoadingNearby: isPickup ? false : null,
+        searchingPickup: isPickup,
+        routePoints: const [],
+        searchResults: const [],
+        query: isPickup ? null : trimmed,
+        isSearching: trimmed.isNotEmpty,
+        isResolvingMapAddress: false,
+      ),
+    );
+    if (trimmed.isEmpty) return;
     _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
       final result = await _homeRepository.searchAddresses(
         query: trimmed,
-        locationBias: state.currentAddress?.location,
+        locationBias:
+            state.effectivePickup?.location ?? state.currentAddress?.location,
       );
       if (requestId != _searchRequestId || isClosed) {
         return;
@@ -219,9 +247,55 @@ class HomeCubit extends Cubit<HomeState> {
     });
   }
 
+  Future<void> selectPickup(AddressSuggestion suggestion) async {
+    _debounceTimer?.cancel();
+    ++_searchRequestId;
+    ++_mapRequestId;
+    emit(
+      state.copyWith(
+        pickupAddress: suggestion,
+        useCustomPickup: true,
+        pickupQuery: suggestion.displayTitle,
+        searchingPickup: true,
+        mapCenter: suggestion.location,
+        routePoints: const [],
+        searchResults: const [],
+        isSearching: false,
+        isResolvingMapAddress: false,
+      ),
+    );
+    unawaited(_refreshRoute());
+    await refreshNearbyExecutors();
+  }
+
+  Future<void> useCurrentPickup() async {
+    _debounceTimer?.cancel();
+    ++_routeRequestId;
+    ++_searchRequestId;
+    ++_mapRequestId;
+    emit(
+      state.copyWith(
+        pickupAddress: null,
+        useCustomPickup: false,
+        pickupQuery: '',
+        searchingPickup: false,
+        mapCenter: state.currentLocation,
+        routePoints: const [],
+        searchResults: const [],
+        isSearching: false,
+        isResolvingMapAddress: false,
+      ),
+    );
+    if (state.currentAddress == null) await resolveCurrentLocation();
+    if (isClosed) return;
+    unawaited(_refreshRoute());
+    await refreshNearbyExecutors();
+  }
+
   Future<void> selectAddress(AddressSuggestion suggestion) async {
     _debounceTimer?.cancel();
     _searchRequestId += 1;
+    ++_mapRequestId;
     emit(
       state.copyWith(
         mapCenter: suggestion.location,
@@ -229,28 +303,43 @@ class HomeCubit extends Cubit<HomeState> {
         routePoints: const [],
         searchResults: const [],
         isSearching: false,
+        isResolvingMapAddress: false,
         query: suggestion.displayTitle,
+        searchingPickup: false,
         errorMessage: null,
       ),
     );
     unawaited(_refreshRoute());
   }
 
-  Future<void> selectDestinationFromMap(LatLng location) async {
+  Future<void> selectDestinationFromMap(LatLng location) =>
+      _selectFromMap(location, isPickup: false);
+
+  Future<void> selectRoutePointFromMap(LatLng location) =>
+      _selectFromMap(location, isPickup: state.searchingPickup);
+
+  Future<void> _selectFromMap(LatLng location, {required bool isPickup}) async {
     _debounceTimer?.cancel();
     _searchRequestId += 1;
+    final requestId = ++_mapRequestId;
+    ++_routeRequestId;
     emit(
       state.copyWith(
         mapCenter: location,
+        pickupAddress: isPickup ? null : _unset,
+        useCustomPickup: isPickup ? true : null,
+        selectedAddress: isPickup ? _unset : null,
+        routePoints: const [],
         searchResults: const [],
         isSearching: false,
         isResolvingMapAddress: true,
+        searchingPickup: isPickup,
         errorMessage: null,
       ),
     );
 
     final result = await _homeRepository.reverseGeocode(location: location);
-    if (isClosed) {
+    if (isClosed || requestId != _mapRequestId) {
       return;
     }
 
@@ -276,27 +365,30 @@ class HomeCubit extends Cubit<HomeState> {
         emit(
           state.copyWith(
             mapCenter: address.location,
-            selectedAddress: address,
+            selectedAddress: isPickup ? _unset : address,
+            pickupAddress: isPickup ? address : _unset,
+            pickupQuery: isPickup ? displayTitle : null,
             routePoints: const [],
-            query: displayTitle,
+            query: isPickup ? null : displayTitle,
             isResolvingMapAddress: false,
             errorMessage: null,
           ),
         );
         unawaited(_refreshRoute());
+        if (isPickup) unawaited(refreshNearbyExecutors());
       },
     );
   }
 
   Future<void> _refreshRoute() async {
-    final pickup = state.currentAddress;
+    final requestId = ++_routeRequestId;
+    final pickup = state.effectivePickup;
     final destination = state.selectedAddress;
     if (pickup == null || destination == null) {
       emit(state.copyWith(routePoints: const []));
       return;
     }
 
-    final requestId = ++_routeRequestId;
     final result = await _taxiRepository.buildRoute(
       pickup: pickup,
       destination: destination,
@@ -318,15 +410,18 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> refreshNearbyExecutors() async {
-    if (state.currentAddress == null) {
+    final requestId = ++_nearbyRequestId;
+    if (state.effectivePickup == null) {
       return;
     }
 
     emit(state.copyWith(isLoadingNearby: true, errorMessage: null));
     final result = await _homeRepository.fetchNearbyExecutors(
-      location: state.currentLocation,
+      location: state.effectivePickup!.location,
       serviceType: state.selectedService.apiValue,
     );
+
+    if (isClosed || requestId != _nearbyRequestId) return;
 
     result.fold(
       (_) => emit(

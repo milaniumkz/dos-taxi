@@ -4,6 +4,11 @@ set -euo pipefail
 incoming_dir="${1:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
 target_dir="${2:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
 commit_sha="${3:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
+runtime_mode="${4:-}"
+if [[ -n "$runtime_mode" && "$runtime_mode" != "--runtime-config-stdin" ]]; then
+  echo "Unsupported runtime configuration mode"
+  exit 1
+fi
 
 lock_file="/tmp/dos-production-deploy.lock"
 exec 9>"$lock_file"
@@ -52,7 +57,12 @@ tar \
   -czf "$backup_dir/source.tar.gz" \
   -C "$target_dir" .
 
+if [[ -d "$incoming_dir/_web/passenger" && -d "$target_dir/deploy/hosting-public/passenger" ]]; then
+  tar -czf "$backup_dir/passenger-web.tar.gz" -C "$target_dir/deploy/hosting-public" passenger
+fi
+
 rsync -a --delete \
+  --exclude='_web/' \
   --exclude='_incoming/' \
   --exclude='.git/' \
   --exclude='node_modules/' \
@@ -82,6 +92,10 @@ rsync -a --delete \
 
 cd "$target_dir/deploy/vps"
 
+if [[ "$runtime_mode" == "--runtime-config-stdin" ]]; then
+  python3 scripts/configure-smsc.py .env
+fi
+
 docker compose --env-file .env -f docker-compose.yml build api admin
 run_db_migrations="$(awk -F= '$1 == "RUN_DB_MIGRATIONS" { print $2 }' .env 2>/dev/null | tail -n 1 | tr -d '\r\"' | tr -d "'")"
 if [[ "${run_db_migrations:-true}" == "true" ]]; then
@@ -101,6 +115,13 @@ fetch('http://127.0.0.1:3000/api/v1/health')
     process.exit(1);
   });
 "
+
+if [[ -d "$incoming_dir/_web/passenger" ]]; then
+  [[ -f "$incoming_dir/_web/passenger/index.html" && -f "$incoming_dir/_web/passenger/main.dart.js" ]]
+  mkdir -p "$target_dir/deploy/hosting-public/passenger"
+  rsync -a --delete "$incoming_dir/_web/passenger/" "$target_dir/deploy/hosting-public/passenger/"
+  printf '%s\n' "$commit_sha" > "$target_dir/deploy/hosting-public/passenger/release.txt"
+fi
 
 cat > DEPLOYED_VERSION <<EOF_VERSION
 commit=$commit_sha

@@ -10,7 +10,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Between, DataSource, In, Repository } from "typeorm";
+import { Between, DataSource, In, IsNull, Repository } from "typeorm";
+import { createHash } from "node:crypto";
 
 import { DeliveryDetailEntity } from "../delivery/entities/delivery-detail.entity";
 import { DispatchService } from "../dispatch/dispatch.service";
@@ -59,6 +60,7 @@ import { AdminOrdersResponseDto } from "./dto/admin-orders-response.dto";
 import { AssignOrderDto } from "./dto/assign-order.dto";
 import { CancelPaymentDto } from "./dto/cancel-payment.dto";
 import { CreateCityDto } from "./dto/create-city.dto";
+import { CreateTariffDto } from "./dto/create-tariff.dto";
 import { CreatePromoCodeDto } from "./dto/create-promo-code.dto";
 import { FinancialReportDto } from "./dto/financial-report.dto";
 import { ListAdminActivityQueryDto } from "./dto/list-admin-activity-query.dto";
@@ -318,6 +320,109 @@ export class AdminService {
     });
   }
 
+  async createTariff(
+    actorId: string,
+    dto: CreateTariffDto,
+    key?: string,
+  ): Promise<TariffEntity> {
+    if (!dto.nameRu.trim() || !dto.nameKk.trim())
+      throw new BadRequestException("TARIFF_NAME_REQUIRED");
+    const city = await this.citiesRepository.findOneBy({ id: dto.cityId });
+    if (!city || !city.isActive)
+      throw new BadRequestException("CITY_NOT_ACTIVE");
+    if (city.currency !== dto.currency)
+      throw new BadRequestException("TARIFF_CITY_CURRENCY_MISMATCH");
+    const vehicleClass =
+      dto.serviceType === ServiceType.TAXI
+        ? dto.vehicleClass || "economy"
+        : null;
+    this.assertAllowedTariffKey(dto.serviceType, vehicleClass);
+    const validFrom = dto.validFrom ? new Date(dto.validFrom) : new Date();
+    const validTo = dto.validTo ? new Date(dto.validTo) : null;
+    if (validTo && validTo <= validFrom)
+      throw new BadRequestException("TARIFF_DATE_RANGE_INVALID");
+    if ((dto.commissionPercent ?? 10) > 100)
+      throw new BadRequestException("TARIFF_COMMISSION_INVALID");
+    return this.dataSource.transaction(async (manager) => {
+      if (key)
+        await manager.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `tariff-request:${actorId}:${key}`,
+        ]);
+      await manager.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        `tariff:${city.id}:${dto.serviceType}:${vehicleClass}`,
+      ]);
+      const repository = manager.getRepository(TariffEntity);
+      const requestKey = key ? `${actorId}:${key}` : null;
+      const payloadHash = createHash("sha256")
+        .update(JSON.stringify(dto))
+        .digest("hex");
+      if (requestKey) {
+        const previous = await manager
+          .getRepository(AdminActivityLogEntity)
+          .createQueryBuilder("activity")
+          .where("activity.metadata ->> 'requestKey' = :requestKey", {
+            requestKey,
+          })
+          .andWhere("activity.action = :action", { action: "tariff.created" })
+          .getOne();
+        if (previous) {
+          if (previous.metadata?.payloadHash !== payloadHash)
+            throw new BadRequestException("IDEMPOTENCY_KEY_CONFLICT");
+          return repository.findOneByOrFail({ id: previous.entityId });
+        }
+      }
+      if (dto.isActive !== false) {
+        const current = await repository.find({
+          where: {
+            cityId: city.id,
+            serviceType: dto.serviceType,
+            vehicleClass: vehicleClass === null ? IsNull() : vehicleClass,
+            isActive: true,
+          },
+        });
+        for (const tariff of current) {
+          if (tariff.validFrom >= validFrom)
+            throw new BadRequestException("TARIFF_VERSION_CONFLICT");
+          if (!tariff.validTo || tariff.validTo > validFrom) {
+            tariff.validTo = validFrom;
+            if (validFrom <= new Date()) tariff.isActive = false;
+            await repository.save(tariff);
+          }
+        }
+      }
+      const tariff = await repository.save(
+        repository.create({
+          cityId: city.id,
+          serviceType: dto.serviceType,
+          vehicleClass,
+          nameRu: dto.nameRu.trim(),
+          nameKk: dto.nameKk.trim(),
+          currency: city.currency,
+          basePrice: dto.basePrice.toFixed(2),
+          pricePerKm: dto.pricePerKm.toFixed(4),
+          pricePerMinute: dto.pricePerMinute.toFixed(4),
+          minimumPrice: dto.minimumPrice.toFixed(2),
+          freeWaitingSeconds: dto.freeWaitingSeconds ?? 180,
+          paidWaitingPerMinute: (dto.paidWaitingPerMinute ?? 0).toFixed(4),
+          commissionPercent: (dto.commissionPercent ?? 10).toFixed(2),
+          commissionFixed: (dto.commissionFixed ?? 0).toFixed(2),
+          validFrom,
+          validTo,
+          isActive: dto.isActive !== false,
+          createdById: actorId,
+        }),
+      );
+      await manager.getRepository(AdminActivityLogEntity).save({
+        actorId,
+        action: "tariff.created",
+        entityType: "tariff",
+        entityId: tariff.id,
+        metadata: { cityId: city.id, requestKey, payloadHash },
+      });
+      return tariff;
+    });
+  }
+
   getTariffDetail(tariffId: string): Promise<TariffEntity> {
     return this.getTariff(tariffId);
   }
@@ -338,14 +443,10 @@ export class AdminService {
       "nameKk",
       "validFrom",
       "validTo",
-      "isActive",
     ];
     const hasLockedFieldChange = lockedFields.some((field) => {
       if (dto[field] === undefined) {
         return false;
-      }
-      if (field === "isActive") {
-        return dto.isActive !== true;
       }
       return true;
     });
@@ -353,7 +454,7 @@ export class AdminService {
       throw new BadRequestException({
         code: "TARIFF_STRUCTURE_LOCKED",
         message:
-          "Tariff city, service type, class, name, activity and dates are system-managed",
+          "Tariff city, service type, class, name and dates are managed through tariff creation",
       });
     }
 
@@ -384,8 +485,7 @@ export class AdminService {
     if (dto.currency !== undefined) {
       current.currency = dto.currency;
     }
-    current.isActive = true;
-    current.validTo = null;
+    if (dto.isActive !== undefined) current.isActive = dto.isActive;
 
     const savedTariff = await this.tariffsRepository.save(current);
     await this.recordActivity(actorId, "tariff.updated", "tariff", tariffId, {

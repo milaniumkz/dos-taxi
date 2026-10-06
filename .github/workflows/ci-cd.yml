@@ -20,6 +20,16 @@ jobs:
   node:
     name: API/Admin checks
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-bookworm
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,6 +51,22 @@ jobs:
 
       - name: Build shared types
         run: pnpm --filter @dos/shared-types build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test OTP and administrative access
+        run: >-
+          pnpm --filter @dos/api exec jest --runInBand
+          test/integration/admin-creation.integration.spec.ts
+          test/integration/admin.integration.spec.ts
+          test/integration/smsc-otp.integration.spec.ts
+          src/modules/notifications/smsc.provider.spec.ts
+          test/unit/env.validation.spec.ts
+          src/modules/auth/auth.spec.ts
+
+      - name: Test runtime configuration
+        run: python3 -m unittest discover -s deploy/vps/scripts -p 'test_*.py'
 
       - name: Typecheck API
         run: pnpm --filter @dos/api typecheck
@@ -85,6 +111,33 @@ jobs:
         working-directory: apps/mobile
         run: flutter test
 
+      - name: Build passenger web app
+        working-directory: apps/mobile
+        run: flutter build web --release -t lib/main_passenger_prod.dart --base-href /passenger/
+
+      - name: Prepare passenger web metadata
+        run: |
+          python3 - <<'PY_WEB'
+          import importlib.util, pathlib, shutil
+          spec = importlib.util.spec_from_file_location("pwa", "scripts/prepare_mobile_web_pwa.py")
+          pwa = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(pwa)
+          target = pathlib.Path("apps/mobile/build/web")
+          cfg = pwa.ROLES["passenger"]
+          pwa.write_manifest(target, "passenger", cfg)
+          pwa.update_index(target, cfg, "/passenger/")
+          (target / "pwa-install.js").write_text(pwa.INSTALL_JS + "\n")
+          for name in ["Icon-512.png", "Icon-maskable-512.png"]:
+              shutil.copyfile(cfg["icon"], target / "icons" / name)
+          PY_WEB
+
+      - name: Save checked passenger web app
+        uses: actions/upload-artifact@v4
+        with:
+          name: passenger-web
+          path: apps/mobile/build/web
+          retention-days: 14
+
   deploy-production:
     name: Deploy VPS production
     runs-on: ubuntu-latest
@@ -102,6 +155,10 @@ jobs:
         with:
           ref: ${{ inputs.deploy_ref || github.sha }}
 
+      - name: Resolve release commit
+        id: release
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Install SSH tools
         run: sudo apt-get update && sudo apt-get install -y rsync openssh-client
 
@@ -117,15 +174,22 @@ jobs:
           printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Download checked passenger web app
+        uses: actions/download-artifact@v4
+        with:
+          name: passenger-web
+          path: apps/mobile/build/web
+
       - name: Upload release to VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
         run: |
           set -euo pipefail
-          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${GITHUB_SHA}'"
+          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${RELEASE_SHA}'"
           rsync -az --delete \
             --exclude='.git/' \
             --exclude='node_modules/' \
@@ -152,7 +216,10 @@ jobs:
             --exclude='apps/mobile/android/*.keystore' \
             --exclude='apps/mobile/android/key.properties' \
             -e "ssh -p ${VPS_PORT:-22}" \
-            ./ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${GITHUB_SHA}/"
+            ./ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/"
+          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${RELEASE_SHA}/_web/passenger'"
+          rsync -az --delete -e "ssh -p ${VPS_PORT:-22}" \
+            apps/mobile/build/web/ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/_web/passenger/"
 
       - name: Promote release
         env:
@@ -160,6 +227,19 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+          SMSC_LOGIN: ${{ secrets.SMSC_LOGIN }}
+          SMSC_PASSWORD: ${{ secrets.SMSC_PASSWORD }}
         run: |
-          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
-            "bash '$VPS_PATH/_incoming/${GITHUB_SHA}/deploy/vps/scripts/ci-promote-release.sh' '$VPS_PATH/_incoming/${GITHUB_SHA}' '$VPS_PATH' '${GITHUB_SHA}'"
+          python3 - <<'PY'
+          import json, os, shlex, subprocess
+          login = os.environ.get("SMSC_LOGIN", "")
+          password = os.environ.get("SMSC_PASSWORD", "")
+          if bool(login) != bool(password):
+              raise SystemExit("Configure both SMSC_LOGIN and SMSC_PASSWORD secrets")
+          settings = {"SMSC_LOGIN": login, "SMSC_PASSWORD": password} if login else {}
+          path, sha = os.environ["VPS_PATH"], os.environ["RELEASE_SHA"]
+          incoming = f"{path}/_incoming/{sha}"
+          command = shlex.join(["bash", f"{incoming}/deploy/vps/scripts/ci-promote-release.sh", incoming, path, sha, "--runtime-config-stdin"])
+          subprocess.run(["ssh", "-p", os.environ.get("VPS_PORT") or "22", f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}', command], input=json.dumps(settings), text=True, check=True)
+          PY

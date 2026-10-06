@@ -11,6 +11,12 @@ import { UserEntity } from "../users/entities/user.entity";
 
 import { AuthService } from "./auth.service";
 
+function testConfig(values: Record<string, string | number>): ConfigService {
+  const config = new ConfigService(values);
+  Object.defineProperty(config, "get", { value: (key: string) => values[key] });
+  return config;
+}
+
 describe("AuthService OTP logic", () => {
   let authService: AuthService;
   let usersRepository: jest.Mocked<Repository<UserEntity>>;
@@ -61,7 +67,7 @@ describe("AuthService OTP logic", () => {
       registerDeviceToken: jest.fn(),
     } as unknown as jest.Mocked<NotificationsService>;
 
-    configService = new ConfigService({
+    configService = testConfig({
       OTP_LENGTH: 4,
       OTP_TTL_SECONDS: 300,
       OTP_MAX_ATTEMPTS: 3,
@@ -101,7 +107,7 @@ describe("AuthService OTP logic", () => {
   });
 
   it("sends OTP through SMS and hides dev code when bypass is disabled", async () => {
-    configService = new ConfigService({
+    configService = testConfig({
       OTP_LENGTH: 4,
       OTP_TTL_SECONDS: 300,
       OTP_MAX_ATTEMPTS: 3,
@@ -146,7 +152,7 @@ describe("AuthService OTP logic", () => {
   });
 
   it("returns generated OTP in response and skips SMS when debug response is enabled", async () => {
-    configService = new ConfigService({
+    configService = testConfig({
       OTP_LENGTH: 4,
       OTP_TTL_SECONDS: 300,
       OTP_MAX_ATTEMPTS: 3,

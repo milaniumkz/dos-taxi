@@ -84,17 +84,19 @@ export class OrdersService {
   async createOrder(
     clientId: string,
     dto: CreateOrderDto,
+    orderId?: string,
   ): Promise<OrderResponseDto> {
     if (dto.serviceType === ServiceType.DELIVERY) {
-      return this.createDeliveryOrder(clientId, dto);
+      return this.createDeliveryOrder(clientId, dto, orderId);
     }
 
-    return this.createTaxiOrder(clientId, dto);
+    return this.createTaxiOrder(clientId, dto, orderId);
   }
 
   async createTaxiOrder(
     clientId: string,
     dto: CreateOrderDto,
+    orderId?: string,
   ): Promise<OrderResponseDto> {
     if (!this.isDriverRideService(dto.serviceType)) {
       throw new BadRequestException({
@@ -132,6 +134,7 @@ export class OrdersService {
 
     const order = await this.ordersRepository.save(
       this.ordersRepository.create({
+        id: orderId,
         clientId,
         serviceType,
         status: OrderStatus.DRAFT,
@@ -184,6 +187,7 @@ export class OrdersService {
   async createDeliveryOrder(
     clientId: string,
     dto: CreateOrderDto,
+    orderId?: string,
   ): Promise<OrderResponseDto> {
     if (dto.serviceType !== ServiceType.DELIVERY || !dto.courierVehicleType) {
       throw new BadRequestException({
@@ -227,6 +231,7 @@ export class OrdersService {
 
     const order = await this.ordersRepository.save(
       this.ordersRepository.create({
+        id: orderId,
         clientId,
         serviceType: ServiceType.DELIVERY,
         status: OrderStatus.DRAFT,

@@ -1,3 +1,4 @@
+import { getCreationLabels } from "../../lib/creation-i18n";
 import Link from 'next/link';
 
 import { AppFrame } from '../../components/app-frame';
@@ -262,6 +263,7 @@ export default async function CityDetailPage({
               title={dictionary.cityDetailPage.tariffsTitle}
               description={dictionary.cityDetailPage.tariffsDescription}
             >
+              <div className="button-row"><a className="action-button" href={`/tariffs/new?cityId=${city.id}&lang=${locale}`}>{getCreationLabels(locale).newTariff}</a><a className="action-button action-button--soft" href={`/orders/new?cityId=${city.id}&lang=${locale}`}>{getCreationLabels(locale).newOrder}</a></div>
               <TariffsPanel
                 tariffs={relatedTariffs}
                 locale={locale}

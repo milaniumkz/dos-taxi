@@ -35,10 +35,12 @@ class PassengerHomePlaceholderScreen extends StatefulWidget {
 
 class _PassengerHomePlaceholderScreenState
     extends State<PassengerHomePlaceholderScreen> {
+  final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
 
   @override
   void dispose() {
+    _pickupController.dispose();
     _destinationController.dispose();
     super.dispose();
   }
@@ -59,6 +61,14 @@ class _PassengerHomePlaceholderScreenState
               }
             });
             return;
+          }
+
+          final pickupLabel = state.effectivePickup?.displayTitle;
+          if (pickupLabel != null && _pickupController.text != pickupLabel) {
+            _pickupController.value = TextEditingValue(
+              text: pickupLabel,
+              selection: TextSelection.collapsed(offset: pickupLabel.length),
+            );
           }
 
           final selectedAddressLabel = state.selectedAddress?.displayTitle;
@@ -93,71 +103,75 @@ class _PassengerHomePlaceholderScreenState
                     nearbyExecutors: state.nearbyExecutors,
                     routePoints: state.routePoints,
                     selectedLocation: state.selectedAddress?.location,
+                    pickupLocation: state.useCustomPickup
+                        ? state.pickupAddress?.location
+                        : null,
                     isLoading: state.isResolvingMapAddress,
-                    onTap: cubit.selectDestinationFromMap,
+                    onTap: cubit.selectRoutePointFromMap,
                   ),
                 ),
-                if (state.currentAddress == null &&
-                    state.isResolvingCurrentLocation)
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: const BoxDecoration(color: Colors.white),
-                      child: SafeArea(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(AppSpacing.xl),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const CircularProgressIndicator(),
-                                const SizedBox(height: AppSpacing.md),
-                                Text(
-                                  l10n.homeResolvingCurrentAddress,
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w800),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       children: [
-                        const Spacer(),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: FloatingActionButton.small(
-                            heroTag: 'passenger-location',
-                            backgroundColor: AppColors.surface,
-                            foregroundColor: AppColors.text,
-                            onPressed: state.isResolvingCurrentLocation
-                                ? null
-                                : cubit.recenterToCurrentPosition,
-                            child: state.isResolvingCurrentLocation
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: FloatingActionButton.small(
+                                      heroTag: 'passenger-location',
+                                      backgroundColor: AppColors.surface,
+                                      foregroundColor: AppColors.text,
+                                      onPressed:
+                                          state.isResolvingCurrentLocation
+                                          ? null
+                                          : cubit.recenterToCurrentPosition,
+                                      child: state.isResolvingCurrentLocation
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.my_location_rounded,
+                                            ),
                                     ),
-                                  )
-                                : const Icon(Icons.my_location_rounded),
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  _PassengerOrderPanel(
+                                    state: state,
+                                    pickupController: _pickupController,
+                                    destinationController:
+                                        _destinationController,
+                                    onPickupChanged: cubit.onPickupQueryChanged,
+                                    onPickupSelected: cubit.selectPickup,
+                                    onPickupFocused: cubit.activatePickupSearch,
+                                    onDestinationFocused:
+                                        cubit.activateDestinationSearch,
+                                    onUseCurrentPickup: () {
+                                      _pickupController.text =
+                                          state.currentAddress?.displayTitle ??
+                                          '';
+                                      cubit.useCurrentPickup();
+                                    },
+                                    onServiceChanged: cubit.setService,
+                                    onDestinationChanged:
+                                        cubit.onSearchQueryChanged,
+                                    onDestinationSelected: cubit.selectAddress,
+                                    onOrder: () => _startOrder(context, state),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _PassengerOrderPanel(
-                          state: state,
-                          destinationController: _destinationController,
-                          onServiceChanged: cubit.setService,
-                          onDestinationChanged: cubit.onSearchQueryChanged,
-                          onDestinationSelected: cubit.selectAddress,
-                          onOrder: () => _startOrder(context, state),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         DosBottomNav(
@@ -201,17 +215,17 @@ class _PassengerHomePlaceholderScreenState
   }
 
   Future<void> _startOrder(BuildContext context, HomeState state) async {
-    if (state.currentAddress == null ||
-        state.currentAddress!.displayTitle.trim().isEmpty) {
+    if (state.effectivePickup == null ||
+        state.effectivePickup!.displayTitle.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.homeLocationUnavailable),
+          content: Text(AppLocalizations.of(context)!.taxiErrorCompleteOrder),
         ),
       );
       return;
     }
 
-    final currentAddress = state.currentAddress!;
+    final currentAddress = state.effectivePickup!;
 
     if (state.selectedService == HomeServiceType.delivery) {
       await serviceLocator<DeliveryOrderCubit>().startNewOrder(
@@ -264,7 +278,13 @@ class _PassengerHomePlaceholderScreenState
 class _PassengerOrderPanel extends StatelessWidget {
   const _PassengerOrderPanel({
     required this.state,
+    required this.pickupController,
     required this.destinationController,
+    required this.onPickupChanged,
+    required this.onPickupSelected,
+    required this.onPickupFocused,
+    required this.onDestinationFocused,
+    required this.onUseCurrentPickup,
     required this.onServiceChanged,
     required this.onDestinationChanged,
     required this.onDestinationSelected,
@@ -272,7 +292,13 @@ class _PassengerOrderPanel extends StatelessWidget {
   });
 
   final HomeState state;
+  final TextEditingController pickupController;
   final TextEditingController destinationController;
+  final ValueChanged<String> onPickupChanged;
+  final ValueChanged<AddressSuggestion> onPickupSelected;
+  final VoidCallback onPickupFocused;
+  final VoidCallback onDestinationFocused;
+  final VoidCallback onUseCurrentPickup;
   final ValueChanged<HomeServiceType> onServiceChanged;
   final ValueChanged<String> onDestinationChanged;
   final ValueChanged<AddressSuggestion> onDestinationSelected;
@@ -281,16 +307,15 @@ class _PassengerOrderPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final pickup = state.currentAddress?.displayTitle.isNotEmpty == true
-        ? state.currentAddress!.displayTitle
-        : state.isResolvingCurrentLocation
-        ? l10n.homeResolvingCurrentAddress
-        : l10n.commonCurrentLocation;
+    final activeQuery = state.searchingPickup ? state.pickupQuery : state.query;
+    final activeAddress = state.searchingPickup
+        ? state.pickupAddress
+        : state.selectedAddress;
     final showSearchResults =
         state.searchResults.isNotEmpty ||
         state.isSearching ||
-        (state.query.isNotEmpty &&
-            state.selectedAddress == null &&
+        (activeQuery.isNotEmpty &&
+            activeAddress == null &&
             !state.isResolvingMapAddress);
 
     return DosCard(
@@ -329,20 +354,42 @@ class _PassengerOrderPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          _RouteRow(
-            icon: Icons.my_location_rounded,
-            label: pickup,
-            isPickup: true,
+          Row(
+            children: [
+              Expanded(
+                child: _DestinationSearchField(
+                  controller: pickupController,
+                  hintText: l10n.taxiAddressPickupLabel,
+                  labelText: l10n.taxiAddressPickupLabel,
+                  onTap: onPickupFocused,
+                  onChanged: onPickupChanged,
+                ),
+              ),
+              IconButton(
+                tooltip: l10n.commonCurrentLocation,
+                onPressed: onUseCurrentPickup,
+                icon: const Icon(Icons.my_location_rounded),
+              ),
+            ],
           ),
+          if (showSearchResults && state.searchingPickup) ...[
+            const SizedBox(height: 6),
+            _DestinationSearchResults(
+              state: state,
+              onSelected: onPickupSelected,
+            ),
+          ],
           const SizedBox(height: 6),
           _DestinationSearchField(
             controller: destinationController,
             hintText: state.isResolvingMapAddress
                 ? l10n.homeResolvingCurrentAddress
                 : l10n.homeSearchPlaceholder,
+            labelText: l10n.taxiAddressDestinationLabel,
+            onTap: onDestinationFocused,
             onChanged: onDestinationChanged,
           ),
-          if (showSearchResults) ...[
+          if (showSearchResults && !state.searchingPickup) ...[
             const SizedBox(height: 6),
             _DestinationSearchResults(
               state: state,
@@ -427,11 +474,15 @@ class _DestinationSearchField extends StatelessWidget {
     required this.controller,
     required this.hintText,
     required this.onChanged,
+    this.labelText,
+    this.onTap,
   });
 
   final TextEditingController controller;
   final String hintText;
   final ValueChanged<String> onChanged;
+  final String? labelText;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -443,6 +494,8 @@ class _DestinationSearchField extends StatelessWidget {
       child: AddressSearchBar(
         controller: controller,
         hintText: hintText,
+        labelText: labelText,
+        onTap: onTap,
         onChanged: onChanged,
       ),
     );
@@ -490,7 +543,11 @@ class _DestinationSearchResults extends StatelessWidget {
                   color: AppColors.muted,
                 ),
                 title: Text(l10n.addressPickerAddressNotFound),
-                subtitle: Text(l10n.addressPickerDestinationMapHint),
+                subtitle: Text(
+                  state.searchingPickup
+                      ? l10n.addressPickerPickupMapHint
+                      : l10n.addressPickerDestinationMapHint,
+                ),
               )
             : ListView.separated(
                 padding: EdgeInsets.zero,
@@ -522,57 +579,6 @@ class _DestinationSearchResults extends StatelessWidget {
                   );
                 },
               ),
-      ),
-    );
-  }
-}
-
-class _RouteRow extends StatelessWidget {
-  const _RouteRow({
-    required this.icon,
-    required this.label,
-    required this.isPickup,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool isPickup;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceAlt,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isPickup ? AppColors.text : AppColors.primary,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            Icon(
-              isPickup
-                  ? Icons.keyboard_arrow_down_rounded
-                  : Icons.arrow_forward_rounded,
-              color: AppColors.muted,
-            ),
-          ],
-        ),
       ),
     );
   }
