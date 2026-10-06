@@ -111,6 +111,33 @@ jobs:
         working-directory: apps/mobile
         run: flutter test
 
+      - name: Build passenger web app
+        working-directory: apps/mobile
+        run: flutter build web --release -t lib/main_passenger_prod.dart --base-href /passenger/
+
+      - name: Prepare passenger web metadata
+        run: |
+          python3 - <<'PY_WEB'
+          import importlib.util, pathlib, shutil
+          spec = importlib.util.spec_from_file_location("pwa", "scripts/prepare_mobile_web_pwa.py")
+          pwa = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(pwa)
+          target = pathlib.Path("apps/mobile/build/web")
+          cfg = pwa.ROLES["passenger"]
+          pwa.write_manifest(target, "passenger", cfg)
+          pwa.update_index(target, cfg, "/passenger/")
+          (target / "pwa-install.js").write_text(pwa.INSTALL_JS + "\n")
+          for name in ["Icon-512.png", "Icon-maskable-512.png"]:
+              shutil.copyfile(cfg["icon"], target / "icons" / name)
+          PY_WEB
+
+      - name: Save checked passenger web app
+        uses: actions/upload-artifact@v4
+        with:
+          name: passenger-web
+          path: apps/mobile/build/web
+          retention-days: 14
+
   deploy-production:
     name: Deploy VPS production
     runs-on: ubuntu-latest
@@ -146,6 +173,12 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+
+      - name: Download checked passenger web app
+        uses: actions/download-artifact@v4
+        with:
+          name: passenger-web
+          path: apps/mobile/build/web
 
       - name: Upload release to VPS
         env:
@@ -184,6 +217,9 @@ jobs:
             --exclude='apps/mobile/android/key.properties' \
             -e "ssh -p ${VPS_PORT:-22}" \
             ./ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/"
+          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${RELEASE_SHA}/_web/passenger'"
+          rsync -az --delete -e "ssh -p ${VPS_PORT:-22}" \
+            apps/mobile/build/web/ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/_web/passenger/"
 
       - name: Promote release
         env:

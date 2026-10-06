@@ -124,3 +124,5 @@ scripts/restore-db.sh backups/YYYYMMDD-HHMMSS/platform_db.dump
 ```
 
 Do not automatically restore an old database over new production data after a failed deploy.
+
+The checked passenger web build is uploaded as the `passenger-web` Actions artifact and promoted to `/passenger/` with the API/admin release. Its previous files are backed up as `passenger-web.tar.gz` and restored by the production rollback operation. `/passenger/release.txt` identifies the deployed commit. Installed Android/iOS apps require a new signed mobile release for UI changes.

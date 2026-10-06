@@ -26,3 +26,5 @@ Design.zip
 deploy/.env.*.yaml
 *.log
 .DS_Store
+
+_web/

@@ -57,6 +57,9 @@ fetch("http://127.0.0.1:3001/api/health").then(async r=>{console.log("Admin heal
       --exclude='./deploy/vps/backups' \
       -xzf "$argument/source.tar.gz" \
       -C ../..
+    if [[ -f "$argument/passenger-web.tar.gz" ]]; then
+      tar -xzf "$argument/passenger-web.tar.gz" -C ../hosting-public
+    fi
     docker compose --env-file .env -f docker-compose.yml build api admin
     docker compose --env-file .env -f docker-compose.yml up -d api admin nginx
     ;;
