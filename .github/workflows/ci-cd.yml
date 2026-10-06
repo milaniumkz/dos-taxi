@@ -19,6 +19,7 @@ concurrency:
 jobs:
   node:
     name: API/Admin checks
+    needs: native-node
     runs-on: ubuntu-latest
     env:
       PROMO_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/platform_test
@@ -64,11 +65,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared types
-        run: pnpm --filter @dos/shared-types build
-
-      - name: Lint
-        run: pnpm lint
+      - name: Download portable shared types from the required build job
+        uses: actions/download-artifact@v4
+        with:
+          name: dos-shared-types
+          path: packages/shared-types/dist
 
       - name: Test OTP, administration, promos and bonuses
         run: >-
@@ -77,24 +78,6 @@ jobs:
           test/integration/promo-bonus.integration.spec.ts
           test/integration/admin.integration.spec.ts
           test/integration/smsc-otp.integration.spec.ts
-          src/modules/notifications/smsc.provider.spec.ts
-          test/unit/env.validation.spec.ts
-          src/modules/auth/auth.spec.ts
-
-      - name: Test runtime configuration
-        run: python3 -m unittest discover -s deploy/vps/scripts -p 'test_*.py'
-
-      - name: Typecheck API
-        run: pnpm --filter @dos/api typecheck
-
-      - name: Typecheck admin
-        run: pnpm --filter @dos/admin typecheck
-
-      - name: Build API
-        run: pnpm --filter @dos/api build
-
-      - name: Build admin
-        run: pnpm --filter @dos/admin build
 
   mobile:
     name: Flutter checks
@@ -280,20 +263,29 @@ jobs:
           PY
 
   native-node:
-    if: github.repository == 'milaniumkz/dos-taxi' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: [milanium-mac-arm64, repo-dos-taxi]
+    runs-on: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && fromJSON('["milanium-mac-arm64", "repo-dos-taxi"]') || fromJSON('["ubuntu-latest"]') }}
     timeout-minutes: 45
     env:
       CI: 'true'
       DATABASE_URL: ''
       REDIS_URL: ''
       PROMO_TEST_DATABASE_URL: ''
-      COREPACK_ENABLE_NETWORK: '0'
+      COREPACK_ENABLE_NETWORK: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && '0' || '1' }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.deploy_ref || github.ref }}
+      - uses: actions/setup-node@v4
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        with:
+          version: 9.15.0
       - name: Select existing Node 20
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           echo /opt/homebrew/opt/node@20/bin >> "$GITHUB_PATH"
           test "$(/opt/homebrew/opt/node@20/bin/node -p 'process.versions.node.split(".")[0]')" = 20
@@ -306,3 +298,10 @@ jobs:
       - run: corepack pnpm --filter @dos/admin typecheck
       - run: corepack pnpm --filter @dos/api build
       - run: corepack pnpm --filter @dos/admin build
+      - name: Share portable TypeScript build for the Linux integration gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: dos-shared-types
+          path: packages/shared-types/dist
+          if-no-files-found: error
+          retention-days: 1
