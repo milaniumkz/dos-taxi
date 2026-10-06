@@ -53,6 +53,7 @@ tar \
   -C "$target_dir" .
 
 rsync -a --delete \
+  --exclude='_incoming/' \
   --exclude='.git/' \
   --exclude='node_modules/' \
   --exclude='apps/admin/.next/' \
