@@ -1,0 +1,15 @@
+substitutions:
+  _IMAGE: asia-south1-docker.pkg.dev/dos-taxi/dos/dos-api:manual
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - deploy/api.Dockerfile
+      - -t
+      - ${_IMAGE}
+      - .
+
+images:
+  - ${_IMAGE}

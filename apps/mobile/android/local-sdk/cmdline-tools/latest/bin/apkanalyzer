@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "files" && "${2:-}" == "list" && $# -ge 3 ]]; then
+  exec unzip -Z1 "$3"
+fi
+
+echo "Unsupported apkanalyzer invocation: $*" >&2
+exit 1

@@ -1,0 +1,165 @@
+name: DOS CI/CD
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_ref:
+        description: "Commit, tag or branch to deploy"
+        required: false
+        default: ""
+
+concurrency:
+  group: dos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  node:
+    name: API/Admin checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.deploy_ref || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @dos/shared-types build
+
+      - name: Typecheck API
+        run: pnpm --filter @dos/api typecheck
+
+      - name: Typecheck admin
+        run: pnpm --filter @dos/admin typecheck
+
+      - name: Build API
+        run: pnpm --filter @dos/api build
+
+      - name: Build admin
+        run: pnpm --filter @dos/admin build
+
+  mobile:
+    name: Flutter checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.deploy_ref || github.ref }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install mobile dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Generate localizations
+        working-directory: apps/mobile
+        run: flutter gen-l10n
+
+      - name: Analyze mobile
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Test mobile
+        working-directory: apps/mobile
+        run: flutter test
+
+  deploy-production:
+    name: Deploy VPS production
+    runs-on: ubuntu-latest
+    needs:
+      - node
+      - mobile
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    concurrency:
+      group: dos-production-deploy
+      cancel-in-progress: false
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.deploy_ref || github.sha }}
+
+      - name: Install SSH tools
+        run: sudo apt-get update && sudo apt-get install -y rsync openssh-client
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload release to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${GITHUB_SHA}'"
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='apps/admin/.next/' \
+            --exclude='apps/api/dist/' \
+            --exclude='apps/mobile/build/' \
+            --exclude='builds/' \
+            --exclude='artifacts/' \
+            --exclude='infra/data/' \
+            --exclude='.DS_Store' \
+            --exclude='._*' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='deploy/.env*.yaml' \
+            --exclude='deploy/.env*.json' \
+            --exclude='deploy/vps/.env' \
+            --exclude='deploy/vps/backups/' \
+            --exclude='deploy/vps/nginx/certbot/' \
+            --exclude='deploy/hosting-public/' \
+            --exclude='deploy/hosting-passenger/' \
+            --exclude='deploy/hosting-driver/' \
+            --exclude='apps/api/.env.local' \
+            --exclude='apps/mobile/android/*.jks' \
+            --exclude='apps/mobile/android/*.keystore' \
+            --exclude='apps/mobile/android/key.properties' \
+            -e "ssh -p ${VPS_PORT:-22}" \
+            ./ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${GITHUB_SHA}/"
+
+      - name: Promote release
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+        run: |
+          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
+            "bash '$VPS_PATH/_incoming/${GITHUB_SHA}/deploy/vps/scripts/ci-promote-release.sh' '$VPS_PATH/_incoming/${GITHUB_SHA}' '$VPS_PATH' '${GITHUB_SHA}'"

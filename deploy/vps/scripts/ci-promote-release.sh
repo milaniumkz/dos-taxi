@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+incoming_dir="${1:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
+target_dir="${2:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
+commit_sha="${3:?Usage: ci-promote-release.sh /opt/dos/_incoming/SHA /opt/dos SHA}"
+
+lock_file="/tmp/dos-production-deploy.lock"
+exec 9>"$lock_file"
+if ! flock -n 9; then
+  echo "Another DOS deployment is running."
+  exit 1
+fi
+
+timestamp="$(date -u +%Y%m%d-%H%M%S)"
+backup_dir="$target_dir/deploy/vps/backups/predeploy-$timestamp-${commit_sha:0:12}"
+mkdir -p "$backup_dir"
+
+compose_dir="$target_dir/deploy/vps"
+if [[ -f "$compose_dir/.env" && -f "$compose_dir/docker-compose.yml" ]]; then
+  (
+    cd "$compose_dir"
+    set -a
+    source .env
+    set +a
+    docker compose --env-file .env -f docker-compose.yml exec -T postgres \
+      pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom \
+      > "$backup_dir/platform_db.dump"
+
+    redis_volume="${COMPOSE_PROJECT_NAME:-dos}_redis_data"
+    if docker volume inspect "$redis_volume" >/dev/null 2>&1; then
+      docker run --rm \
+        -v "$redis_volume:/data:ro" \
+        -v "$backup_dir:/backup" \
+        alpine:3.20 sh -c 'cd /data && tar czf /backup/redis_data.tar.gz .'
+    fi
+
+    cp .env "$backup_dir/env.backup"
+    chmod 600 "$backup_dir/env.backup"
+  )
+fi
+
+tar \
+  --exclude='./_incoming' \
+  --exclude='./node_modules' \
+  --exclude='./apps/admin/.next' \
+  --exclude='./apps/api/dist' \
+  --exclude='./apps/mobile/build' \
+  --exclude='./deploy/vps/backups' \
+  --exclude='./deploy/vps/.env' \
+  --exclude='./deploy/hosting-public' \
+  --exclude='./deploy/hosting-passenger' \
+  --exclude='./deploy/hosting-driver' \
+  --exclude='./.git' \
+  -czf "$backup_dir/source.tar.gz" \
+  -C "$target_dir" .
+
+rsync -a --delete \
+  --exclude='.git/' \
+  --exclude='node_modules/' \
+  --exclude='apps/admin/.next/' \
+  --exclude='apps/api/dist/' \
+  --exclude='apps/mobile/build/' \
+  --exclude='builds/' \
+  --exclude='artifacts/' \
+  --exclude='infra/data/' \
+  --exclude='.DS_Store' \
+  --exclude='._*' \
+  --exclude='.env' \
+  --exclude='.env.*' \
+  --exclude='deploy/.env*.yaml' \
+  --exclude='deploy/.env*.json' \
+  --exclude='deploy/vps/.env' \
+  --exclude='deploy/vps/backups/' \
+  --exclude='deploy/vps/nginx/certbot/' \
+  --exclude='deploy/hosting-public/' \
+  --exclude='deploy/hosting-passenger/' \
+  --exclude='deploy/hosting-driver/' \
+  --exclude='apps/api/.env.local' \
+  --exclude='apps/mobile/android/*.jks' \
+  --exclude='apps/mobile/android/*.keystore' \
+  --exclude='apps/mobile/android/key.properties' \
+  "$incoming_dir/" "$target_dir/"
+
+cd "$target_dir/deploy/vps"
+
+docker compose --env-file .env -f docker-compose.yml build api admin
+if [[ "${RUN_DB_MIGRATIONS:-true}" == "true" ]]; then
+  scripts/migrate.sh
+fi
+docker compose --env-file .env -f docker-compose.yml up -d api admin nginx
+
+docker compose --env-file .env -f docker-compose.yml exec -T api node -e "
+fetch('http://127.0.0.1:3000/api/v1/health')
+  .then(async (r) => {
+    const body = await r.text();
+    console.log(r.status, body);
+    process.exit(r.ok ? 0 : 1);
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+"
+
+cat > DEPLOYED_VERSION <<EOF_VERSION
+commit=$commit_sha
+deployed_at=$(date -u +%FT%TZ)
+backup=$backup_dir
+EOF_VERSION
+
+rm -rf "$incoming_dir"
+echo "Deployed $commit_sha"
+echo "Backup: $backup_dir"

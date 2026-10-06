@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  postgres-test:
+    image: postgres:15
+    container_name: dos-postgres-test
+    environment:
+      POSTGRES_DB: platform_test
+      POSTGRES_USER: platform
+      POSTGRES_PASSWORD: platform
+    ports:
+      - '5433:5432'
+
+  redis-test:
+    image: redis:7
+    container_name: dos-redis-test
+    ports:
+      - '6380:6379'

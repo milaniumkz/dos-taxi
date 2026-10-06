@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "921107545537",
+    "project_id": "dos-taxi",
+    "storage_bucket": "dos-taxi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:921107545537:android:f4aa1a9d652838048f4340",
+        "android_client_info": {
+          "package_name": "kz.milanium.dosdriver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA97w8ocSdTQ_X9Hb4HbsEJZkodMMSkmZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:921107545537:android:0fb738ebf4b65f398f4340",
+        "android_client_info": {
+          "package_name": "kz.milanium.dospassenger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA97w8ocSdTQ_X9Hb4HbsEJZkodMMSkmZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

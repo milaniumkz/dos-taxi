@@ -1,0 +1,36 @@
+{
+  "name": "dos-platform",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "corepack pnpm --filter @dos/shared-types build && corepack pnpm --filter @dos/api build && corepack pnpm --filter @dos/admin build",
+    "dev:api": "corepack pnpm --filter @dos/api start:dev",
+    "dev:admin": "corepack pnpm --filter @dos/admin dev",
+    "mobile:android:install-apkanalyzer-shim": "bash scripts/install_android_apkanalyzer_shim.sh",
+    "mobile:android:apk:passenger": "cd apps/mobile && \"/Volumes/PD1000/job/flutter/bin/flutter\" build apk --release --flavor passenger -t lib/main_passenger_prod.dart",
+    "mobile:android:apk:driver": "cd apps/mobile && \"/Volumes/PD1000/job/flutter/bin/flutter\" build apk --release --flavor driver -t lib/main_driver_prod.dart",
+    "mobile:android:aab:passenger": "cd apps/mobile && \"/Volumes/PD1000/job/flutter/bin/flutter\" build appbundle --release --flavor passenger -t lib/main_passenger_prod.dart",
+    "mobile:android:aab:driver": "cd apps/mobile && \"/Volumes/PD1000/job/flutter/bin/flutter\" build appbundle --release --flavor driver -t lib/main_driver_prod.dart",
+    "mobile:web:prepare-pwa": "python3 scripts/prepare_mobile_web_pwa.py",
+    "admin:dev-token": "bash -lc 'cd apps/api && set -a && source .env.local && set +a && ./node_modules/.bin/ts-node --project tsconfig.json scripts/generate-dev-admin-token.ts && echo'",
+    "preflight:admin": "bash scripts/preflight_admin_runtime.sh",
+    "lint": "corepack pnpm -r lint",
+    "preflight:runtime": "bash scripts/preflight_local_runtime.sh",
+    "runtime:boot": "bash scripts/boot_local_infra.sh",
+    "runtime:prepare": "bash scripts/prepare_local_runtime.sh",
+    "runtime:smoke": "bash scripts/run_local_live_smoke.sh",
+    "smoke:admin:api": "bash scripts/smoke_admin_api_http.sh",
+    "smoke:admin": "bash scripts/smoke_admin_http.sh",
+    "smoke:admin:live": "bash scripts/smoke_admin_live_http.sh",
+    "smoke:api": "bash scripts/smoke_api_http.sh",
+    "typecheck": "corepack pnpm -r typecheck",
+    "test": "corepack pnpm -r test",
+    "verify:node": "bash scripts/verify_node_workspace.sh",
+    "verify:release": "bash scripts/verify_release_readiness.sh",
+    "format": "corepack pnpm -r format",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
