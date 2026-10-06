@@ -1,14 +1,23 @@
-import { Currency, ServiceType } from '@dos/shared-types';
-import { ApiProperty } from '@nestjs/swagger';
+import { Currency, ServiceType } from "@dos/shared-types";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class EstimateResultDto {
+  @ApiPropertyOptional()
+  discountAmount?: number;
+
+  @ApiPropertyOptional()
+  originalPrice?: number;
+
+  @ApiPropertyOptional()
+  promoCodeId?: string;
+
   @ApiProperty()
   tariffId!: string;
 
   @ApiProperty({ enum: ServiceType })
   serviceType!: ServiceType;
 
-  @ApiProperty({ example: 'economy', nullable: true })
+  @ApiProperty({ example: "economy", nullable: true })
   vehicleClass!: string | null;
 
   @ApiProperty({ example: 1550 })

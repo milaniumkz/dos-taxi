@@ -22,6 +22,9 @@ class DeliveryOrderState extends Equatable {
     this.selectedEstimate,
     this.paymentMethod = DeliveryPaymentMethod.cash,
     this.promoCode = '',
+    this.appliedPromoCode = '',
+    this.isApplyingPromo = false,
+    this.promoErrorCode,
     this.searchResults = const [],
     this.isSearchingAddresses = false,
     this.isSearchingSender = false,
@@ -48,6 +51,9 @@ class DeliveryOrderState extends Equatable {
   final DeliveryEstimate? selectedEstimate;
   final DeliveryPaymentMethod paymentMethod;
   final String promoCode;
+  final String appliedPromoCode;
+  final bool isApplyingPromo;
+  final String? promoErrorCode;
   final List<AddressSuggestion> searchResults;
   final bool isSearchingAddresses;
   final bool isSearchingSender;
@@ -74,6 +80,9 @@ class DeliveryOrderState extends Equatable {
     Object? selectedEstimate = _unset,
     DeliveryPaymentMethod? paymentMethod,
     String? promoCode,
+    String? appliedPromoCode,
+    bool? isApplyingPromo,
+    Object? promoErrorCode = _unset,
     List<AddressSuggestion>? searchResults,
     bool? isSearchingAddresses,
     bool? isSearchingSender,
@@ -114,6 +123,11 @@ class DeliveryOrderState extends Equatable {
           : selectedEstimate as DeliveryEstimate?,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       promoCode: promoCode ?? this.promoCode,
+      appliedPromoCode: appliedPromoCode ?? this.appliedPromoCode,
+      isApplyingPromo: isApplyingPromo ?? this.isApplyingPromo,
+      promoErrorCode: promoErrorCode == _unset
+          ? this.promoErrorCode
+          : promoErrorCode as String?,
       searchResults: searchResults ?? this.searchResults,
       isSearchingAddresses: isSearchingAddresses ?? this.isSearchingAddresses,
       isSearchingSender: isSearchingSender ?? this.isSearchingSender,
@@ -148,6 +162,9 @@ class DeliveryOrderState extends Equatable {
     selectedEstimate,
     paymentMethod,
     promoCode,
+    appliedPromoCode,
+    isApplyingPromo,
+    promoErrorCode,
     searchResults,
     isSearchingAddresses,
     isSearchingSender,

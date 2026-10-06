@@ -7,6 +7,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/dos_ui.dart';
+import '../../../../shared/widgets/promo_code_field.dart';
 import '../../../active_order/domain/entities/active_order_service_type.dart';
 import '../../../active_order/domain/entities/active_order_session.dart';
 import '../../../active_order/presentation/screens/active_order_screen.dart';
@@ -125,18 +126,18 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
                               cubit.setPaymentMethod(TaxiPaymentMethod.halyk),
                         ),
                         const SizedBox(height: AppSpacing.md),
-                        DosCard(
-                          child: TextField(
-                            controller: _promoController,
-                            onChanged: cubit.setPromoCode,
-                            decoration: InputDecoration(
-                              labelText: l10n.taxiPaymentPromoLabel,
-                              hintText: l10n.taxiPaymentPromoHint,
-                              suffixIcon: const Icon(
-                                Icons.radio_button_unchecked_rounded,
-                              ),
-                            ),
-                          ),
+                        PromoCodeField(
+                          controller: _promoController,
+                          onChanged: cubit.setPromoCode,
+                          onApply: cubit.applyPromoCode,
+                          isApplying: state.isApplyingPromo,
+                          isApplied: state.appliedPromoCode.isNotEmpty,
+                          errorCode: state.promoErrorCode,
+                          price: state.selectedEstimate?.price,
+                          discountAmount:
+                              state.selectedEstimate?.discountAmount ?? 0,
+                          currency: state.selectedEstimate?.currency ?? 'KZT',
+                          enabled: !state.isApplyingPromo && !isSubmitting,
                         ),
                       ],
                     ),
@@ -145,7 +146,10 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: state.selectedEstimate == null || isSubmitting
+                      onPressed:
+                          state.selectedEstimate == null ||
+                              isSubmitting ||
+                              state.isApplyingPromo
                           ? null
                           : cubit.submitOrder,
                       child: isSubmitting

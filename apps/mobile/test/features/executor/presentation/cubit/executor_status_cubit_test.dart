@@ -144,4 +144,18 @@ void main() {
           .having((state) => state.lastPresenceAt, 'lastPresenceAt', isNotNull),
     ],
   );
+  test(
+    'location action requests fresh GPS and recenters even at identical coordinates',
+    () async {
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.centerOnCurrentLocation();
+      final first = cubit.state.currentLocation;
+      await cubit.centerOnCurrentLocation();
+      expect(cubit.state.currentLocation, first);
+      expect(cubit.state.recenterRequestId, 2);
+      expect(cubit.state.isLocating, isFalse);
+      verify(() => locationService.currentLocation()).called(2);
+    },
+  );
 }

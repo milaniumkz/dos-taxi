@@ -15,6 +15,9 @@ class TaxiOrderState extends Equatable {
     this.selectedEstimate,
     this.paymentMethod = TaxiPaymentMethod.cash,
     this.promoCode = '',
+    this.appliedPromoCode = '',
+    this.isApplyingPromo = false,
+    this.promoErrorCode,
     this.searchResults = const [],
     this.isSearchingAddresses = false,
     this.isSearchingPickup = false,
@@ -34,6 +37,9 @@ class TaxiOrderState extends Equatable {
   final TaxiEstimate? selectedEstimate;
   final TaxiPaymentMethod paymentMethod;
   final String promoCode;
+  final String appliedPromoCode;
+  final bool isApplyingPromo;
+  final String? promoErrorCode;
   final List<AddressSuggestion> searchResults;
   final bool isSearchingAddresses;
   final bool isSearchingPickup;
@@ -56,6 +62,9 @@ class TaxiOrderState extends Equatable {
     Object? selectedEstimate = _unset,
     TaxiPaymentMethod? paymentMethod,
     String? promoCode,
+    String? appliedPromoCode,
+    bool? isApplyingPromo,
+    Object? promoErrorCode = _unset,
     List<AddressSuggestion>? searchResults,
     bool? isSearchingAddresses,
     bool? isSearchingPickup,
@@ -79,6 +88,11 @@ class TaxiOrderState extends Equatable {
           : selectedEstimate as TaxiEstimate?,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       promoCode: promoCode ?? this.promoCode,
+      appliedPromoCode: appliedPromoCode ?? this.appliedPromoCode,
+      isApplyingPromo: isApplyingPromo ?? this.isApplyingPromo,
+      promoErrorCode: promoErrorCode == _unset
+          ? this.promoErrorCode
+          : promoErrorCode as String?,
       searchResults: searchResults ?? this.searchResults,
       isSearchingAddresses: isSearchingAddresses ?? this.isSearchingAddresses,
       isSearchingPickup: isSearchingPickup ?? this.isSearchingPickup,
@@ -106,6 +120,9 @@ class TaxiOrderState extends Equatable {
     selectedEstimate,
     paymentMethod,
     promoCode,
+    appliedPromoCode,
+    isApplyingPromo,
+    promoErrorCode,
     searchResults,
     isSearchingAddresses,
     isSearchingPickup,

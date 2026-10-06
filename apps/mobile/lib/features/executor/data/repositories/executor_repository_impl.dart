@@ -6,6 +6,7 @@ import '../../../../core/errors/failure.dart';
 import '../../../order_history/domain/repositories/order_history_repository.dart';
 import '../../domain/entities/executor_active_order_session.dart';
 import '../../domain/entities/executor_profile.dart';
+import '../../domain/entities/driver_bonus_progress.dart';
 import '../../domain/entities/incoming_executor_offer.dart';
 import '../../domain/repositories/executor_repository.dart';
 import '../datasources/executor_remote_data_source.dart';
@@ -22,6 +23,22 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   final AppConfig _config;
 
   bool get _allowsLocalFallback => _config.flavor != AppFlavor.prod;
+
+  @override
+  Future<Either<Failure, DriverBonusProgress>> fetchBonusProgress() async {
+    try {
+      return Right(await _remoteDataSource.fetchBonusProgress());
+    } on Failure catch (failure) {
+      return Left(failure);
+    } catch (_) {
+      return const Left(
+        Failure(
+          code: 'DRIVER_BONUS_PROGRESS_UNAVAILABLE',
+          message: 'DRIVER_BONUS_PROGRESS_UNAVAILABLE',
+        ),
+      );
+    }
+  }
 
   @override
   Future<Either<Failure, ExecutorProfile?>> fetchProfile() async {

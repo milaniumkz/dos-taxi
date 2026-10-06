@@ -103,6 +103,7 @@ class TaxiRemoteDataSource {
     required AddressSuggestion destination,
     required int distanceMeters,
     required int durationSeconds,
+    String? promoCode,
     String serviceType = 'taxi',
   }) async {
     final classes = serviceType == 'intercity'
@@ -128,6 +129,8 @@ class TaxiRemoteDataSource {
                   'address': destination.displayTitle,
                 },
               ],
+              if (promoCode != null && promoCode.isNotEmpty)
+                'promoCode': promoCode,
               'distanceMeters': _positiveMetric(distanceMeters),
               'durationSeconds': _positiveMetric(durationSeconds),
             },

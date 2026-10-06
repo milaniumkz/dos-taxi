@@ -5,9 +5,12 @@ import '../../../../core/errors/failure.dart';
 import '../../../order_history/domain/repositories/order_history_repository.dart';
 import '../entities/executor_active_order_session.dart';
 import '../entities/executor_profile.dart';
+import '../entities/driver_bonus_progress.dart';
 import '../entities/incoming_executor_offer.dart';
 
 abstract class ExecutorRepository {
+  Future<Either<Failure, DriverBonusProgress>> fetchBonusProgress();
+
   Future<Either<Failure, ExecutorProfile?>> fetchProfile();
 
   Future<Either<Failure, ExecutorActiveOrderSession?>> fetchActiveOrder();

@@ -25,6 +25,7 @@ import '../cubit/executor_status_cubit.dart';
 import '../cubit/incoming_order_cubit.dart';
 import '../vehicle_catalog.dart';
 import '../widgets/executor_heat_map.dart';
+import '../widgets/driver_bonus_progress_card.dart';
 import '../widgets/incoming_order_sheet.dart';
 import 'executor_active_order_screen.dart';
 
@@ -528,9 +529,7 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
             Positioned.fill(
               child: ExecutorHeatMap(
                 currentLocation: statusState.currentLocation,
-                onLocatePressed: () => context
-                    .read<ExecutorStatusCubit>()
-                    .centerOnCurrentLocation(),
+                recenterRequestId: statusState.recenterRequestId,
               ),
             )
           else
@@ -664,57 +663,88 @@ class _DriverTabBody extends StatelessWidget {
       default:
         return Align(
           alignment: Alignment.bottomCenter,
-          child: DosCard(
-            color: AppColors.darkSurface,
-            borderColor: const Color(0x22FFFFFF),
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.driverDashboardTitle,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(color: AppColors.darkText),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FloatingActionButton.small(
+                    heroTag: 'driver-location',
+                    tooltip: l10n.commonCurrentLocation,
+                    backgroundColor: AppColors.surface,
+                    foregroundColor: AppColors.text,
+                    onPressed:
+                        context.watch<ExecutorStatusCubit>().state.isLocating
+                        ? null
+                        : context
+                              .read<ExecutorStatusCubit>()
+                              .centerOnCurrentLocation,
+                    child: context.watch<ExecutorStatusCubit>().state.isLocating
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.my_location_rounded),
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DriverMetric(
-                        label: l10n.driverDashboardBalanceLabel,
-                        value: AppFormatters.formatCurrency(
-                          context,
-                          profile.balance,
-                          currencyCode: profile.cityCurrency,
+                const SizedBox(height: AppSpacing.sm),
+                DosCard(
+                  color: AppColors.darkSurface,
+                  borderColor: const Color(0x22FFFFFF),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.driverDashboardTitle,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.darkText,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _DriverMetric(
-                        label: l10n.driverDashboardHeartbeatLabel,
-                        value: heartbeatLabel,
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _DriverMetric(
+                              label: l10n.driverDashboardBalanceLabel,
+                              value: AppFormatters.formatCurrency(
+                                context,
+                                profile.balance,
+                                currencyCode: profile.cityCurrency,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: _DriverMetric(
+                              label: l10n.driverDashboardHeartbeatLabel,
+                              value: heartbeatLabel,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (hasActiveOrder)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: onOpenActiveOrder,
-                      child: Text(l10n.driverDashboardOpenActiveOrder),
-                    ),
-                  )
-                else
-                  Text(
-                    l10n.driverDashboardWaitingOffer,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.darkMuted,
-                    ),
+                      const SizedBox(height: AppSpacing.md),
+                      DriverBonusProgressCard(balance: profile.balance),
+                      const SizedBox(height: AppSpacing.md),
+                      if (hasActiveOrder)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: onOpenActiveOrder,
+                            child: Text(l10n.driverDashboardOpenActiveOrder),
+                          ),
+                        )
+                      else
+                        Text(
+                          l10n.driverDashboardWaitingOffer,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.darkMuted),
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),

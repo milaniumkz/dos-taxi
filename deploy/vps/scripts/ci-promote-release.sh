@@ -10,6 +10,13 @@ if [[ -n "$runtime_mode" && "$runtime_mode" != "--runtime-config-stdin" ]]; then
   exit 1
 fi
 
+# Capture SSH stdin before Docker's interactive exec can consume the payload.
+# Keep credentials in this non-exported shell variable, never in CLI arguments.
+runtime_settings=""
+if [[ "$runtime_mode" == "--runtime-config-stdin" ]]; then
+  runtime_settings="$(cat)"
+fi
+
 lock_file="/tmp/dos-production-deploy.lock"
 exec 9>"$lock_file"
 if ! flock -n 9; then
@@ -57,9 +64,11 @@ tar \
   -czf "$backup_dir/source.tar.gz" \
   -C "$target_dir" .
 
-if [[ -d "$incoming_dir/_web/passenger" && -d "$target_dir/deploy/hosting-public/passenger" ]]; then
-  tar -czf "$backup_dir/passenger-web.tar.gz" -C "$target_dir/deploy/hosting-public" passenger
-fi
+for role in passenger driver; do
+  if [[ -d "$incoming_dir/_web/$role" && -d "$target_dir/deploy/hosting-public/$role" ]]; then
+    tar -czf "$backup_dir/$role-web.tar.gz" -C "$target_dir/deploy/hosting-public" "$role"
+  fi
+done
 
 rsync -a --delete \
   --exclude='_web/' \
@@ -93,7 +102,8 @@ rsync -a --delete \
 cd "$target_dir/deploy/vps"
 
 if [[ "$runtime_mode" == "--runtime-config-stdin" ]]; then
-  python3 scripts/configure-smsc.py .env
+  printf '%s' "$runtime_settings" | python3 scripts/configure-smsc.py .env
+  unset runtime_settings
 fi
 
 docker compose --env-file .env -f docker-compose.yml build api admin
@@ -116,12 +126,14 @@ fetch('http://127.0.0.1:3000/api/v1/health')
   });
 "
 
-if [[ -d "$incoming_dir/_web/passenger" ]]; then
-  [[ -f "$incoming_dir/_web/passenger/index.html" && -f "$incoming_dir/_web/passenger/main.dart.js" ]]
-  mkdir -p "$target_dir/deploy/hosting-public/passenger"
-  rsync -a --delete "$incoming_dir/_web/passenger/" "$target_dir/deploy/hosting-public/passenger/"
-  printf '%s\n' "$commit_sha" > "$target_dir/deploy/hosting-public/passenger/release.txt"
-fi
+for role in passenger driver; do
+  if [[ -d "$incoming_dir/_web/$role" ]]; then
+    [[ -f "$incoming_dir/_web/$role/index.html" && -f "$incoming_dir/_web/$role/main.dart.js" ]]
+    mkdir -p "$target_dir/deploy/hosting-public/$role"
+    rsync -a --delete "$incoming_dir/_web/$role/" "$target_dir/deploy/hosting-public/$role/"
+    printf '%s\n' "$commit_sha" > "$target_dir/deploy/hosting-public/$role/release.txt"
+  fi
+done
 
 cat > DEPLOYED_VERSION <<EOF_VERSION
 commit=$commit_sha

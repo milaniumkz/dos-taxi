@@ -12,6 +12,7 @@ class EstimateDeliveryParams extends Equatable {
     required this.toAddress,
     required this.distanceMeters,
     required this.durationSeconds,
+    this.promoCode,
     required this.isFragile,
     required this.requiresReturn,
     this.declaredValue,
@@ -22,6 +23,7 @@ class EstimateDeliveryParams extends Equatable {
   final AddressSuggestion toAddress;
   final int distanceMeters;
   final int durationSeconds;
+  final String? promoCode;
   final bool isFragile;
   final bool requiresReturn;
   final double? declaredValue;
@@ -33,6 +35,7 @@ class EstimateDeliveryParams extends Equatable {
     toAddress,
     distanceMeters,
     durationSeconds,
+    promoCode,
     isFragile,
     requiresReturn,
     declaredValue,

@@ -20,6 +20,7 @@ import { GeoService } from "../geo/geo.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { EstimateResultDto } from "../pricing/dto/estimate-result.dto";
 import { PricingService } from "../pricing/pricing.service";
+import { PromoCodesService } from "../promo-codes/promo-codes.service";
 import { UserEntity } from "../users/entities/user.entity";
 
 import { CompleteDeliveryOrderDto } from "./dto/complete-delivery-order.dto";
@@ -63,11 +64,21 @@ export class OrdersService {
     private readonly ordersRealtimeService: OrdersRealtimeService,
     @Inject(forwardRef(() => DispatchQueueService))
     private readonly dispatchQueueService: DispatchQueueService,
+    private readonly promoCodesService: PromoCodesService,
   ) {}
+
+  private saveCreatedOrder(
+    order: OrderEntity,
+    promoCode?: string,
+  ): Promise<OrderEntity> {
+    return promoCode?.trim()
+      ? this.promoCodesService.saveOrder(order, promoCode)
+      : this.ordersRepository.save(order);
+  }
 
   async estimate(dto: EstimateOrderDto): Promise<EstimateResultDto> {
     const city = await this.resolveCity(dto.cityId, dto.routePoints);
-    return this.pricingService.estimate({
+    const estimate = await this.pricingService.estimate({
       cityId: city.id,
       serviceType: dto.serviceType,
       vehicleType: dto.courierVehicleType,
@@ -79,6 +90,15 @@ export class OrdersService {
       declaredValue: dto.declaredValue,
       cashOnDelivery: dto.cashOnDelivery,
     });
+    if (!dto.promoCode?.trim()) return estimate;
+    return {
+      ...estimate,
+      originalPrice: estimate.estimatedPrice,
+      ...(await this.promoCodesService.preview(
+        dto.promoCode,
+        estimate.estimatedPrice,
+      )),
+    };
   }
 
   async createOrder(
@@ -132,7 +152,7 @@ export class OrdersService {
       durationSeconds: routeMetrics.durationSeconds,
     });
 
-    const order = await this.ordersRepository.save(
+    const order = await this.saveCreatedOrder(
       this.ordersRepository.create({
         id: orderId,
         clientId,
@@ -146,10 +166,12 @@ export class OrdersService {
         durationSeconds: routeMetrics.durationSeconds,
         paymentMethod: dto.paymentMethod,
         promoCodeId: null,
+        discountAmount: "0.00",
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
         executorId: null,
         cancelReason: null,
       }),
+      dto.promoCode,
     );
 
     await this.routePointsRepository.save(
@@ -229,7 +251,7 @@ export class OrdersService {
       cashOnDelivery: dto.cashOnDelivery,
     });
 
-    const order = await this.ordersRepository.save(
+    const order = await this.saveCreatedOrder(
       this.ordersRepository.create({
         id: orderId,
         clientId,
@@ -243,10 +265,12 @@ export class OrdersService {
         durationSeconds: routeMetrics.durationSeconds,
         paymentMethod: dto.paymentMethod,
         promoCodeId: null,
+        discountAmount: "0.00",
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
         executorId: null,
         cancelReason: null,
       }),
+      dto.promoCode,
     );
 
     await this.routePointsRepository.save(
@@ -741,7 +765,13 @@ export class OrdersService {
     order.distanceMeters = actualDistanceMeters;
     order.durationSeconds = actualDurationSeconds;
     order.currency = estimate.currency;
-    order.finalPrice = estimate.estimatedPrice.toFixed(2);
+    // Preserve the monetary discount fixed when the promo was redeemed.
+    const discount = Math.min(
+      estimate.estimatedPrice,
+      Number(order.discountAmount ?? 0),
+    );
+    order.discountAmount = discount.toFixed(2);
+    order.finalPrice = (estimate.estimatedPrice - discount).toFixed(2);
   }
 
   private async calculateActualDistanceMeters(

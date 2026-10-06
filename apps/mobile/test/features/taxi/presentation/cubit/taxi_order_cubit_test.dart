@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dos_mobile/core/errors/failure.dart';
@@ -181,5 +182,88 @@ void main() {
           .having((state) => state.stage, 'stage', TaxiOrderStage.selecting)
           .having((state) => state.errorMessage, 'error', 'Order failed'),
     ],
+  );
+  test(
+    'applies a promo quote and restores full price when the code is edited',
+    () async {
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.startNewOrder(
+        initialPickup: pickup,
+        initialDestination: destination,
+      );
+      when(() => estimateTaxiUseCase(any())).thenAnswer(
+        (_) async => const Right([
+          TaxiEstimate(
+            carClass: 'economy',
+            price: 900,
+            discountAmount: 300,
+            currency: 'KZT',
+            etaMinutes: 4,
+          ),
+          TaxiEstimate(
+            carClass: 'comfort',
+            price: 1200,
+            discountAmount: 400,
+            currency: 'KZT',
+            etaMinutes: 6,
+          ),
+        ]),
+      );
+      cubit.selectCarClass('comfort');
+      cubit.setPromoCode(' welcome ');
+      expect(await cubit.applyPromoCode(), isTrue);
+      expect(cubit.state.appliedPromoCode, 'WELCOME');
+      expect(cubit.state.selectedEstimate?.price, 1200);
+      expect(cubit.state.selectedEstimate?.carClass, 'comfort');
+      final request =
+          verify(() => estimateTaxiUseCase(captureAny())).captured.last
+              as EstimateTaxiParams;
+      expect(request.promoCode, 'WELCOME');
+      cubit.setPromoCode('NEW');
+      expect(cubit.state.appliedPromoCode, isEmpty);
+      expect(cubit.state.selectedEstimate?.price, 1600);
+      expect(cubit.state.selectedEstimate?.discountAmount, 0);
+    },
+  );
+
+  test('invalid promo prevents creating an undiscounted order', () async {
+    final cubit = buildCubit();
+    addTearDown(cubit.close);
+    await cubit.startNewOrder(
+      initialPickup: pickup,
+      initialDestination: destination,
+    );
+    when(() => estimateTaxiUseCase(any())).thenAnswer(
+      (_) async =>
+          const Left(Failure(code: 'PROMO_CODE_EXPIRED', message: 'expired')),
+    );
+    cubit.setPromoCode('OLD');
+    await cubit.submitOrder();
+    expect(cubit.state.promoErrorCode, 'PROMO_CODE_EXPIRED');
+    expect(cubit.state.stage, TaxiOrderStage.selecting);
+    verifyNever(() => createTaxiOrderUseCase(any()));
+  });
+
+  test(
+    'discard stale promo response after the passenger edits the code',
+    () async {
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.startNewOrder(
+        initialPickup: pickup,
+        initialDestination: destination,
+      );
+      final pending = Completer<Either<Failure, List<TaxiEstimate>>>();
+      when(() => estimateTaxiUseCase(any())).thenAnswer((_) => pending.future);
+      cubit.setPromoCode('FIRST');
+      final applying = cubit.applyPromoCode();
+      cubit.setPromoCode('SECOND');
+      pending.complete(const Right(estimates));
+      expect(await applying, isFalse);
+      expect(cubit.state.appliedPromoCode, isEmpty);
+      expect(cubit.state.promoCode, 'SECOND');
+      expect(cubit.state.isApplyingPromo, isFalse);
+    },
   );
 }

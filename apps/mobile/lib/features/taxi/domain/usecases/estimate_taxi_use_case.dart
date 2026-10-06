@@ -12,6 +12,7 @@ class EstimateTaxiParams extends Equatable {
     required this.destination,
     required this.distanceMeters,
     required this.durationSeconds,
+    this.promoCode,
     this.serviceType = 'taxi',
   });
 
@@ -19,6 +20,7 @@ class EstimateTaxiParams extends Equatable {
   final AddressSuggestion destination;
   final int distanceMeters;
   final int durationSeconds;
+  final String? promoCode;
   final String serviceType;
 
   @override
@@ -27,6 +29,7 @@ class EstimateTaxiParams extends Equatable {
     destination,
     distanceMeters,
     durationSeconds,
+    promoCode,
     serviceType,
   ];
 }

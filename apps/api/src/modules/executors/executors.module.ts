@@ -12,6 +12,9 @@ import { ExecutorDocumentEntity } from "./entities/executor-document.entity";
 import { ExecutorLocationEntity } from "./entities/executor-location.entity";
 import { ExecutorEntity } from "./entities/executor.entity";
 import { ExecutorsController } from "./executors.controller";
+import { DriverBonusesService } from "./driver-bonuses.service";
+import { DriverBonusSettingEntity } from "./entities/driver-bonus-setting.entity";
+import { OrderEntity } from "../orders/entities/order.entity";
 import { ExecutorsService } from "./executors.service";
 
 @Module({
@@ -20,6 +23,8 @@ import { ExecutorsService } from "./executors.service";
       UserEntity,
       CityEntity,
       ExecutorEntity,
+      DriverBonusSettingEntity,
+      OrderEntity,
       ExecutorBalanceTopUpEntity,
       ExecutorLocationEntity,
       ExecutorDocumentEntity,
@@ -27,7 +32,12 @@ import { ExecutorsService } from "./executors.service";
     AuthModule,
   ],
   controllers: [ExecutorsController],
-  providers: [ExecutorsService, RedisStoreService, S3StorageService],
+  providers: [
+    DriverBonusesService,
+    ExecutorsService,
+    RedisStoreService,
+    S3StorageService,
+  ],
   exports: [ExecutorsService],
 })
 export class ExecutorsModule {}

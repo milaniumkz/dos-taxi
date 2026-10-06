@@ -95,6 +95,7 @@ class DeliveryRemoteDataSource {
     required AddressSuggestion toAddress,
     required int distanceMeters,
     required int durationSeconds,
+    String? promoCode,
     required bool isFragile,
     required bool requiresReturn,
     double? declaredValue,
@@ -109,6 +110,8 @@ class DeliveryRemoteDataSource {
             data: {
               'serviceType': 'delivery',
               'courierVehicleType': vehicleType.apiValue,
+              if (promoCode != null && promoCode.isNotEmpty)
+                'promoCode': promoCode,
               'distanceMeters': _positiveMetric(distanceMeters),
               'durationSeconds': _positiveMetric(durationSeconds),
               'isFragile': isFragile,
