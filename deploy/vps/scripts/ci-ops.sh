@@ -32,7 +32,11 @@ console.log(JSON.stringify({smsProvider:process.env.NOTIFICATIONS_SMS_PROVIDER,s
 fetch("http://127.0.0.1:3000/api/v1/health/ready").then(async r=>console.log("API readiness",r.status,await r.text())).catch(()=>console.log("API readiness unavailable"));
 '
     docker compose --env-file .env -f docker-compose.yml exec -T admin node -e '
-fetch("http://127.0.0.1:3001/api/health").then(async r=>{console.log("Admin health",r.status,await r.text());process.exit(r.ok?0:1)}).catch(()=>process.exit(1));
+const headers = {};
+if (process.env.ADMIN_BASIC_AUTH_USERNAME && process.env.ADMIN_BASIC_AUTH_PASSWORD) {
+  headers.authorization = "Basic " + Buffer.from(process.env.ADMIN_BASIC_AUTH_USERNAME + ":" + process.env.ADMIN_BASIC_AUTH_PASSWORD).toString("base64");
+}
+fetch("http://127.0.0.1:3001/api/health", {headers}).then(async r=>{console.log("Admin health",r.status,await r.text());process.exit(r.ok?0:1)}).catch(()=>process.exit(1));
 '
     ;;
   logs)
