@@ -137,12 +137,12 @@ class AppNotificationService {
   Future<String?> deviceToken() async {
     try {
       if (kIsWeb) {
-        return FirebaseMessaging.instance.getToken(
+        return await FirebaseMessaging.instance.getToken(
           vapidKey: _webVapidKey.isEmpty ? null : _webVapidKey,
         );
       }
 
-      return FirebaseMessaging.instance.getToken();
+      return await FirebaseMessaging.instance.getToken();
     } catch (_) {
       return null;
     }

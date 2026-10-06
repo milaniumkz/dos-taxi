@@ -25,7 +25,7 @@ import 'package:dos_mobile/features/profile/presentation/screens/profile_screen.
 import 'package:dos_mobile/features/taxi/domain/entities/taxi_estimate.dart';
 import 'package:dos_mobile/features/taxi/domain/entities/taxi_route.dart';
 import 'package:dos_mobile/features/taxi/presentation/cubit/taxi_order_cubit.dart';
-import 'package:dos_mobile/features/taxi/presentation/screens/taxi_confirm_screen.dart';
+import 'package:dos_mobile/features/taxi/presentation/screens/taxi_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -175,12 +175,12 @@ void main() {
     );
   });
 
-  testWidgets('renders taxi confirm screen in Kazakh without overflow', (
+  testWidgets('renders taxi payment screen in Kazakh without overflow', (
     tester,
   ) async {
     final cubit = _MockTaxiOrderCubit();
     final state = TaxiOrderState(
-      stage: TaxiOrderStage.confirming,
+      stage: TaxiOrderStage.selecting,
       pickup: pickup,
       destination: destination,
       route: const TaxiRoute(
@@ -215,7 +215,7 @@ void main() {
       tester,
       BlocProvider<TaxiOrderCubit>.value(
         value: cubit,
-        child: const TaxiConfirmScreen(),
+        child: const TaxiPaymentScreen(),
       ),
     );
   });
@@ -315,7 +315,6 @@ void main() {
           id: 'executor-1',
           phone: '+77000000000',
           name: 'Аружан',
-          email: null,
           executorType: 'courier',
           vehicleType: 'bicycle',
           carClass: null,

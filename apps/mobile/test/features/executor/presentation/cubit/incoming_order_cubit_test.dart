@@ -19,7 +19,6 @@ void main() {
     id: 'executor-1',
     phone: '+7 700 000 00 00',
     name: 'Aruzhan',
-    email: null,
     executorType: 'driver',
     vehicleType: null,
     carClass: 'economy',

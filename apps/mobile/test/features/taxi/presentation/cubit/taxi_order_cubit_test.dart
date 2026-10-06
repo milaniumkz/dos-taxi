@@ -130,31 +130,10 @@ void main() {
   );
 
   blocTest<TaxiOrderCubit, TaxiOrderState>(
-    'moves to confirming after payment step is prepared',
-    build: buildCubit,
-    seed: () => TaxiOrderState(
-      stage: TaxiOrderStage.selecting,
-      pickup: pickup,
-      destination: destination,
-      route: route,
-      estimates: estimates,
-      selectedEstimate: estimates.first,
-    ),
-    act: (cubit) => cubit.prepareConfirmation(),
-    expect: () => [
-      isA<TaxiOrderState>().having(
-        (state) => state.stage,
-        'stage',
-        TaxiOrderStage.confirming,
-      ),
-    ],
-  );
-
-  blocTest<TaxiOrderCubit, TaxiOrderState>(
     'moves to searching and stores order id when order is submitted',
     build: buildCubit,
     seed: () => TaxiOrderState(
-      stage: TaxiOrderStage.confirming,
+      stage: TaxiOrderStage.selecting,
       pickup: pickup,
       destination: destination,
       route: route,
@@ -184,7 +163,7 @@ void main() {
     },
     build: buildCubit,
     seed: () => TaxiOrderState(
-      stage: TaxiOrderStage.confirming,
+      stage: TaxiOrderStage.selecting,
       pickup: pickup,
       destination: destination,
       route: route,
@@ -199,7 +178,7 @@ void main() {
         TaxiOrderStage.searching,
       ),
       isA<TaxiOrderState>()
-          .having((state) => state.stage, 'stage', TaxiOrderStage.confirming)
+          .having((state) => state.stage, 'stage', TaxiOrderStage.selecting)
           .having((state) => state.errorMessage, 'error', 'Order failed'),
     ],
   );

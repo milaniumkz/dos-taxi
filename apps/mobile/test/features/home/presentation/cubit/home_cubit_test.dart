@@ -7,6 +7,7 @@ import 'package:dos_mobile/features/active_order/domain/entities/active_order_se
 import 'package:dos_mobile/features/active_order/domain/repositories/active_order_repository.dart';
 import 'package:dos_mobile/features/home/domain/entities/address_suggestion.dart';
 import 'package:dos_mobile/features/home/domain/repositories/home_repository.dart';
+import 'package:dos_mobile/features/taxi/domain/repositories/taxi_repository.dart';
 import 'package:dos_mobile/features/home/presentation/cubit/home_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,10 +20,13 @@ class _MockActiveOrderRepository extends Mock
 
 class _MockLocationService extends Mock implements LocationService {}
 
+class _MockTaxiRepository extends Mock implements TaxiRepository {}
+
 void main() {
   late HomeRepository homeRepository;
   late ActiveOrderRepository activeOrderRepository;
   late LocationService locationService;
+  late TaxiRepository taxiRepository;
   final currentLocation = LatLng(43.25, 76.93);
   final currentAddress = AddressSuggestion(
     title: 'пр. Абая, 150',
@@ -38,6 +42,7 @@ void main() {
     homeRepository = _MockHomeRepository();
     activeOrderRepository = _MockActiveOrderRepository();
     locationService = _MockLocationService();
+    taxiRepository = _MockTaxiRepository();
     when(
       () => homeRepository.fetchNearbyExecutors(
         location: any(named: 'location'),
@@ -55,8 +60,12 @@ void main() {
     ).thenAnswer((_) async => Right(currentAddress));
   });
 
-  HomeCubit buildCubit() =>
-      HomeCubit(homeRepository, activeOrderRepository, locationService);
+  HomeCubit buildCubit() => HomeCubit(
+    homeRepository,
+    activeOrderRepository,
+    locationService,
+    taxiRepository,
+  );
 
   blocTest<HomeCubit, HomeState>(
     'resolves passenger location before restoring active order',
