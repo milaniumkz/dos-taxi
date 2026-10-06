@@ -82,6 +82,7 @@ class TaxiRepositoryImpl implements TaxiRepository {
         destination: params.destination,
         distanceMeters: params.distanceMeters,
         durationSeconds: params.durationSeconds,
+        promoCode: params.promoCode,
         serviceType: params.serviceType,
       );
       return right(estimates);

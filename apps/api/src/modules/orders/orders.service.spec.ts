@@ -120,6 +120,7 @@ describe("OrdersService.transition", () => {
       notificationsService,
       ordersRealtimeService,
       dispatchQueueService,
+      {} as import("../promo-codes/promo-codes.service").PromoCodesService,
     );
   });
 

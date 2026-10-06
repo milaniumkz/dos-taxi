@@ -42,12 +42,14 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   final CreateTaxiOrderUseCase _createTaxiOrderUseCase;
   Timer? _searchDebounce;
   int _searchRequestId = 0;
+  int _promoRequestId = 0;
 
   Future<void> startNewOrder({
     AddressSuggestion? initialPickup,
     AddressSuggestion? initialDestination,
     String serviceType = 'taxi',
   }) async {
+    ++_promoRequestId;
     emit(
       TaxiOrderState(
         pickup: initialPickup,
@@ -98,6 +100,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   Future<void> setPickup(AddressSuggestion suggestion) async {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         pickup: suggestion,
@@ -105,6 +108,9 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
         route: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         searchResults: const [],
         isSearchingAddresses: false,
         isResolvingMapAddress: false,
@@ -119,6 +125,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   Future<void> setDestination(AddressSuggestion suggestion) async {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         destination: suggestion,
@@ -126,6 +133,9 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
         route: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         searchResults: const [],
         isSearchingAddresses: false,
         isResolvingMapAddress: false,
@@ -140,6 +150,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   void clearPickup() {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         pickup: null,
@@ -147,6 +158,9 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
         route: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         stage: TaxiOrderStage.idle,
         searchResults: const [],
         isSearchingAddresses: false,
@@ -159,6 +173,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   void clearDestination() {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         destination: null,
@@ -166,6 +181,9 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
         route: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         stage: TaxiOrderStage.idle,
         searchResults: const [],
         isSearchingAddresses: false,
@@ -219,13 +237,103 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   }
 
   void setPromoCode(String promoCode) {
-    emit(state.copyWith(promoCode: promoCode.trim(), errorMessage: null));
+    final code = promoCode.trim().toUpperCase();
+    if (code == state.promoCode) return;
+    ++_promoRequestId;
+    final estimates = state.estimates
+        .map((estimate) => estimate.withoutPromo())
+        .toList();
+    TaxiEstimate? selected;
+    for (final estimate in estimates) {
+      if (estimate.carClass == state.selectedEstimate?.carClass) {
+        selected = estimate;
+      }
+    }
+    emit(
+      state.copyWith(
+        promoCode: code,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
+        estimates: estimates,
+        selectedEstimate: selected,
+        errorMessage: null,
+      ),
+    );
+  }
+
+  Future<bool> applyPromoCode() async {
+    if (state.isApplyingPromo) return false;
+    final code = state.promoCode;
+    if (code.isEmpty) return true;
+    if (code == state.appliedPromoCode) return true;
+    final from = state.pickup;
+    final to = state.destination;
+    final route = state.route;
+    if (from == null || to == null || route == null) {
+      emit(state.copyWith(promoErrorCode: 'TAXI_ORDER_INCOMPLETE'));
+      return false;
+    }
+    final request = ++_promoRequestId;
+    emit(state.copyWith(isApplyingPromo: true, promoErrorCode: null));
+    final result = await _estimateTaxiUseCase(
+      EstimateTaxiParams(
+        pickup: from,
+        destination: to,
+        distanceMeters: route.distanceMeters,
+        durationSeconds: route.durationSeconds,
+        serviceType: state.serviceType,
+        promoCode: code,
+      ),
+    );
+    if (isClosed || request != _promoRequestId) return false;
+    return result.fold(
+      (failure) {
+        emit(
+          state.copyWith(isApplyingPromo: false, promoErrorCode: failure.code),
+        );
+        return false;
+      },
+      (estimates) {
+        if (estimates.isEmpty) {
+          emit(
+            state.copyWith(
+              isApplyingPromo: false,
+              promoErrorCode: 'PROMO_CODE_INVALID_PRICE',
+            ),
+          );
+          return false;
+        }
+        var selected = estimates.first;
+        for (final estimate in estimates) {
+          if (estimate.carClass == state.selectedEstimate?.carClass) {
+            selected = estimate;
+          }
+        }
+        emit(
+          state.copyWith(
+            isApplyingPromo: false,
+            promoErrorCode: null,
+            appliedPromoCode: code,
+            estimates: estimates,
+            selectedEstimate: selected,
+          ),
+        );
+        return true;
+      },
+    );
   }
 
   Future<void> submitOrder() async {
     if (state.stage == TaxiOrderStage.searching ||
         state.createdOrderId != null) {
       return;
+    }
+
+    if (state.isApplyingPromo) return;
+    if (state.promoCode.isNotEmpty &&
+        state.appliedPromoCode != state.promoCode) {
+      if (!await applyPromoCode()) return;
     }
 
     final pickup = state.pickup;
@@ -266,7 +374,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
       (failure) => emit(
         state.copyWith(
           stage: TaxiOrderStage.selecting,
-          errorMessage: failure.message,
+          errorMessage: failure.code.startsWith('PROMO_CODE_') ? failure.code : failure.message,
         ),
       ),
       (orderId) => emit(state.copyWith(createdOrderId: orderId)),
@@ -282,6 +390,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   void _activateSearchTarget({required bool isPickup}) {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         searchResults: const [],
@@ -426,6 +535,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
   }) async {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     final fallback = AddressSuggestion(
       title: fallbackTitle,
       subtitle: '',
@@ -441,6 +551,9 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
         route: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         stage: TaxiOrderStage.idle,
         searchResults: const [],
         isSearchingAddresses: false,

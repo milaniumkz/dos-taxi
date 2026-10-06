@@ -12,6 +12,7 @@ import '../../../order_history/domain/repositories/order_history_repository.dart
 import '../../domain/entities/executor_profile.dart';
 import '../models/executor_active_order_session_model.dart';
 import '../models/executor_profile_model.dart';
+import '../models/driver_bonus_progress_model.dart';
 import '../models/incoming_executor_offer_model.dart';
 
 class ExecutorRemoteDataSource {
@@ -26,6 +27,15 @@ class ExecutorRemoteDataSource {
   final ApiClient _apiClient;
   final AppConfig _config;
   final TokenStorage _tokenStorage;
+
+  Future<DriverBonusProgressModel> fetchBonusProgress() async {
+    final response = await _apiClient.guard(
+      () => _apiClient.dio.get<Map<String, dynamic>>(
+        '/executor/bonuses/progress',
+      ),
+    );
+    return DriverBonusProgressModel.fromJson(response.data!);
+  }
 
   Future<ExecutorProfileModel?> fetchProfile() async {
     try {

@@ -64,9 +64,11 @@ tar \
   -czf "$backup_dir/source.tar.gz" \
   -C "$target_dir" .
 
-if [[ -d "$incoming_dir/_web/passenger" && -d "$target_dir/deploy/hosting-public/passenger" ]]; then
-  tar -czf "$backup_dir/passenger-web.tar.gz" -C "$target_dir/deploy/hosting-public" passenger
-fi
+for role in passenger driver; do
+  if [[ -d "$incoming_dir/_web/$role" && -d "$target_dir/deploy/hosting-public/$role" ]]; then
+    tar -czf "$backup_dir/$role-web.tar.gz" -C "$target_dir/deploy/hosting-public" "$role"
+  fi
+done
 
 rsync -a --delete \
   --exclude='_web/' \
@@ -124,12 +126,14 @@ fetch('http://127.0.0.1:3000/api/v1/health')
   });
 "
 
-if [[ -d "$incoming_dir/_web/passenger" ]]; then
-  [[ -f "$incoming_dir/_web/passenger/index.html" && -f "$incoming_dir/_web/passenger/main.dart.js" ]]
-  mkdir -p "$target_dir/deploy/hosting-public/passenger"
-  rsync -a --delete "$incoming_dir/_web/passenger/" "$target_dir/deploy/hosting-public/passenger/"
-  printf '%s\n' "$commit_sha" > "$target_dir/deploy/hosting-public/passenger/release.txt"
-fi
+for role in passenger driver; do
+  if [[ -d "$incoming_dir/_web/$role" ]]; then
+    [[ -f "$incoming_dir/_web/$role/index.html" && -f "$incoming_dir/_web/$role/main.dart.js" ]]
+    mkdir -p "$target_dir/deploy/hosting-public/$role"
+    rsync -a --delete "$incoming_dir/_web/$role/" "$target_dir/deploy/hosting-public/$role/"
+    printf '%s\n' "$commit_sha" > "$target_dir/deploy/hosting-public/$role/release.txt"
+  fi
+done
 
 cat > DEPLOYED_VERSION <<EOF_VERSION
 commit=$commit_sha

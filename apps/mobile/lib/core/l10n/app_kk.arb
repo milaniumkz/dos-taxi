@@ -455,5 +455,43 @@
   "driverProfileSupportChatLabel": "Қолдау чаты",
   "driverProfileSupportChatValue": "Операторға админ-панельде жазыңыз",
   "driverProfileAppVersionLabel": "Қолданба нұсқасы",
-  "driverProfileAppVersionValue": "1.0.1"
+  "driverProfileAppVersionValue": "1.0.1",
+  "promoApplyAction": "Қолдану",
+  "promoApplied": "Промокод қолданылды",
+  "promoOriginalPrice": "Жеңілдіксіз",
+  "promoDiscount": "Жеңілдік",
+  "promoTotal": "Барлығы",
+  "promoNotFound": "Промокод табылмады. Дұрыс жазылғанын тексеріңіз.",
+  "promoInactive": "Бұл промокод өшірілген.",
+  "promoExpired": "Промокодтың жарамдылық мерзімі аяқталды.",
+  "promoLimitReached": "Промокодты қолдану шегі таусылды.",
+  "promoUnavailable": "Жеңілдік қолданылмады. Басқа промокодты қолданып көріңіз.",
+  "driverBonusUnavailable": "Бонус шарттарын жүктеу мүмкін болмады",
+  "driverBonusDisabled": "Бонус бағдарламасы қазір өшірілген",
+  "driverBonusRefresh": "Бонус барысын жаңарту",
+  "driverBonusConditions": "Әрбір {orders} аяқталған тапсырыс үшін — {amount}",
+  "driverBonusProgress": "{required} тапсырыстың {completed} орындалды. Қалғаны: {remaining}.",
+  "@driverBonusConditions": {
+    "placeholders": {
+      "orders": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@driverBonusProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "required": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -455,5 +455,43 @@
   "driverProfileSupportChatLabel": "Чат поддержки",
   "driverProfileSupportChatValue": "Напишите оператору в админ-панели",
   "driverProfileAppVersionLabel": "Версия приложения",
-  "driverProfileAppVersionValue": "1.0.1"
+  "driverProfileAppVersionValue": "1.0.1",
+  "promoApplyAction": "Применить",
+  "promoApplied": "Промокод применён",
+  "promoOriginalPrice": "Без скидки",
+  "promoDiscount": "Скидка",
+  "promoTotal": "Итого",
+  "promoNotFound": "Промокод не найден. Проверьте написание.",
+  "promoInactive": "Этот промокод отключён.",
+  "promoExpired": "Срок действия промокода истёк.",
+  "promoLimitReached": "Лимит использований промокода исчерпан.",
+  "promoUnavailable": "Не удалось применить скидку. Попробуйте другой промокод.",
+  "driverBonusUnavailable": "Не удалось загрузить условия бонусов",
+  "driverBonusDisabled": "Бонусная программа сейчас отключена",
+  "driverBonusRefresh": "Обновить прогресс бонуса",
+  "driverBonusConditions": "За каждые {orders} завершённых заказов — {amount}",
+  "driverBonusProgress": "Выполнено {completed} из {required}. Осталось {remaining}.",
+  "@driverBonusConditions": {
+    "placeholders": {
+      "orders": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@driverBonusProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "required": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  }
 }

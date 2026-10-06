@@ -56,11 +56,13 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   final ValidateDeliveryDetailsUseCase _validateDeliveryDetailsUseCase;
   Timer? _searchDebounce;
   int _searchRequestId = 0;
+  int _promoRequestId = 0;
 
   Future<void> startNewOrder({
     AddressSuggestion? initialFromAddress,
     AddressSuggestion? initialToAddress,
   }) async {
+    ++_promoRequestId;
     emit(
       DeliveryOrderState(
         fromAddress: initialFromAddress,
@@ -98,6 +100,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   void setFromAddress(AddressSuggestion suggestion) {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         fromAddress: suggestion,
@@ -105,6 +108,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         routeInfo: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         searchResults: const [],
         isSearchingAddresses: false,
         isResolvingMapAddress: false,
@@ -116,6 +122,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   void setToAddress(AddressSuggestion suggestion) {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         toAddress: suggestion,
@@ -123,6 +130,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         routeInfo: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         searchResults: const [],
         isSearchingAddresses: false,
         isResolvingMapAddress: false,
@@ -134,6 +144,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   void clearFromAddress() {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         fromAddress: null,
@@ -141,6 +152,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         routeInfo: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         stage: DeliveryOrderStage.idle,
         searchResults: const [],
         isSearchingAddresses: false,
@@ -153,6 +167,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   void clearToAddress() {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         toAddress: null,
@@ -160,6 +175,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         routeInfo: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         stage: DeliveryOrderStage.idle,
         searchResults: const [],
         isSearchingAddresses: false,
@@ -277,7 +295,94 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   }
 
   void setPromoCode(String promoCode) {
-    emit(state.copyWith(promoCode: promoCode.trim(), errorMessage: null));
+    final code = promoCode.trim().toUpperCase();
+    if (code == state.promoCode) return;
+    ++_promoRequestId;
+    final estimates = state.estimates
+        .map((estimate) => estimate.withoutPromo())
+        .toList();
+    DeliveryEstimate? selected;
+    for (final estimate in estimates) {
+      if (estimate.vehicleType == state.selectedEstimate?.vehicleType) {
+        selected = estimate;
+      }
+    }
+    emit(
+      state.copyWith(
+        promoCode: code,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
+        estimates: estimates,
+        selectedEstimate: selected,
+        errorMessage: null,
+      ),
+    );
+  }
+
+  Future<bool> applyPromoCode() async {
+    if (state.isApplyingPromo) return false;
+    final code = state.promoCode;
+    if (code.isEmpty) return true;
+    if (code == state.appliedPromoCode) return true;
+    final from = state.fromAddress;
+    final to = state.toAddress;
+    final route = state.routeInfo;
+    if (from == null || to == null || route == null) {
+      emit(state.copyWith(promoErrorCode: 'DELIVERY_ORDER_INCOMPLETE'));
+      return false;
+    }
+    final request = ++_promoRequestId;
+    emit(state.copyWith(isApplyingPromo: true, promoErrorCode: null));
+    final result = await _estimateDeliveryUseCase(
+      EstimateDeliveryParams(
+        fromAddress: from,
+        toAddress: to,
+        distanceMeters: route.distanceMeters,
+        durationSeconds: route.durationSeconds,
+        isFragile: state.isFragile,
+        requiresReturn: state.requiresReturn,
+        declaredValue: state.declaredValue,
+        cashOnDelivery: state.cashOnDelivery,
+        promoCode: code,
+      ),
+    );
+    if (isClosed || request != _promoRequestId) return false;
+    return result.fold(
+      (failure) {
+        emit(
+          state.copyWith(isApplyingPromo: false, promoErrorCode: failure.code),
+        );
+        return false;
+      },
+      (estimates) {
+        if (estimates.isEmpty) {
+          emit(
+            state.copyWith(
+              isApplyingPromo: false,
+              promoErrorCode: 'PROMO_CODE_INVALID_PRICE',
+            ),
+          );
+          return false;
+        }
+        var selected = estimates.first;
+        for (final estimate in estimates) {
+          if (estimate.vehicleType == state.selectedEstimate?.vehicleType) {
+            selected = estimate;
+          }
+        }
+        emit(
+          state.copyWith(
+            isApplyingPromo: false,
+            promoErrorCode: null,
+            appliedPromoCode: code,
+            estimates: estimates,
+            selectedEstimate: selected,
+          ),
+        );
+        return true;
+      },
+    );
   }
 
   bool prepareConfirmation() {
@@ -296,6 +401,12 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
     if (state.stage == DeliveryOrderStage.searching ||
         state.createdOrderId != null) {
       return;
+    }
+
+    if (state.isApplyingPromo) return;
+    if (state.promoCode.isNotEmpty &&
+        state.appliedPromoCode != state.promoCode) {
+      if (!await applyPromoCode()) return;
     }
 
     final fromAddress = state.fromAddress;
@@ -346,7 +457,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
       (failure) => emit(
         state.copyWith(
           stage: DeliveryOrderStage.confirming,
-          errorMessage: failure.message,
+          errorMessage: failure.code.startsWith('PROMO_CODE_') ? failure.code : failure.message,
         ),
       ),
       (orderId) => emit(state.copyWith(createdOrderId: orderId)),
@@ -362,6 +473,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   void _activateSearchTarget({required bool isSender}) {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     emit(
       state.copyWith(
         searchResults: const [],
@@ -394,6 +506,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         routeInfo: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         stage: DeliveryOrderStage.idle,
         searchResults: const [],
         isSearchingAddresses: true,
@@ -479,6 +594,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
   }) async {
     _searchDebounce?.cancel();
     _searchRequestId += 1;
+    ++_promoRequestId;
     final fallback = AddressSuggestion(
       title: fallbackTitle,
       subtitle:
@@ -496,6 +612,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         routeInfo: null,
         estimates: const [],
         selectedEstimate: null,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         stage: DeliveryOrderStage.idle,
         searchResults: const [],
         isSearchingAddresses: false,
@@ -533,6 +652,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
     final toAddress = state.toAddress;
 
     if (fromAddress == null || toAddress == null) {
+      ++_promoRequestId;
       emit(state.copyWith(errorMessage: 'DELIVERY_ADDRESSES_REQUIRED'));
       return false;
     }
@@ -540,6 +660,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
     emit(
       state.copyWith(
         stage: DeliveryOrderStage.estimating,
+        appliedPromoCode: '',
+        isApplyingPromo: false,
+        promoErrorCode: null,
         errorMessage: null,
         createdOrderId: null,
       ),

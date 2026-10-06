@@ -1,9 +1,6 @@
-import {
-  CourierVehicleType,
-  ServiceType,
-} from '@dos/shared-types';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { CourierVehicleType, ServiceType } from "@dos/shared-types";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -14,13 +11,20 @@ import {
   IsString,
   IsUUID,
   Min,
+  MaxLength,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
-import { EstimateRoutePointDto } from './estimate-route-point.dto';
+import { EstimateRoutePointDto } from "./estimate-route-point.dto";
 
 export class EstimateOrderDto {
-  @ApiPropertyOptional({ format: 'uuid' })
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  promoCode?: string;
+
+  @ApiPropertyOptional({ format: "uuid" })
   @IsOptional()
   @IsUUID()
   cityId?: string;
@@ -29,7 +33,7 @@ export class EstimateOrderDto {
   @IsEnum(ServiceType)
   serviceType!: ServiceType;
 
-  @ApiPropertyOptional({ example: 'economy' })
+  @ApiPropertyOptional({ example: "economy" })
   @IsOptional()
   @IsString()
   carClass?: string;

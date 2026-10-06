@@ -10,6 +10,8 @@ class ExecutorStatusState extends Equatable {
     this.isLoading = false,
     this.isSubmittingOnboarding = false,
     this.isUpdatingOnline = false,
+    this.isLocating = false,
+    this.recenterRequestId = 0,
     this.demoDashboardEnabled = false,
     this.lastPresenceAt,
     this.errorMessage,
@@ -21,6 +23,8 @@ class ExecutorStatusState extends Equatable {
   final bool isLoading;
   final bool isSubmittingOnboarding;
   final bool isUpdatingOnline;
+  final bool isLocating;
+  final int recenterRequestId;
   final bool demoDashboardEnabled;
   final DateTime? lastPresenceAt;
   final String? errorMessage;
@@ -37,6 +41,8 @@ class ExecutorStatusState extends Equatable {
     bool? isLoading,
     bool? isSubmittingOnboarding,
     bool? isUpdatingOnline,
+    bool? isLocating,
+    int? recenterRequestId,
     bool? demoDashboardEnabled,
     Object? lastPresenceAt = _unset,
     Object? errorMessage = _unset,
@@ -49,6 +55,8 @@ class ExecutorStatusState extends Equatable {
       isSubmittingOnboarding:
           isSubmittingOnboarding ?? this.isSubmittingOnboarding,
       isUpdatingOnline: isUpdatingOnline ?? this.isUpdatingOnline,
+      isLocating: isLocating ?? this.isLocating,
+      recenterRequestId: recenterRequestId ?? this.recenterRequestId,
       demoDashboardEnabled: demoDashboardEnabled ?? this.demoDashboardEnabled,
       lastPresenceAt: lastPresenceAt == _unset
           ? this.lastPresenceAt
@@ -67,6 +75,8 @@ class ExecutorStatusState extends Equatable {
     isLoading,
     isSubmittingOnboarding,
     isUpdatingOnline,
+    isLocating,
+    recenterRequestId,
     demoDashboardEnabled,
     lastPresenceAt,
     errorMessage,

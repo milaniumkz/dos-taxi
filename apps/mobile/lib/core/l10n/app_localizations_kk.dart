@@ -1204,4 +1204,55 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get driverProfileAppVersionValue => '1.0.1';
+
+  @override
+  String get promoApplyAction => 'Қолдану';
+
+  @override
+  String get promoApplied => 'Промокод қолданылды';
+
+  @override
+  String get promoOriginalPrice => 'Жеңілдіксіз';
+
+  @override
+  String get promoDiscount => 'Жеңілдік';
+
+  @override
+  String get promoTotal => 'Барлығы';
+
+  @override
+  String get promoNotFound =>
+      'Промокод табылмады. Дұрыс жазылғанын тексеріңіз.';
+
+  @override
+  String get promoInactive => 'Бұл промокод өшірілген.';
+
+  @override
+  String get promoExpired => 'Промокодтың жарамдылық мерзімі аяқталды.';
+
+  @override
+  String get promoLimitReached => 'Промокодты қолдану шегі таусылды.';
+
+  @override
+  String get promoUnavailable =>
+      'Жеңілдік қолданылмады. Басқа промокодты қолданып көріңіз.';
+
+  @override
+  String get driverBonusUnavailable => 'Бонус шарттарын жүктеу мүмкін болмады';
+
+  @override
+  String get driverBonusDisabled => 'Бонус бағдарламасы қазір өшірілген';
+
+  @override
+  String get driverBonusRefresh => 'Бонус барысын жаңарту';
+
+  @override
+  String driverBonusConditions(int orders, String amount) {
+    return 'Әрбір $orders аяқталған тапсырыс үшін — $amount';
+  }
+
+  @override
+  String driverBonusProgress(int completed, int required, int remaining) {
+    return '$required тапсырыстың $completed орындалды. Қалғаны: $remaining.';
+  }
 }

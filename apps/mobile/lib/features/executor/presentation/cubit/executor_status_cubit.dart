@@ -69,17 +69,31 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
   Future<void> refreshVerification() => initialize();
 
   Future<void> centerOnCurrentLocation() async {
+    if (state.isLocating) return;
+    emit(state.copyWith(isLocating: true, errorMessage: null));
     final nextLocation = await _resolveFreshDeviceLocation();
     if (isClosed) {
       return;
     }
 
     if (nextLocation == null) {
-      emit(state.copyWith(errorMessage: 'Не удалось определить геолокацию'));
+      emit(
+        state.copyWith(
+          isLocating: false,
+          errorMessage: 'HOME_LOCATION_UNAVAILABLE',
+        ),
+      );
       return;
     }
 
-    emit(state.copyWith(currentLocation: nextLocation, errorMessage: null));
+    emit(
+      state.copyWith(
+        currentLocation: nextLocation,
+        isLocating: false,
+        recenterRequestId: state.recenterRequestId + 1,
+        errorMessage: null,
+      ),
+    );
   }
 
   Future<void> submitOnboarding({

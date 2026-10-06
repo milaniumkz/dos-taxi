@@ -30,6 +30,8 @@ import { UploadExecutorDocumentDto } from "./dto/upload-executor-document.dto";
 import { ExecutorDocumentEntity } from "./entities/executor-document.entity";
 import { ExecutorBalanceTopUpEntity } from "./entities/executor-balance-top-up.entity";
 import { ExecutorEntity } from "./entities/executor.entity";
+import { DriverBonusesService } from "./driver-bonuses.service";
+import { DriverBonusProgressDto } from "./dto/driver-bonus-progress.dto";
 import { ExecutorsService } from "./executors.service";
 
 @ApiTags("executor")
@@ -37,7 +39,21 @@ import { ExecutorsService } from "./executors.service";
 @UseGuards(JwtAuthGuard)
 @Controller("executor")
 export class ExecutorsController {
-  constructor(private readonly executorsService: ExecutorsService) {}
+  constructor(
+    private readonly executorsService: ExecutorsService,
+    private readonly driverBonusesService: DriverBonusesService,
+  ) {}
+
+  @Get("bonuses/progress")
+  @ApiOperation({
+    summary: "Get current driver bonus conditions and completed-order progress",
+  })
+  @ApiOkResponse({ type: DriverBonusProgressDto })
+  getBonusProgress(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<DriverBonusProgressDto> {
+    return this.driverBonusesService.getProgress(user.sub);
+  }
 
   @Get("profile")
   @ApiOperation({ summary: "Get current executor profile" })

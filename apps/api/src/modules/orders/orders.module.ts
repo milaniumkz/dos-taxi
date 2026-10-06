@@ -21,6 +21,9 @@ import { ExecutorOrdersController } from "./executor-orders.controller";
 import { OrderChatService } from "./order-chat.service";
 import { OrdersRealtimeService } from "./orders-realtime.service";
 import { OrdersController } from "./orders.controller";
+import { PromoCodeEntity } from "../promo-codes/entities/promo-code.entity";
+import { PromoCodesService } from "../promo-codes/promo-codes.service";
+
 import { OrdersService } from "./orders.service";
 
 @Module({
@@ -33,6 +36,7 @@ import { OrdersService } from "./orders.service";
     TypeOrmModule.forFeature([
       CityEntity,
       OrderEntity,
+      PromoCodeEntity,
       OrderChatMessageEntity,
       OrderStatusEventEntity,
       RoutePointEntity,
@@ -44,7 +48,12 @@ import { OrdersService } from "./orders.service";
     ]),
   ],
   controllers: [OrdersController, ExecutorOrdersController],
-  providers: [OrdersService, OrdersRealtimeService, OrderChatService],
+  providers: [
+    PromoCodesService,
+    OrdersService,
+    OrdersRealtimeService,
+    OrderChatService,
+  ],
   exports: [OrdersService],
 })
 export class OrdersModule {}

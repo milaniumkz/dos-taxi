@@ -1,4 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:dartz/dartz.dart' show Right;
+import 'package:dos_mobile/features/executor/domain/entities/driver_bonus_progress.dart';
+import 'package:dos_mobile/features/executor/domain/repositories/executor_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:dos_mobile/core/api/api_client.dart';
 import 'package:dos_mobile/core/di/service_locator.dart';
@@ -53,6 +56,8 @@ class _MockExecutorStatusCubit extends MockCubit<ExecutorStatusState>
 
 class _MockIncomingOrderCubit extends MockCubit<IncomingOrderState>
     implements IncomingOrderCubit {}
+
+class _MockExecutorRepository extends Mock implements ExecutorRepository {}
 
 class _MockApiClient extends Mock implements ApiClient {}
 
@@ -410,4 +415,82 @@ void main() {
       ),
     );
   });
+  testWidgets(
+    'driver dashboard shows bonus progress and a tappable location icon',
+    (tester) async {
+      final status = _MockExecutorStatusCubit();
+      final incoming = _MockIncomingOrderCubit();
+      final repository = _MockExecutorRepository();
+      when(() => repository.fetchBonusProgress()).thenAnswer(
+        (_) async => const Right(
+          DriverBonusProgress(
+            isEnabled: true,
+            ordersRequired: 20,
+            bonusAmount: 5000,
+            currency: 'KZT',
+            totalCompletedOrders: 7,
+            completedInCycle: 7,
+            remainingOrders: 13,
+            nextThreshold: 20,
+          ),
+        ),
+      );
+      serviceLocator.registerSingleton<ExecutorRepository>(repository);
+      const state = ExecutorStatusState(
+        stage: ExecutorScreenStage.dashboard,
+        currentLocation: LatLng(43.238949, 76.889709),
+        profile: ExecutorProfile(
+          id: 'driver',
+          phone: '+77000000000',
+          name: 'Driver',
+          executorType: 'driver',
+          vehicleType: null,
+          carClass: 'economy',
+          isOnline: false,
+          balance: 0,
+          verificationStatus: 'verified',
+          preferredLanguage: 'kk',
+          cityName: 'Алматы',
+        ),
+      );
+      whenListen(
+        status,
+        const Stream<ExecutorStatusState>.empty(),
+        initialState: state,
+      );
+      whenListen(
+        incoming,
+        const Stream<IncomingOrderState>.empty(),
+        initialState: const IncomingOrderState(),
+      );
+      when(() => status.initialize()).thenAnswer((_) async {});
+      when(() => status.centerOnCurrentLocation()).thenAnswer((_) async {});
+      await _pumpScreen(
+        tester,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<ExecutorStatusCubit>.value(value: status),
+            BlocProvider<IncomingOrderCubit>.value(value: incoming),
+          ],
+          child: const ExecutorHomeScreen(),
+        ),
+      );
+      expect(find.textContaining('13'), findsOneWidget);
+      final bar = tester
+          .widgetList<LinearProgressIndicator>(
+            find.byType(LinearProgressIndicator),
+          )
+          .single;
+      expect(bar.value, 0.35);
+      final icon = find.widgetWithIcon(
+        FloatingActionButton,
+        Icons.my_location_rounded,
+      );
+      expect(icon, findsOneWidget);
+      await tester.tap(icon);
+      verify(() => status.centerOnCurrentLocation()).called(1);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 }

@@ -2341,6 +2341,96 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'1.0.1'**
   String get driverProfileAppVersionValue;
+
+  /// No description provided for @promoApplyAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Применить'**
+  String get promoApplyAction;
+
+  /// No description provided for @promoApplied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Промокод применён'**
+  String get promoApplied;
+
+  /// No description provided for @promoOriginalPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без скидки'**
+  String get promoOriginalPrice;
+
+  /// No description provided for @promoDiscount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скидка'**
+  String get promoDiscount;
+
+  /// No description provided for @promoTotal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Итого'**
+  String get promoTotal;
+
+  /// No description provided for @promoNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Промокод не найден. Проверьте написание.'**
+  String get promoNotFound;
+
+  /// No description provided for @promoInactive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот промокод отключён.'**
+  String get promoInactive;
+
+  /// No description provided for @promoExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Срок действия промокода истёк.'**
+  String get promoExpired;
+
+  /// No description provided for @promoLimitReached.
+  ///
+  /// In ru, this message translates to:
+  /// **'Лимит использований промокода исчерпан.'**
+  String get promoLimitReached;
+
+  /// No description provided for @promoUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось применить скидку. Попробуйте другой промокод.'**
+  String get promoUnavailable;
+
+  /// No description provided for @driverBonusUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить условия бонусов'**
+  String get driverBonusUnavailable;
+
+  /// No description provided for @driverBonusDisabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Бонусная программа сейчас отключена'**
+  String get driverBonusDisabled;
+
+  /// No description provided for @driverBonusRefresh.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить прогресс бонуса'**
+  String get driverBonusRefresh;
+
+  /// No description provided for @driverBonusConditions.
+  ///
+  /// In ru, this message translates to:
+  /// **'За каждые {orders} завершённых заказов — {amount}'**
+  String driverBonusConditions(int orders, String amount);
+
+  /// No description provided for @driverBonusProgress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выполнено {completed} из {required}. Осталось {remaining}.'**
+  String driverBonusProgress(int completed, int required, int remaining);
 }
 
 class _AppLocalizationsDelegate

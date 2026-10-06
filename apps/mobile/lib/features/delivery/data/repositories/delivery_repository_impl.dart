@@ -89,6 +89,7 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
         toAddress: params.toAddress,
         distanceMeters: params.distanceMeters,
         durationSeconds: params.durationSeconds,
+        promoCode: params.promoCode,
         isFragile: params.isFragile,
         requiresReturn: params.requiresReturn,
         declaredValue: params.declaredValue,

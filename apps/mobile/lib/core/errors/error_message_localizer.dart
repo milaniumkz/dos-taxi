@@ -14,6 +14,19 @@ class ErrorMessageLocalizer {
     }
 
     final key = raw.toUpperCase();
+    switch (key) {
+      case 'PROMO_CODE_NOT_FOUND':
+        return l10n.promoNotFound;
+      case 'PROMO_CODE_INACTIVE':
+        return l10n.promoInactive;
+      case 'PROMO_CODE_EXPIRED':
+        return l10n.promoExpired;
+      case 'PROMO_CODE_LIMIT_REACHED':
+        return l10n.promoLimitReached;
+      case 'PROMO_CODE_INVALID_DISCOUNT':
+      case 'PROMO_CODE_INVALID_PRICE':
+        return l10n.promoUnavailable;
+    }
     final normalized = raw.toLowerCase();
     final isKk = l10n.localeName.toLowerCase().startsWith('kk');
 

@@ -1199,4 +1199,54 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get driverProfileAppVersionValue => '1.0.1';
+
+  @override
+  String get promoApplyAction => 'Применить';
+
+  @override
+  String get promoApplied => 'Промокод применён';
+
+  @override
+  String get promoOriginalPrice => 'Без скидки';
+
+  @override
+  String get promoDiscount => 'Скидка';
+
+  @override
+  String get promoTotal => 'Итого';
+
+  @override
+  String get promoNotFound => 'Промокод не найден. Проверьте написание.';
+
+  @override
+  String get promoInactive => 'Этот промокод отключён.';
+
+  @override
+  String get promoExpired => 'Срок действия промокода истёк.';
+
+  @override
+  String get promoLimitReached => 'Лимит использований промокода исчерпан.';
+
+  @override
+  String get promoUnavailable =>
+      'Не удалось применить скидку. Попробуйте другой промокод.';
+
+  @override
+  String get driverBonusUnavailable => 'Не удалось загрузить условия бонусов';
+
+  @override
+  String get driverBonusDisabled => 'Бонусная программа сейчас отключена';
+
+  @override
+  String get driverBonusRefresh => 'Обновить прогресс бонуса';
+
+  @override
+  String driverBonusConditions(int orders, String amount) {
+    return 'За каждые $orders завершённых заказов — $amount';
+  }
+
+  @override
+  String driverBonusProgress(int completed, int required, int remaining) {
+    return 'Выполнено $completed из $required. Осталось $remaining.';
+  }
 }
