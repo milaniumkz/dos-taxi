@@ -230,18 +230,21 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             const SizedBox(height: AppSpacing.sm),
             DosCard(
               padding: EdgeInsets.zero,
-              child: ListTile(
-                leading: const Icon(Icons.add_card_rounded),
-                title: Text(l10n.paymentsAddCardAction),
-                subtitle: Text(l10n.paymentsKassa24Provider),
-                trailing: _isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_rounded),
-                onTap: _isSaving ? null : () => _showAddCardDialog(l10n),
+              child: Material(
+                type: MaterialType.transparency,
+                child: ListTile(
+                  leading: const Icon(Icons.add_card_rounded),
+                  title: Text(l10n.paymentsAddCardAction),
+                  subtitle: Text(l10n.paymentsKassa24Provider),
+                  trailing: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add_rounded),
+                  onTap: _isSaving ? null : () => _showAddCardDialog(l10n),
+                ),
               ),
             ),
             if (_errorMessage != null) ...[
@@ -312,25 +315,30 @@ class _PaymentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return DosCard(
       padding: EdgeInsets.zero,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: selected ? AppColors.primary : AppColors.surfaceAlt,
-          child: Icon(icon, color: AppColors.text),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: selected
+                ? AppColors.primary
+                : AppColors.surfaceAlt,
+            child: Icon(icon, color: AppColors.text),
+          ),
+          title: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontSize: 14),
+          ),
+          trailing: onDelete != null
+              ? IconButton(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.close_rounded),
+                )
+              : selected
+              ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+              : const Icon(Icons.radio_button_unchecked_rounded),
         ),
-        title: Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontSize: 14),
-        ),
-        trailing: onDelete != null
-            ? IconButton(
-                onPressed: onDelete,
-                icon: const Icon(Icons.close_rounded),
-              )
-            : selected
-            ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
-            : const Icon(Icons.radio_button_unchecked_rounded),
       ),
     );
   }
