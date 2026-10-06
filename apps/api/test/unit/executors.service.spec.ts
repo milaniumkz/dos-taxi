@@ -94,6 +94,7 @@ describe('ExecutorsService', () => {
       userId: 'user-1',
       executorType: ExecutorType.DRIVER,
       isOnline: false,
+      verificationStatus: 'verified',
     } as ExecutorEntity);
 
     await executorsService.updateStatus('user-1', {
@@ -120,5 +121,24 @@ describe('ExecutorsService', () => {
       }),
       300,
     );
+  });
+
+  it('rejects an unverified executor going online without writing status or location', async () => {
+    executorsRepository.findOne.mockResolvedValue({
+      id: 'executor-1',
+      userId: 'user-1',
+      executorType: ExecutorType.DRIVER,
+      verificationStatus: 'pending',
+      isOnline: false,
+    } as ExecutorEntity);
+
+    await expect(executorsService.updateStatus('user-1', {
+      isOnline: true,
+      lat: 43.238949,
+      lng: 76.889709,
+    })).rejects.toThrow('Executor profile must be verified before going online');
+    expect(executorsRepository.save).not.toHaveBeenCalled();
+    expect(executorLocationsRepository.upsert).not.toHaveBeenCalled();
+    expect(redisStoreService.setJson).not.toHaveBeenCalled();
   });
 });

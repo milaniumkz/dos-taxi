@@ -1,0 +1,99 @@
+name: Native Mac Pilot
+on:
+  push:
+    branches: [codex/mac-ci-pilot]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-mac-dos-taxi-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native-node:
+    if: github.repository == 'milaniumkz/dos-taxi' && (github.ref == 'refs/heads/codex/mac-ci-pilot' || github.ref == 'refs/heads/main')
+    runs-on: [milanium-mac-arm64, repo-dos-taxi]
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      DATABASE_URL: ''
+      REDIS_URL: ''
+      PROMO_TEST_DATABASE_URL: ''
+      COREPACK_ENABLE_NETWORK: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select existing Node 20
+        run: |
+          echo /opt/homebrew/opt/node@20/bin >> "$GITHUB_PATH"
+          test "$(/opt/homebrew/opt/node@20/bin/node -p 'process.versions.node.split(".")[0]')" = 20
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @dos/shared-types build
+      - run: corepack pnpm lint
+      - run: corepack pnpm --filter @dos/api test:unit
+      - run: python3 -m unittest discover -s deploy/vps/scripts -p 'test_*.py'
+      - run: corepack pnpm --filter @dos/api typecheck
+      - run: corepack pnpm --filter @dos/admin typecheck
+      - run: corepack pnpm --filter @dos/api build
+      - run: corepack pnpm --filter @dos/admin build
+  mobile:
+    name: Flutter checks
+    needs: native-node
+    if: github.repository == 'milaniumkz/dos-taxi' && (github.ref == 'refs/heads/codex/mac-ci-pilot' || github.ref == 'refs/heads/main')
+    runs-on: [milanium-mac-arm64, repo-dos-taxi]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Select existing Mac Flutter 3.41.1
+        run: |
+          echo /Volumes/PD1000/job/flutter/bin >> "$GITHUB_PATH"
+          /Volumes/PD1000/job/flutter/bin/flutter --version --machine | python3 -c 'import json,sys; assert json.load(sys.stdin)["frameworkVersion"] == "3.41.1"'
+
+      - name: Install mobile dependencies
+        working-directory: apps/mobile
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate localizations
+        working-directory: apps/mobile
+        run: flutter gen-l10n
+
+      - name: Analyze mobile
+        working-directory: apps/mobile
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test mobile
+        working-directory: apps/mobile
+        run: flutter test
+
+      - name: Build passenger web app
+        working-directory: apps/mobile
+        run: flutter build web --release -t lib/main_passenger_prod.dart --base-href /passenger/
+
+      - name: Prepare passenger web metadata
+        run: python3 scripts/prepare_ci_web.py passenger
+
+      - name: Save checked passenger web app
+        uses: actions/upload-artifact@v4
+        with:
+          name: passenger-web
+          path: apps/mobile/build/web
+          retention-days: 14
+
+      - name: Build driver web app
+        working-directory: apps/mobile
+        run: flutter build web --release -t lib/main_driver_prod.dart --base-href /driver/
+
+      - name: Prepare driver web metadata
+        run: python3 scripts/prepare_ci_web.py driver
+
+      - name: Save checked driver web app
+        uses: actions/upload-artifact@v4
+        with:
+          name: driver-web
+          path: apps/mobile/build/web
+          retention-days: 14
+
