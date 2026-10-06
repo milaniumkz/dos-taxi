@@ -1,0 +1,45 @@
+name: Native CI Split Pilot
+on:
+  push:
+    branches: [codex/ci-split-pilot]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-ci-split-dos-taxi-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native-node:
+    if: github.repository == 'milaniumkz/dos-taxi' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/ci-split-pilot')
+    runs-on: [milanium-mac-arm64, repo-dos-taxi]
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      DATABASE_URL: ''
+      REDIS_URL: ''
+      PROMO_TEST_DATABASE_URL: ''
+      COREPACK_ENABLE_NETWORK: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select existing Node 20
+        run: |
+          echo /opt/homebrew/opt/node@20/bin >> "$GITHUB_PATH"
+          test "$(/opt/homebrew/opt/node@20/bin/node -p 'process.versions.node.split(".")[0]')" = 20
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @dos/shared-types build
+      - run: corepack pnpm lint
+      - run: corepack pnpm --filter @dos/api test:unit
+      - run: python3 -m unittest discover -s deploy/vps/scripts -p 'test_*.py'
+      - run: corepack pnpm --filter @dos/api typecheck
+      - run: corepack pnpm --filter @dos/admin typecheck
+      - run: corepack pnpm --filter @dos/api build
+      - run: corepack pnpm --filter @dos/admin build
+      - name: Share portable TypeScript build for the Linux integration gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: dos-shared-types
+          path: packages/shared-types/dist
+          if-no-files-found: error
+          retention-days: 1
