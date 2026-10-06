@@ -194,29 +194,40 @@ class ProfileScreen extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         child: Column(
                           children: [
-                            ListTile(
-                              leading: const Icon(
-                                Icons.logout_rounded,
-                                color: AppColors.danger,
+                            Material(
+                              type: MaterialType.transparency,
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.logout_rounded,
+                                  color: AppColors.danger,
+                                ),
+                                title: Text(
+                                  l10n.profileSignOutAction,
+                                  style: const TextStyle(
+                                    color: AppColors.danger,
+                                  ),
+                                ),
+                                onTap: () =>
+                                    context.read<AuthCubit>().signOut(),
                               ),
-                              title: Text(
-                                l10n.profileSignOutAction,
-                                style: const TextStyle(color: AppColors.danger),
-                              ),
-                              onTap: () => context.read<AuthCubit>().signOut(),
                             ),
                             const _MenuDivider(),
-                            ListTile(
-                              leading: const Icon(
-                                Icons.delete_forever_rounded,
-                                color: AppColors.danger,
+                            Material(
+                              type: MaterialType.transparency,
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.delete_forever_rounded,
+                                  color: AppColors.danger,
+                                ),
+                                title: Text(
+                                  l10n.accountDeleteTitle,
+                                  style: const TextStyle(
+                                    color: AppColors.danger,
+                                  ),
+                                ),
+                                subtitle: Text(l10n.accountDeleteSubtitle),
+                                onTap: () => _confirmDeleteAccount(context),
                               ),
-                              title: Text(
-                                l10n.accountDeleteTitle,
-                                style: const TextStyle(color: AppColors.danger),
-                              ),
-                              subtitle: Text(l10n.accountDeleteSubtitle),
-                              onTap: () => _confirmDeleteAccount(context),
                             ),
                           ],
                         ),
@@ -406,24 +417,27 @@ class _LanguageTile extends StatelessWidget {
     final cubit = context.read<ProfileSettingsCubit>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: ListTile(
-        leading: const Icon(Icons.language_rounded),
-        title: Text(l10n.profileLanguageLabel),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DosPill(
-              label: l10n.profileLanguageRu,
-              selected: state.localeCode == 'ru',
-              onTap: () => cubit.changeLocale('ru'),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            DosPill(
-              label: l10n.profileLanguageKk,
-              selected: state.localeCode == 'kk',
-              onTap: () => cubit.changeLocale('kk'),
-            ),
-          ],
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          leading: const Icon(Icons.language_rounded),
+          title: Text(l10n.profileLanguageLabel),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DosPill(
+                label: l10n.profileLanguageRu,
+                selected: state.localeCode == 'ru',
+                onTap: () => cubit.changeLocale('ru'),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              DosPill(
+                label: l10n.profileLanguageKk,
+                selected: state.localeCode == 'kk',
+                onTap: () => cubit.changeLocale('kk'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -441,24 +455,27 @@ class _ThemeTile extends StatelessWidget {
     final cubit = context.read<ProfileSettingsCubit>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: ListTile(
-        leading: const Icon(Icons.brightness_6_rounded),
-        title: Text(l10n.profileThemeLabel),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DosPill(
-              label: l10n.profileThemeLight,
-              selected: state.themeMode == ThemeMode.light,
-              onTap: () => cubit.changeThemeMode(ThemeMode.light),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            DosPill(
-              label: l10n.profileThemeDark,
-              selected: state.themeMode == ThemeMode.dark,
-              onTap: () => cubit.changeThemeMode(ThemeMode.dark),
-            ),
-          ],
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          leading: const Icon(Icons.brightness_6_rounded),
+          title: Text(l10n.profileThemeLabel),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DosPill(
+                label: l10n.profileThemeLight,
+                selected: state.themeMode == ThemeMode.light,
+                onTap: () => cubit.changeThemeMode(ThemeMode.light),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              DosPill(
+                label: l10n.profileThemeDark,
+                selected: state.themeMode == ThemeMode.dark,
+                onTap: () => cubit.changeThemeMode(ThemeMode.dark),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -481,12 +498,15 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final foreground = Theme.of(context).colorScheme.onSurface;
-    return ListTile(
-      onTap: onTap,
-      leading: Icon(icon, color: foreground),
-      title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle!),
-      trailing: const Icon(Icons.chevron_right_rounded),
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        onTap: onTap,
+        leading: Icon(icon, color: foreground),
+        title: Text(title),
+        subtitle: subtitle == null ? null : Text(subtitle!),
+        trailing: const Icon(Icons.chevron_right_rounded),
+      ),
     );
   }
 }

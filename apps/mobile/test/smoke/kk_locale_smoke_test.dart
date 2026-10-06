@@ -1,4 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:dio/dio.dart';
+import 'package:dos_mobile/core/api/api_client.dart';
+import 'package:dos_mobile/core/di/service_locator.dart';
 import 'package:dos_mobile/core/l10n/app_localizations.dart';
 import 'package:dos_mobile/features/active_order/domain/entities/active_order_service_type.dart';
 import 'package:dos_mobile/features/active_order/domain/entities/active_order_session.dart';
@@ -51,6 +54,8 @@ class _MockExecutorStatusCubit extends MockCubit<ExecutorStatusState>
 class _MockIncomingOrderCubit extends MockCubit<IncomingOrderState>
     implements IncomingOrderCubit {}
 
+class _MockApiClient extends Mock implements ApiClient {}
+
 Widget _localizedApp(Widget child) {
   return MaterialApp(
     locale: const Locale('kk'),
@@ -90,6 +95,10 @@ void main() {
     location: const LatLng(43.245, 76.95),
   );
 
+  tearDown(() async {
+    await serviceLocator.reset();
+  });
+
   testWidgets('renders profile screen in Kazakh without overflow', (
     tester,
   ) async {
@@ -113,6 +122,15 @@ void main() {
   testWidgets('renders payments screen in Kazakh without overflow', (
     tester,
   ) async {
+    final apiClient = _MockApiClient();
+    when(() => apiClient.guard<Response<dynamic>>(any())).thenAnswer(
+      (_) async => Response<dynamic>(
+        requestOptions: RequestOptions(path: '/payments/methods'),
+        data: const [],
+      ),
+    );
+    serviceLocator.registerSingleton<ApiClient>(apiClient);
+
     await _pumpScreen(tester, const PaymentsScreen());
   });
 
