@@ -1,8 +1,17 @@
 ---
-name: DOS CI/CD
-concurrency:
-  group: dos-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+name: Full CI Verification
+'on':
+  push:
+    branches:
+    - codex/full-ci-pilot
+  workflow_dispatch:
+    inputs:
+      deploy_ref:
+        description: Commit, tag or branch to deploy
+        required: false
+        default: ''
+permissions:
+  contents: read
 jobs:
   node:
     name: API/Admin checks
@@ -53,6 +62,8 @@ jobs:
       run: pnpm --filter @dos/api exec jest --runInBand test/integration/admin-creation.integration.spec.ts
         test/integration/promo-bonus.integration.spec.ts test/integration/admin.integration.spec.ts
         test/integration/smsc-otp.integration.spec.ts
+    if: github.repository == 'milaniumkz/dos-taxi' && github.event_name != 'pull_request'
+      && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/full-ci-pilot')
   mobile:
     name: Flutter checks
     runs-on: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main'
@@ -115,113 +126,8 @@ jobs:
         name: driver-web
         path: apps/mobile/build/web
         retention-days: 14
-  deploy-production:
-    name: Deploy VPS production
-    runs-on: ubuntu-latest
-    needs:
-    - node
-    - mobile
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    concurrency:
-      group: dos-production-deploy
-      cancel-in-progress: false
-    environment: production
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        ref: "${{ inputs.deploy_ref || github.sha }}"
-    - name: Resolve release commit
-      id: release
-      run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-    - name: Install SSH tools
-      run: sudo apt-get update && sudo apt-get install -y rsync openssh-client
-    - name: Configure SSH
-      env:
-        VPS_SSH_PRIVATE_KEY: "${{ secrets.VPS_SSH_PRIVATE_KEY }}"
-        VPS_KNOWN_HOSTS: "${{ secrets.VPS_KNOWN_HOSTS }}"
-      run: |
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-        printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
-        chmod 600 ~/.ssh/known_hosts
-    - name: Download checked passenger web app
-      uses: actions/download-artifact@v4
-      with:
-        name: passenger-web
-        path: apps/mobile/build/web
-    - name: Download checked driver web app
-      uses: actions/download-artifact@v4
-      with:
-        name: driver-web
-        path: apps/mobile/build/driver-web
-    - name: Upload release to VPS
-      env:
-        VPS_HOST: "${{ secrets.VPS_HOST }}"
-        VPS_PORT: "${{ secrets.VPS_PORT }}"
-        VPS_USER: "${{ secrets.VPS_USER }}"
-        VPS_PATH: "${{ secrets.VPS_PATH }}"
-        RELEASE_SHA: "${{ steps.release.outputs.sha }}"
-      run: |
-        set -euo pipefail
-        ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${RELEASE_SHA}'"
-        rsync -az --delete \
-          --exclude='.git/' \
-          --exclude='node_modules/' \
-          --exclude='apps/admin/.next/' \
-          --exclude='apps/api/dist/' \
-          --exclude='apps/mobile/build/' \
-          --exclude='builds/' \
-          --exclude='artifacts/' \
-          --exclude='infra/data/' \
-          --exclude='.DS_Store' \
-          --exclude='._*' \
-          --exclude='.env' \
-          --exclude='.env.*' \
-          --exclude='deploy/.env*.yaml' \
-          --exclude='deploy/.env*.json' \
-          --exclude='deploy/vps/.env' \
-          --exclude='deploy/vps/backups/' \
-          --exclude='deploy/vps/nginx/certbot/' \
-          --exclude='deploy/hosting-public/' \
-          --exclude='deploy/hosting-passenger/' \
-          --exclude='deploy/hosting-driver/' \
-          --exclude='apps/api/.env.local' \
-          --exclude='apps/mobile/android/*.jks' \
-          --exclude='apps/mobile/android/*.keystore' \
-          --exclude='apps/mobile/android/key.properties' \
-          -e "ssh -p ${VPS_PORT:-22}" \
-          ./ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/"
-        ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${RELEASE_SHA}/_web/passenger'"
-        rsync -az --delete -e "ssh -p ${VPS_PORT:-22}" \
-          apps/mobile/build/web/ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/_web/passenger/"
-        ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_PATH/_incoming/${RELEASE_SHA}/_web/driver'"
-        rsync -az --delete -e "ssh -p ${VPS_PORT:-22}" \
-          apps/mobile/build/driver-web/ "$VPS_USER@$VPS_HOST:$VPS_PATH/_incoming/${RELEASE_SHA}/_web/driver/"
-    - name: Promote release
-      env:
-        VPS_HOST: "${{ secrets.VPS_HOST }}"
-        VPS_PORT: "${{ secrets.VPS_PORT }}"
-        VPS_USER: "${{ secrets.VPS_USER }}"
-        VPS_PATH: "${{ secrets.VPS_PATH }}"
-        RELEASE_SHA: "${{ steps.release.outputs.sha }}"
-        SMSC_LOGIN: "${{ secrets.SMSC_LOGIN }}"
-        SMSC_PASSWORD: "${{ secrets.SMSC_PASSWORD }}"
-      run: |
-        python3 - <<'PY'
-        import json, os, shlex, subprocess
-        login = os.environ.get("SMSC_LOGIN", "")
-        password = os.environ.get("SMSC_PASSWORD", "")
-        if bool(login) != bool(password):
-            raise SystemExit("Configure both SMSC_LOGIN and SMSC_PASSWORD secrets")
-        settings = {"SMSC_LOGIN": login, "SMSC_PASSWORD": password} if login else {}
-        path, sha = os.environ["VPS_PATH"], os.environ["RELEASE_SHA"]
-        incoming = f"{path}/_incoming/{sha}"
-        command = shlex.join(["bash", f"{incoming}/deploy/vps/scripts/ci-promote-release.sh", incoming, path, sha, "--runtime-config-stdin"])
-        subprocess.run(["ssh", "-p", os.environ.get("VPS_PORT") or "22", f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}', command], input=json.dumps(settings), text=True, check=True)
-        PY
+    if: github.repository == 'milaniumkz/dos-taxi' && github.event_name != 'pull_request'
+      && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/full-ci-pilot')
   native-node:
     runs-on: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main'
       || github.ref == 'refs/heads/codex/full-ci-pilot') && fromJSON('["milanium-mac-arm64",
@@ -272,14 +178,5 @@ jobs:
         path: packages/shared-types/dist
         if-no-files-found: error
         retention-days: 1
-'on':
-  pull_request: 
-  push:
-    branches:
-    - main
-  workflow_dispatch:
-    inputs:
-      deploy_ref:
-        description: Commit, tag or branch to deploy
-        required: false
-        default: ''
+    if: github.repository == 'milaniumkz/dos-taxi' && github.event_name != 'pull_request'
+      && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/full-ci-pilot')
