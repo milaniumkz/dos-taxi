@@ -2431,6 +2431,36 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Выполнено {completed} из {required}. Осталось {remaining}.'**
   String driverBonusProgress(int completed, int required, int remaining);
+
+  /// No description provided for @taxiClassTogether.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вместе'**
+  String get taxiClassTogether;
+
+  /// No description provided for @taxiClassChild.
+  ///
+  /// In ru, this message translates to:
+  /// **'Детский (с креслом)'**
+  String get taxiClassChild;
+
+  /// No description provided for @authRetryAfter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить запрос можно через {seconds} сек.'**
+  String authRetryAfter(int seconds);
+
+  /// No description provided for @vehiclePlateFormatHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'KZ: 123ABC01, A123456, A123BCD; RU: A123BC777'**
+  String get vehiclePlateFormatHint;
+
+  /// No description provided for @driverChildSeatNotice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включайте «Детский» только при наличии детского кресла.'**
+  String get driverChildSeatNotice;
 }
 
 class _AppLocalizationsDelegate

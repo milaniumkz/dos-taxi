@@ -1249,4 +1249,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String driverBonusProgress(int completed, int required, int remaining) {
     return 'Выполнено $completed из $required. Осталось $remaining.';
   }
+
+  @override
+  String get taxiClassTogether => 'Вместе';
+
+  @override
+  String get taxiClassChild => 'Детский (с креслом)';
+
+  @override
+  String authRetryAfter(int seconds) {
+    return 'Повторить запрос можно через $seconds сек.';
+  }
+
+  @override
+  String get vehiclePlateFormatHint =>
+      'KZ: 123ABC01, A123456, A123BCD; RU: A123BC777';
+
+  @override
+  String get driverChildSeatNotice =>
+      'Включайте «Детский» только при наличии детского кресла.';
 }

@@ -216,9 +216,9 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
 
     if (_executorType == 'driver' &&
         !AppFormatters.isValidVehiclePlate(vehiclePlate)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Госномер: KZ 123ABC01 / RU A123BC777')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.vehiclePlateFormatHint)));
       return;
     }
 
@@ -399,7 +399,7 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
                     controller: _vehiclePlateController,
                     decoration: InputDecoration(
                       labelText: l10n.driverOnboardingVehiclePlateLabel,
-                      helperText: 'KZ: 123ABC01, RU: A123BC777',
+                      helperText: l10n.vehiclePlateFormatHint,
                     ),
                     textCapitalization: TextCapitalization.characters,
                     inputFormatters: const [VehiclePlateInputFormatter()],
@@ -1891,7 +1891,7 @@ class _DriverVehicleSettingsSheetState
               label: l10n.driverOnboardingVehiclePlateLabel,
               textCapitalization: TextCapitalization.characters,
               inputFormatters: const [VehiclePlateInputFormatter()],
-              helperText: 'KZ: 123ABC01, RU: A123BC777',
+              helperText: l10n.vehiclePlateFormatHint,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -1902,6 +1902,10 @@ class _DriverVehicleSettingsSheetState
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.driverChildSeatNotice,
+              style: const TextStyle(color: AppColors.darkMuted),
+            ),
             for (final tariff in _tariffKeys)
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
@@ -1969,9 +1973,9 @@ class _DriverVehicleSettingsSheetState
       return;
     }
     if (!AppFormatters.isValidVehiclePlate(plate)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Госномер: KZ 123ABC01 / RU A123BC777')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.vehiclePlateFormatHint)));
       return;
     }
     final saved = await context
@@ -2001,6 +2005,8 @@ class _DriverVehicleSettingsSheetState
       'comfort' => l10n.taxiClassComfort,
       'comfort_plus' => l10n.taxiClassComfortPlus,
       'business' => l10n.taxiClassBusiness,
+      'together' => l10n.taxiClassTogether,
+      'child' => l10n.taxiClassChild,
       _ => l10n.taxiClassEconomy,
     };
   }
@@ -2019,7 +2025,14 @@ class _DriverVehicleSettingsSheetState
   String? get _selectedColor =>
       VehicleCatalog.colorValue(_colorController.text);
 
-  static const _tariffKeys = ['economy', 'comfort', 'comfort_plus', 'business'];
+  static const _tariffKeys = [
+    'economy',
+    'comfort',
+    'comfort_plus',
+    'business',
+    'together',
+    'child',
+  ];
 }
 
 class _DarkTextField extends StatelessWidget {

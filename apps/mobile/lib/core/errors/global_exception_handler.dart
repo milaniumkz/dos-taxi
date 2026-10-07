@@ -7,6 +7,9 @@ class GlobalExceptionHandler {
     final responseData = error.response?.data;
     if (responseData is Map<String, dynamic>) {
       return Failure(
+        retryAfterSeconds: (responseData['details'] is Map
+            ? (responseData['details']['retryAfterSeconds'] as num?)?.toInt()
+            : null),
         code: responseData['code'] as String? ?? 'API_ERROR',
         message: responseData['message'] as String? ?? 'Ошибка API',
       );

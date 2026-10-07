@@ -298,10 +298,18 @@ export class PricingService {
       return result;
     }
 
-    if (serviceType === ServiceType.TAXI) {
+    if (
+      serviceType === ServiceType.TAXI &&
+      vehicleClass !== "together" &&
+      vehicleClass !== "child"
+    ) {
       const fallbackTaxiTariff =
         activeCandidates.find((tariff) => tariff.vehicleClass === "economy") ??
-        activeCandidates[0];
+        activeCandidates.find(
+          (tariff) =>
+            tariff.vehicleClass !== "together" &&
+            tariff.vehicleClass !== "child",
+        );
       if (fallbackTaxiTariff) {
         const result = {
           tariff: this.toTariffSnapshot(fallbackTaxiTariff),

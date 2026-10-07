@@ -493,5 +493,17 @@
         "type": "int"
       }
     }
+  },
+  "taxiClassTogether": "Бірге",
+  "taxiClassChild": "Балалар (орындықпен)",
+  "authRetryAfter": "{seconds} секундтан кейін қайта сұратуға болады.",
+  "vehiclePlateFormatHint": "KZ: 123ABC01, A123456, A123BCD; RU: A123BC777",
+  "driverChildSeatNotice": "«Балалар» тарифін балалар орындығы болғанда ғана қосыңыз.",
+  "@authRetryAfter": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
   }
 }

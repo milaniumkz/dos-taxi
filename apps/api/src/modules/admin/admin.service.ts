@@ -510,7 +510,7 @@ export class AdminService {
     throw new BadRequestException({
       code: "TARIFF_CLASS_NOT_ALLOWED",
       message:
-        "Allowed tariffs: taxi economy/comfort/comfort_plus/business, one delivery tariff, one intercity tariff",
+        "Allowed tariffs: taxi economy/comfort/comfort_plus/business/together/child, one delivery tariff, one intercity tariff",
     });
   }
   async listOrders(

@@ -3416,7 +3416,7 @@ export async function getExecutorsSnapshot(
 
     return items.map((item) => normalizeExecutorSnapshot(item));
   } catch {
-    return filterDemoExecutors(query);
+    throw new Error("Не удалось загрузить водителей из API. Повторите попытку позже.");
   }
 }
 

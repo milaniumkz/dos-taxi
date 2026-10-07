@@ -17,6 +17,8 @@ export const TAXI_TARIFF_CLASSES = [
   "comfort",
   "comfort_plus",
   "business",
+  "together",
+  "child",
 ] as const;
 
 export function buildDefaultTariffs(): TariffDefaultDefinition[] {

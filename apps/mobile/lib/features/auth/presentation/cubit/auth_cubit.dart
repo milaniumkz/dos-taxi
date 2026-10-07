@@ -72,6 +72,11 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void _emitFailure(Failure failure) {
-    emit(AuthError(failure.message));
+    emit(
+      AuthError(
+        failure.retryAfterSeconds != null ? failure.code : failure.message,
+        retryAfterSeconds: failure.retryAfterSeconds,
+      ),
+    );
   }
 }

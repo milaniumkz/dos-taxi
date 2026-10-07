@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/api/api_client.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../home/domain/entities/address_suggestion.dart';
 import '../models/taxi_estimate_model.dart';
 import '../models/taxi_route_model.dart';
@@ -108,46 +109,55 @@ class TaxiRemoteDataSource {
   }) async {
     final classes = serviceType == 'intercity'
         ? ['intercity']
-        : ['economy', 'comfort', 'comfort_plus', 'business'];
+        : [
+            'economy',
+            'comfort',
+            'comfort_plus',
+            'business',
+            'together',
+            'child',
+          ];
     final responses = await Future.wait(
-      classes.map(
-        (carClass) => _apiClient.guard(
-          () => _apiClient.dio.post<Map<String, dynamic>>(
-            '/orders/estimate',
-            data: {
-              'serviceType': serviceType,
-              if (serviceType != 'intercity') 'carClass': carClass,
-              'routePoints': [
-                {
-                  'lat': pickup.location.latitude,
-                  'lng': pickup.location.longitude,
-                  'address': pickup.displayTitle,
-                },
-                {
-                  'lat': destination.location.latitude,
-                  'lng': destination.location.longitude,
-                  'address': destination.displayTitle,
-                },
-              ],
-              if (promoCode != null && promoCode.isNotEmpty)
-                'promoCode': promoCode,
-              'distanceMeters': _positiveMetric(distanceMeters),
-              'durationSeconds': _positiveMetric(durationSeconds),
-            },
-          ),
-        ),
-      ),
+      classes.map((carClass) async {
+        try {
+          final response = await _apiClient.guard(
+            () => _apiClient.dio.post<Map<String, dynamic>>(
+              '/orders/estimate',
+              data: {
+                'serviceType': serviceType,
+                if (serviceType != 'intercity') 'carClass': carClass,
+                'routePoints': [
+                  {
+                    'lat': pickup.location.latitude,
+                    'lng': pickup.location.longitude,
+                    'address': pickup.displayTitle,
+                  },
+                  {
+                    'lat': destination.location.latitude,
+                    'lng': destination.location.longitude,
+                    'address': destination.displayTitle,
+                  },
+                ],
+                if (promoCode != null && promoCode.isNotEmpty)
+                  'promoCode': promoCode,
+                'distanceMeters': _positiveMetric(distanceMeters),
+                'durationSeconds': _positiveMetric(durationSeconds),
+              },
+            ),
+          );
+          return TaxiEstimateModel.fromEstimateResponse(
+            carClass: carClass,
+            json: response.data ?? <String, dynamic>{},
+            fallbackPrice: 0,
+            fallbackEtaMinutes: 5 + classes.indexOf(carClass) * 2,
+          );
+        } on Failure catch (failure) {
+          if (failure.code == 'TARIFF_NOT_FOUND') return null;
+          rethrow;
+        }
+      }),
     );
-
-    return [
-      for (var index = 0; index < classes.length; index += 1)
-        TaxiEstimateModel.fromEstimateResponse(
-          carClass: classes[index],
-          json: responses[index].data ?? <String, dynamic>{},
-          fallbackPrice: 0,
-          fallbackEtaMinutes: 5 + index * 2,
-        ),
-    ];
+    return responses.whereType<TaxiEstimateModel>().toList(growable: false);
   }
 
   Future<String> createTaxiOrder({

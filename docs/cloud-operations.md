@@ -126,3 +126,11 @@ scripts/restore-db.sh backups/YYYYMMDD-HHMMSS/platform_db.dump
 Do not automatically restore an old database over new production data after a failed deploy.
 
 The checked passenger and driver web builds are uploaded as the `passenger-web` and `driver-web` Actions artifacts and promoted to `/passenger/` and `/driver/` with the API/admin release. Their previous files are backed up as `passenger-web.tar.gz` and `driver-web.tar.gz` and restored by the production rollback operation. Each role’s `release.txt` identifies the deployed commit. Installed Android/iOS apps require a new signed mobile release for UI changes.
+
+## HTTPS for the server IP
+
+Use `DOS Production Ops` with `https-status` to inspect nginx listeners and public certificate metadata, or `https-ip` to configure `89.126.200.51`. The operation uses Certbot 5.8.0 and Let's Encrypt's shortlived IP certificate profile. It retains existing domain certificates/routes, saves the previous live nginx configuration, validates the new configuration before reload and restores the previous configuration if validation fails. The hosted runner verifies both the IP HTTPS readiness endpoint and the existing app hostname with TLS verification enabled.
+
+The `dos-ip-https-renew.timer` systemd unit runs every 12 hours. Renewal uses a pinned Certbot image, then checks and reloads nginx. The initial setup verifies renewal using ACME staging. Inspect it on the VPS with `systemctl status dos-ip-https-renew.timer` and `journalctl -u dos-ip-https-renew.service`. The setup and renewals share the production deployment lock.
+
+After IP HTTPS is enabled, the promotion script preserves the runtime `nginx/templates/default.conf.template`. Certificates, renewal scripts and the activation marker remain under `nginx/certbot`, which deployments already preserve. Change this runtime TLS configuration through a checked production operation, and keep certificate/key files out of Git.

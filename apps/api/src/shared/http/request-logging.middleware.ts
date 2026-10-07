@@ -46,7 +46,7 @@ export function createRequestLoggingMiddleware(logger: HttpRequestLogger) {
       const durationMs = Number(finishedAt - startedAt) / 1_000_000;
       const traceId = request.traceId ?? 'unknown-trace-id';
       const statusCode = response.statusCode;
-      const path = request.originalUrl || request.url;
+      const path = (request.originalUrl || request.url).split('?')[0];
       const clientIp = resolveClientIp(request);
       const log = selectLogMethod(logger, statusCode);
 

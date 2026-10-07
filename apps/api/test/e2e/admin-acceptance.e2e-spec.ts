@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   Currency,
   PaymentMethod,
@@ -77,6 +78,7 @@ describe('Admin acceptance e2e', () => {
 
     const tariffResponse = await request(harness.app.getHttpAdapter().getInstance())
       .post('/api/v1/admin/tariffs')
+      .set('X-Idempotency-Key', randomUUID())
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         cityId: TEST_CITY_ID,

@@ -12,6 +12,8 @@ on:
           - logs
           - restart
           - rollback
+          - https-status
+          - https-ip
       rollback_backup:
         description: "Backup directory for rollback, e.g. backups/predeploy-YYYYMMDD-HHMMSS-abcdef123456"
         required: false
@@ -27,6 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Checkout operational scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Install SSH tools
         run: sudo apt-get update && sudo apt-get install -y openssh-client
 
@@ -53,8 +59,29 @@ jobs:
         run: |
           set -euo pipefail
           case "$OPERATION" in
-            health|logs|restart|rollback) ;;
+            health|logs|restart|rollback|https-status|https-ip) ;;
             *) echo "Unsupported operation"; exit 1 ;;
           esac
-          ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
-            "cd '$VPS_PATH/deploy/vps' && bash scripts/ci-ops.sh '$OPERATION' '$ROLLBACK_BACKUP'"
+          if [[ "$OPERATION" == https-* ]]; then
+            python3 - <<'PY'
+          import os, shlex, subprocess
+          host = f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}'
+          port = os.environ.get("VPS_PORT") or "22"
+          script = f'/tmp/dos-https-{os.environ["GITHUB_SHA"]}.sh'
+          renderer = f'/tmp/dos-https-{os.environ["GITHUB_SHA"]}.py'
+          mode = "status" if os.environ["OPERATION"] == "https-status" else "setup"
+          subprocess.run(["scp", "-P", port, "deploy/vps/scripts/https-ip.sh", f"{host}:{script}"], check=True)
+          if mode == "setup":
+              subprocess.run(["scp", "-P", port, "deploy/vps/scripts/render-ip-https.py", f"{host}:{renderer}"], check=True)
+          command = shlex.join(["bash", script, mode, f'{os.environ["VPS_PATH"]}/deploy/vps', "89.126.200.51", renderer])
+          subprocess.run(["ssh", "-p", port, host, command], check=True)
+          PY
+          else
+            ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
+              "cd '$VPS_PATH/deploy/vps' && bash scripts/ci-ops.sh '$OPERATION' '$ROLLBACK_BACKUP'"
+          fi
+      - name: Verify public IP HTTPS and retained app hostname
+        if: inputs.operation == 'https-ip'
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 https://89.126.200.51/api/v1/health/ready
+          curl --fail --silent --show-error https://dos.89.126.200.51.sslip.io/api/v1/health

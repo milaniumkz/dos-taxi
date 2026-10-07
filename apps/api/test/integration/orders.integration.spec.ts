@@ -1,3 +1,4 @@
+import { OrderChatService } from '../../src/modules/orders/order-chat.service';
 import {
   CourierVehicleType,
   Currency,
@@ -351,6 +352,7 @@ describe('Orders integration flow', () => {
         DispatchController,
       ],
       providers: [
+        { provide: OrderChatService, useValue: {} },
         {
           provide: OrdersService,
           useValue: ordersService,

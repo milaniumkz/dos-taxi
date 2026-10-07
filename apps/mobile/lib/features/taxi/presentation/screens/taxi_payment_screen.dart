@@ -183,6 +183,10 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
         return l10n.taxiClassComfort;
       case 'comfort_plus':
         return l10n.taxiClassComfortPlus;
+      case 'together':
+        return l10n.taxiClassTogether;
+      case 'child':
+        return l10n.taxiClassChild;
       case 'business':
         return l10n.taxiClassBusiness;
       default:

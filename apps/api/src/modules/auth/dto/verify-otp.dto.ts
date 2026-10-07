@@ -1,3 +1,5 @@
+import { Transform } from 'class-transformer';
+import { normalizeAuthPhone } from '../../../shared/validators/phone.validator';
 import { UserRole } from '@dos/shared-types';
 import {
   IsIn,
@@ -13,6 +15,7 @@ export class VerifyOtpDto {
   @IsString()
   @IsNotEmpty()
   @Matches(/^\+?[0-9]{10,15}$/)
+  @Transform(({ value }) => normalizeAuthPhone(value))
   phone!: string;
 
   @IsString()

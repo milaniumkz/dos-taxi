@@ -74,6 +74,7 @@ describe("OrdersService.transition", () => {
       find: jest.fn(),
     } as unknown as jest.Mocked<Repository<DeliveryDetailEntity>>;
     executorsRepository = {
+      decrement: jest.fn(),
       findOne: jest.fn(),
       save: jest.fn(),
     } as unknown as jest.Mocked<Repository<ExecutorEntity>>;
@@ -421,11 +422,10 @@ describe("OrdersService.transition", () => {
     );
     expect(result.distanceMeters).toBe(7800);
     expect(result.finalPrice).toBe("2100.00");
-    expect(executorsRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "executor-1",
-        balance: "-315.00",
-      }),
+    expect(executorsRepository.decrement).toHaveBeenCalledWith(
+      { id: "executor-1" },
+      "balance",
+      "315.00",
     );
     expect(notificationsService.send).toHaveBeenCalledWith(
       "client-1",
@@ -544,11 +544,10 @@ describe("OrdersService.transition", () => {
         orderAmount: 5200,
       }),
     );
-    expect(executorsRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "executor-1",
-        balance: "480.00",
-      }),
+    expect(executorsRepository.decrement).toHaveBeenCalledWith(
+      { id: "executor-1" },
+      "balance",
+      "520.00",
     );
   });
 

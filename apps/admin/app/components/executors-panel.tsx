@@ -24,7 +24,7 @@ type ExecutorsPanelProps = {
   linkToDetails?: boolean;
 };
 
-const CAR_CLASS_OPTIONS = ["economy", "comfort", "comfort_plus", "business"];
+const CAR_CLASS_OPTIONS = ["economy", "comfort", "comfort_plus", "business", "together", "child"];
 
 function executorTitle(executor: ExecutorSnapshot): string {
   return executor.user?.name?.trim() || executor.user?.phone || executor.id;
@@ -48,6 +48,10 @@ function carClassLabel(value: string, dictionary: AdminDictionary): string {
       return dictionary.forms.carClassComfort;
     case "comfort_plus":
       return dictionary.forms.carClassComfortPlus;
+    case "together":
+      return dictionary.forms.carClassTogether;
+    case "child":
+      return dictionary.forms.carClassChild;
     case "business":
       return dictionary.forms.carClassBusiness;
     default:

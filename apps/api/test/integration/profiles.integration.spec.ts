@@ -1,3 +1,4 @@
+import { DriverBonusesService } from '../../src/modules/executors/driver-bonuses.service';
 import { UserRole } from '@dos/shared-types';
 import {
   CanActivate,
@@ -119,6 +120,7 @@ describe('Profiles integration', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [UsersController, ExecutorsController, AdminController],
       providers: [
+        { provide: DriverBonusesService, useValue: {} },
         {
           provide: UsersService,
           useValue: usersServiceMock,

@@ -65,21 +65,20 @@ export class AuthService {
       };
     }
 
-    const rateLimitKey = `auth:otp:rate:${ipAddress}`;
-    const hourlyAttempts = await this.redisStoreService.increment(
-      rateLimitKey,
-      3600,
-    );
-
-    const maxAttempts = this.getNumberConfig("OTP_MAX_ATTEMPTS", 3);
-    if (hourlyAttempts > maxAttempts) {
-      throw new HttpException(
-        {
+    const limits = [
+      { key: `auth:otp:phone:${phone}`, max: this.getNumberConfig("OTP_MAX_ATTEMPTS", 3) },
+      { key: `auth:otp:ip:${ipAddress}`, max: this.getNumberConfig("OTP_IP_MAX_ATTEMPTS", 100) },
+    ];
+    for (const limit of limits) {
+      const attempts = await this.redisStoreService.increment(limit.key, 3600);
+      if (attempts > limit.max) {
+        const retryAfterSeconds = await this.redisStoreService.ttl(limit.key);
+        throw new HttpException({
           code: "OTP_RATE_LIMITED",
-          message: "Too many OTP requests from this IP",
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
+          message: "Too many OTP requests",
+          details: { retryAfterSeconds },
+        }, HttpStatus.TOO_MANY_REQUESTS);
+      }
     }
 
     const otpBypassEnabled = this.isOtpBypassEnabled();

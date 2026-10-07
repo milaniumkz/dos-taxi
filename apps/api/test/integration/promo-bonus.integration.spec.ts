@@ -20,6 +20,7 @@ import { CityEntity } from "../../src/modules/admin/entities/city.entity";
 import { JwtAuthGuard } from "../../src/modules/auth/guards/jwt-auth.guard";
 import { DeliveryDetailEntity } from "../../src/modules/delivery/entities/delivery-detail.entity";
 import { DispatchQueueService } from "../../src/modules/dispatch/dispatch-queue.service";
+import { KaspiService } from "../../src/modules/payments/kaspi/kaspi.service";
 import { DriverBonusesService } from "../../src/modules/executors/driver-bonuses.service";
 import { DriverBonusSettingEntity } from "../../src/modules/executors/entities/driver-bonus-setting.entity";
 import { DriverBonusPayoutEntity } from "../../src/modules/executors/entities/driver-bonus-payout.entity";
@@ -65,7 +66,16 @@ describe("Promo redemption and driver bonus progress", () => {
     durationSeconds: 300,
     etaSeconds: 300,
   };
-  const pricing = { estimate: jest.fn(async () => estimate) };
+  const pricing = {
+    estimate: jest.fn(async () => estimate),
+    calculateExecutorCommission: jest.fn(async () => ({
+      amount: 120,
+      percent: 10,
+      fixed: 0,
+      currency: Currency.KZT,
+      tariffId: estimate.tariffId,
+    })),
+  };
   const dispatch = { enqueueDispatchOrder: jest.fn() };
   const routePoints = [
     { sequenceIndex: 0, lat: 43.23, lng: 76.9, address: "A" },
@@ -84,6 +94,7 @@ describe("Promo redemption and driver bonus progress", () => {
       schema,
       entities: databaseEntities,
       synchronize: false,
+      extra: { options: `-c search_path=${schema},public` },
       logging: false,
     });
     await db.initialize();
@@ -388,6 +399,59 @@ describe("Promo redemption and driver bonus progress", () => {
       ).status,
     ).toBe(401);
   });
+  it("keeps concurrent Kaspi credits, commissions and a single milestone bonus", async () => {
+    const executor = await db.getRepository(ExecutorEntity).save({
+      userId: driver.id,
+      cityId: city.id,
+      executorType: ExecutorType.DRIVER,
+      verificationStatus: "verified",
+      balance: "1000.00",
+    });
+    await db.getRepository(DriverBonusSettingEntity).save({
+      key: "default",
+      isEnabled: true,
+      ordersRequired: 2,
+      bonusAmount: "700.00",
+    });
+    const rides = await db.getRepository(OrderEntity).save(
+      Array.from({ length: 2 }, () => ({
+        ...draft(),
+        executorId: executor.id,
+        status: OrderStatus.IN_PROGRESS,
+        startedAt: new Date(),
+      })),
+    );
+    await db
+      .getRepository(RoutePointEntity)
+      .save(
+        rides.flatMap((ride) =>
+          routePoints.map((point) => ({ ...point, orderId: ride.id })),
+        ),
+      );
+    const results = await Promise.all([
+      ...rides.map((ride) =>
+        orders.transition(ride.id, OrderStatus.COMPLETED, client.id, {
+          actualDistanceMeters: 2000,
+        }),
+      ),
+      new KaspiService(db).handle({
+        command: "pay",
+        txn_id: "123456789012345678",
+        account: driver.phone.slice(1),
+        sum: "5000.00",
+        txn_date: "20261007140000",
+      }),
+    ]);
+    expect(results[2]).toMatchObject({ result: 0 });
+    expect(
+      (
+        await db
+          .getRepository(ExecutorEntity)
+          .findOneByOrFail({ id: executor.id })
+      ).balance,
+    ).toBe("6460.00");
+    expect(await db.getRepository(DriverBonusPayoutEntity).count()).toBe(1);
+  });
   it("starts the next bonus cycle at a completed milestone", async () => {
     const executor = await db
       .getRepository(ExecutorEntity)
@@ -422,5 +486,34 @@ describe("Promo redemption and driver bonus progress", () => {
       totalCompletedOrders: 2,
       nextThreshold: 4,
     });
+  });
+  it("persists the selected special tariff instead of replacing it with the driver's car class", async () => {
+    const created = await orders.createOrder(client.id, {
+      serviceType: ServiceType.TAXI,
+      paymentMethod: PaymentMethod.CASH,
+      cityId: city.id,
+      carClass: "together",
+      routePoints,
+      distanceMeters: 2000,
+      durationSeconds: 300,
+    });
+    const stored = await db
+      .getRepository(OrderEntity)
+      .findOneByOrFail({ id: created.id });
+    expect(stored.carClass).toBe("together");
+    const executor = await db
+      .getRepository(ExecutorEntity)
+      .save({
+        userId: driver.id,
+        cityId: city.id,
+        executorType: ExecutorType.DRIVER,
+        carClass: "economy",
+      });
+    await db
+      .getRepository(OrderEntity)
+      .update(created.id, { executorId: executor.id });
+    expect((await orders.getOrder(client.id, created.id)).carClass).toBe(
+      "together",
+    );
   });
 });

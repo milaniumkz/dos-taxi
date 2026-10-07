@@ -1,7 +1,7 @@
 name: dos_mobile
 description: DOS passenger and driver applications built on a shared Flutter codebase.
 publish_to: 'none'
-version: 1.0.26+30
+version: 1.0.27+31
 
 environment:
   sdk: ^3.11.0

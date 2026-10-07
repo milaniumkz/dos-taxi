@@ -94,7 +94,7 @@ export class UpdateExecutorProfileDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsIn(["economy", "comfort", "comfort_plus", "business"], { each: true })
+  @IsIn(["economy", "comfort", "comfort_plus", "business", "together", "child"], { each: true })
   enabledTariffs?: string[];
 
   @IsOptional()

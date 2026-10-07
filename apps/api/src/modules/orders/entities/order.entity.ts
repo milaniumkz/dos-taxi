@@ -74,6 +74,9 @@ export class OrderEntity {
   })
   currency!: Currency;
 
+  @Column({ name: 'car_class', type: 'varchar', length: 50, nullable: true })
+  carClass!: string | null;
+
   @Column({
     name: 'estimated_price',
     type: 'decimal',

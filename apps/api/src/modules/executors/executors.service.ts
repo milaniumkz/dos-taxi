@@ -283,10 +283,10 @@ export class ExecutorsService {
   }
 
   private normalizeEnabledTariffs(values?: string[]): string[] {
-    const allowed = ["economy", "comfort", "comfort_plus", "business"];
+    const allowed = ["economy", "comfort", "comfort_plus", "business", "together", "child"];
     const normalized = [
       ...new Set(
-        (values?.length ? values : allowed).filter((value) =>
+        (values?.length ? values : ["economy", "comfort", "comfort_plus", "business"]).filter((value) =>
           allowed.includes(value),
         ),
       ),

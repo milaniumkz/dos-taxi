@@ -1,0 +1,6600 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/admin/settings/dispatch": {
+      "get": {
+        "operationId": "AdminController_getDispatchSettings",
+        "summary": "Get dispatch radius and ranking settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminController_updateDispatchSettings",
+        "summary": "Update dispatch radius and ranking settings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDispatchSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/settings/driver-bonus": {
+      "get": {
+        "operationId": "AdminController_getDriverBonusSettings",
+        "summary": "Get driver completion bonus settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverBonusSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminController_updateDriverBonusSettings",
+        "summary": "Update driver completion bonus settings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDriverBonusSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverBonusSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cities": {
+      "get": {
+        "operationId": "AdminController_listCities",
+        "summary": "List cities for admin backoffice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CityEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createCity",
+        "summary": "Create city for admin backoffice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cities/{id}": {
+      "get": {
+        "operationId": "AdminController_getCity",
+        "summary": "Get city details for admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminController_updateCity",
+        "summary": "Update city and activation state",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/tariffs": {
+      "get": {
+        "operationId": "AdminController_listTariffs",
+        "summary": "List tariffs for admin backoffice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TariffEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminCreationController_createTariff",
+        "summary": "Create a city tariff and close the previous version",
+        "parameters": [
+          {
+            "name": "x-idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "description": "UUID retained when retrying this creation",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTariffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TariffEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/tariffs/{id}": {
+      "get": {
+        "operationId": "AdminController_getTariff",
+        "summary": "Get tariff details for admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TariffEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminController_updateTariff",
+        "summary": "Update tariff with versioning",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTariffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TariffEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "operationId": "AdminController_listOrders",
+        "summary": "List orders with admin filters and pagination",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrdersResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminCreationController_createOrder",
+        "summary": "Create an order for a client by phone",
+        "parameters": [
+          {
+            "name": "x-idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "description": "UUID retained when retrying this creation",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}": {
+      "get": {
+        "operationId": "AdminController_getOrderDetail",
+        "summary": "Get order details for admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}/assign": {
+      "patch": {
+        "operationId": "AdminController_assignOrder",
+        "summary": "Manually assign executor to searching order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}/dispatch/retry": {
+      "post": {
+        "operationId": "AdminController_restartOrderDispatch",
+        "summary": "Restart dispatch for searching order from admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}/status": {
+      "patch": {
+        "operationId": "AdminController_updateOrderStatus",
+        "summary": "Force allowed terminal order status from admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminOrderStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/notes": {
+      "get": {
+        "operationId": "AdminController_listNotes",
+        "summary": "List internal admin notes with entity, marker and priority filters",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "order",
+                "user",
+                "executor",
+                "city",
+                "tariff",
+                "promo_code"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "query",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorQuery",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "assignedToId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "assigneeQuery",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasAssignee",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "context",
+                "handoff",
+                "escalation"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "open",
+                "resolved",
+                "archived"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "isPinned",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminNoteDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createNote",
+        "summary": "Create internal admin note with handoff or escalation marker",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminNoteDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/activity": {
+      "get": {
+        "operationId": "AdminController_listActivity",
+        "summary": "List admin activity log for operator actions",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "order",
+                "user",
+                "executor",
+                "city",
+                "tariff",
+                "promo_code",
+                "payment"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "city.created",
+                "city.updated",
+                "tariff.created",
+                "tariff.updated",
+                "order.created",
+                "order.creation_requested",
+                "order.assigned",
+                "order.status_updated",
+                "order.dispatch_retried",
+                "note.created",
+                "note.updated",
+                "user.updated",
+                "executor.updated",
+                "executor.verified",
+                "executor.blocked",
+                "promo_code.created",
+                "promo_code.updated",
+                "payment.refunded",
+                "payment.cancelled"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "group",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "order",
+                "payment",
+                "note",
+                "moderation"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "window",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "hour",
+                "day",
+                "week"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorQuery",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "query",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminActivityDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/notes/{id}": {
+      "patch": {
+        "operationId": "AdminController_updateNote",
+        "summary": "Update internal admin note lifecycle, assignee and priority",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminNoteDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "AdminController_listUsers",
+        "summary": "List users for admin backoffice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "operationId": "AdminController_getUser",
+        "summary": "Get user details for admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminController_updateUser",
+        "summary": "Update or block user through admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executors": {
+      "get": {
+        "operationId": "AdminController_listExecutors",
+        "summary": "List executors for admin backoffice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutorEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executors/{id}": {
+      "get": {
+        "operationId": "AdminController_getExecutor",
+        "summary": "Get executor details for admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminController_updateExecutor",
+        "summary": "Update executor profile from admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminExecutorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executors/{id}/verify": {
+      "patch": {
+        "operationId": "AdminController_verifyExecutorLegacy",
+        "summary": "Verify executor through admin panel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyExecutorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_verifyExecutor",
+        "summary": "Verify executor through admin API",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyExecutorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executors/{id}/block": {
+      "post": {
+        "operationId": "AdminController_blockExecutor",
+        "summary": "Block or unblock executor through admin API",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockEntityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executor-balance-topups": {
+      "get": {
+        "operationId": "AdminController_listExecutorBalanceTopUps",
+        "summary": "List executor balance top-up requests",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutorBalanceTopUpEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executor-balance-topups/{id}": {
+      "patch": {
+        "operationId": "AdminController_updateExecutorBalanceTopUp",
+        "summary": "Update executor balance top-up request",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBalanceTopUpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorBalanceTopUpEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executor-payouts": {
+      "get": {
+        "operationId": "AdminController_listExecutorPayouts",
+        "summary": "List executor payout requests",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutorPayoutEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createExecutorPayout",
+        "summary": "Create executor payout request",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExecutorPayoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorPayoutEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/executor-payouts/{id}": {
+      "patch": {
+        "operationId": "AdminController_updateExecutorPayout",
+        "summary": "Update executor payout request",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExecutorPayoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorPayoutEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/promo-codes": {
+      "get": {
+        "operationId": "AdminController_listPromoCodes",
+        "summary": "List promo codes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PromoCodeEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createPromoCode",
+        "summary": "Create promo code",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePromoCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoCodeEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/promo-codes/{id}": {
+      "get": {
+        "operationId": "AdminController_getPromoCode",
+        "summary": "Get promo code details",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoCodeEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminController_updatePromoCode",
+        "summary": "Update promo code",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromoCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoCodeEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/promo-codes/{id}/analytics": {
+      "get": {
+        "operationId": "AdminController_getPromoCodeAnalytics",
+        "summary": "Get promo code analytics for admin backoffice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoCodeAnalyticsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/payments/{id}/refund": {
+      "post": {
+        "operationId": "AdminController_refundPayment",
+        "summary": "Refund payment through admin API",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/payments/{id}/cancel": {
+      "post": {
+        "operationId": "AdminController_cancelPayment",
+        "summary": "Cancel authorized payment through admin API",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reports/financial": {
+      "get": {
+        "operationId": "AdminController_getFinancialReport",
+        "summary": "Get financial report for backoffice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialReportDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reports/operations": {
+      "get": {
+        "operationId": "AdminController_getOperationsReport",
+        "summary": "Get operations report for backoffice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsReportDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/send-otp": {
+      "post": {
+        "operationId": "AuthController_sendOtp",
+        "summary": "Generate and send a one-time password",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendOtpResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-otp": {
+      "post": {
+        "operationId": "AuthController_verifyOtp",
+        "summary": "Verify OTP and issue access/refresh tokens",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "summary": "Rotate refresh token and issue new session",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "summary": "Invalidate current refresh token",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/estimate": {
+      "post": {
+        "operationId": "OrdersController_estimate",
+        "summary": "Estimate taxi or delivery order price",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders": {
+      "post": {
+        "operationId": "OrdersController_createOrder",
+        "summary": "Create a taxi or delivery order and move it to searching",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/active": {
+      "get": {
+        "operationId": "OrdersController_getActiveOrder",
+        "summary": "Get active order for current client",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/history": {
+      "get": {
+        "operationId": "OrdersController_getHistory",
+        "summary": "Get cursor-based order history for current client",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdersHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}": {
+      "get": {
+        "operationId": "OrdersController_getOrder",
+        "summary": "Get order details for current client",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/cancel": {
+      "patch": {
+        "operationId": "OrdersController_cancelOrder",
+        "summary": "Cancel an existing order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/messages": {
+      "get": {
+        "operationId": "OrdersController_listMessages",
+        "summary": "List current client order chat messages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderChatMessageDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "OrdersController_sendMessage",
+        "summary": "Send current client order chat message",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendOrderChatMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderChatMessageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/rate": {
+      "post": {
+        "operationId": "OrdersController_rateOrder",
+        "summary": "Rate a completed order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/active": {
+      "get": {
+        "operationId": "ExecutorOrdersController_getActiveOrder",
+        "summary": "Get active order for current executor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Executor has no active order"
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/history": {
+      "get": {
+        "operationId": "ExecutorOrdersController_getHistory",
+        "summary": "Get cursor-based order history for current executor",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdersHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/messages": {
+      "get": {
+        "operationId": "ExecutorOrdersController_listMessages",
+        "summary": "List current executor order chat messages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderChatMessageDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "ExecutorOrdersController_sendMessage",
+        "summary": "Send current executor order chat message",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendOrderChatMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderChatMessageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/status": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_updateOrderStatus",
+        "summary": "Update active executor order status",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExecutorOrderStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/pickup": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_pickupDelivery",
+        "summary": "Mark delivery order as picked up",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/at-door": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_markDeliveryAtDoor",
+        "summary": "Mark delivery courier as at recipient door",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/complete": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_completeDelivery",
+        "summary": "Complete delivery with proof and recipient code",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteDeliveryOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/failed": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_failDelivery",
+        "summary": "Mark delivery as failed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FailDeliveryOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/incoming": {
+      "get": {
+        "operationId": "DispatchController_getIncomingOffers",
+        "summary": "Get incoming order offers for executor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IncomingDispatchOfferDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/accept": {
+      "post": {
+        "operationId": "DispatchController_acceptOrder",
+        "summary": "Accept incoming order offer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order accepted"
+          }
+        },
+        "tags": [
+          "executor-orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/reject": {
+      "post": {
+        "operationId": "DispatchController_rejectOrder",
+        "summary": "Reject incoming order offer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Offer rejected"
+          }
+        },
+        "tags": [
+          "executor-orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/geo/autocomplete": {
+      "get": {
+        "operationId": "GeoController_autocomplete",
+        "summary": "Find address suggestions via OSM/Nominatim",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "Абая 10",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "city-uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 43.238949,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 76.889709,
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ru",
+              "enum": [
+                "ru",
+                "kk"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AddressSuggestionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/geo/reverse": {
+      "get": {
+        "operationId": "GeoController_reverse",
+        "summary": "Reverse geocode coordinates via OSM/Nominatim",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 43.238949,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 76.889709,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ru",
+              "enum": [
+                "ru",
+                "kk"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressSuggestionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/geo/route": {
+      "post": {
+        "operationId": "GeoController_route",
+        "summary": "Build route via OSRM",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/geo/executors-nearby": {
+      "get": {
+        "operationId": "GeoController_executorsNearby",
+        "summary": "Return generalized nearby executor markers",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 43.238949,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 76.889709,
+              "type": "number"
+            }
+          },
+          {
+            "name": "serviceType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "taxi",
+                "intercity",
+                "delivery"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "vehicleType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "bicycle",
+                "moped",
+                "scooter",
+                "car"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NearbyExecutorMarkerDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/payments/methods": {
+      "get": {
+        "operationId": "PaymentsController_getPaymentMethods",
+        "summary": "Get saved payment cards for current user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentCardResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/cards/bind": {
+      "post": {
+        "operationId": "PaymentsController_bindCard",
+        "summary": "Bind a new payment card",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindCardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentCardResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/cards/{id}": {
+      "delete": {
+        "operationId": "PaymentsController_deleteCard",
+        "summary": "Delete an existing payment card",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "payments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/orders/{id}/pay": {
+      "post": {
+        "operationId": "PaymentsController_payOrder",
+        "summary": "Pay for an order using a saved card",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payments/webhook/{provider}": {
+      "post": {
+        "operationId": "PaymentsController_handleWebhook",
+        "summary": "Handle provider payment webhook",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/payments/kaspi": {
+      "get": {
+        "operationId": "KaspiController_handle",
+        "summary": "Kaspi online protocol: check executor account / credit KZT balance",
+        "parameters": [
+          {
+            "name": "command",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "check",
+                "pay"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "txn_id",
+            "required": true,
+            "in": "query",
+            "description": "String: up to 18 digits, never a JS number",
+            "schema": {
+              "example": "123456789012345678",
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "required": true,
+            "in": "query",
+            "description": "Registered executor phone, 11 digits beginning with 7",
+            "schema": {
+              "example": "77010000000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sum",
+            "required": true,
+            "in": "query",
+            "description": "KZT, exactly two decimal places; ignored for check",
+            "schema": {
+              "example": "5000.00",
+              "type": "string"
+            }
+          },
+          {
+            "name": "txn_date",
+            "required": false,
+            "in": "query",
+            "description": "Required for pay; bank accounting date YYYYMMDDhhmmss",
+            "schema": {
+              "example": "20261007140000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KaspiResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Disabled integration or source IP not allowlisted"
+          }
+        },
+        "tags": [
+          "kaspi"
+        ]
+      }
+    },
+    "/api/v1/executor/bonuses/progress": {
+      "get": {
+        "operationId": "ExecutorsController_getBonusProgress",
+        "summary": "Get current driver bonus conditions and completed-order progress",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverBonusProgressDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/profile": {
+      "get": {
+        "operationId": "ExecutorsController_getProfile",
+        "summary": "Get current executor profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "ExecutorsController_updateProfile",
+        "summary": "Update current executor profile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExecutorProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/status": {
+      "patch": {
+        "operationId": "ExecutorsController_updateStatus",
+        "summary": "Update executor online status and location",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExecutorStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/balance-topups": {
+      "post": {
+        "operationId": "ExecutorsController_createBalanceTopUp",
+        "summary": "Create executor balance top-up request",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBalanceTopUpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorBalanceTopUpEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/documents": {
+      "post": {
+        "operationId": "ExecutorsController_uploadDocument",
+        "summary": "Upload executor verification document",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentType": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "documentType",
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorDocumentEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "summary": "Health check endpoint",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ok",
+                    "service": "api",
+                    "timestamp": "2025-01-01T00:00:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "summary": "Dependency readiness endpoint",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ok",
+                    "service": "api",
+                    "timestamp": "2025-01-01T00:00:00.000Z",
+                    "checks": {
+                      "database": {
+                        "status": "up"
+                      },
+                      "redis": {
+                        "status": "up"
+                      },
+                      "storage": {
+                        "status": "up"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "error",
+                    "service": "api",
+                    "timestamp": "2025-01-01T00:00:00.000Z",
+                    "checks": {
+                      "database": {
+                        "status": "down",
+                        "details": {
+                          "name": "Error",
+                          "message": "connect ECONNREFUSED 127.0.0.1:5432"
+                        }
+                      },
+                      "redis": {
+                        "status": "up"
+                      },
+                      "storage": {
+                        "status": "up"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/support/messages": {
+      "get": {
+        "operationId": "SupportController_listMessages",
+        "summary": "List current user's support chat messages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SupportMessageDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "support"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "SupportController_sendMessage",
+        "summary": "Send support chat message to admin backoffice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendSupportMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportMessageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "support"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "operationId": "UsersController_getProfile",
+        "summary": "Get current client profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "profile"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_updateProfile",
+        "summary": "Update current client profile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "profile"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_deleteProfile",
+        "summary": "Delete current account and anonymize personal data",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "profile"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "DOS Platform API",
+    "description": "Core API for the DOS transportation platform",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "DispatchSettingsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateDispatchSettingsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DriverBonusSettingsDto": {
+        "type": "object",
+        "properties": {
+          "isEnabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "ordersRequired": {
+            "type": "number",
+            "example": 20
+          },
+          "bonusAmount": {
+            "type": "number",
+            "example": 5000
+          }
+        },
+        "required": [
+          "isEnabled",
+          "ordersRequired",
+          "bonusAmount"
+        ]
+      },
+      "UpdateDriverBonusSettingsDto": {
+        "type": "object",
+        "properties": {
+          "isEnabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "ordersRequired": {
+            "type": "number",
+            "example": 20
+          },
+          "bonusAmount": {
+            "type": "number",
+            "example": 5000
+          }
+        }
+      },
+      "CityEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCityDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCityDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TariffEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateTariffDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AdminOrderSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "searching",
+              "accepted",
+              "arriving",
+              "waiting",
+              "in_progress",
+              "delivered",
+              "completed",
+              "cancelled_client",
+              "cancelled_executor",
+              "cancelled_system",
+              "failed"
+            ]
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "executorId": {
+            "type": "object"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "estimatedPrice": {
+            "type": "object"
+          },
+          "finalPrice": {
+            "type": "object"
+          },
+          "discountAmount": {
+            "type": "string"
+          },
+          "promoCodeId": {
+            "type": "object"
+          },
+          "promoCodeCode": {
+            "type": "object"
+          },
+          "pickupAddress": {
+            "type": "object"
+          },
+          "destinationAddress": {
+            "type": "object"
+          },
+          "deliveryStatus": {
+            "type": "string",
+            "enum": [
+              "pending_pickup",
+              "picked_up",
+              "in_transit",
+              "at_door",
+              "delivered_confirmed",
+              "delivery_failed",
+              "returning"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "scheduledAt": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "serviceType",
+          "status",
+          "clientId",
+          "cityId",
+          "currency",
+          "paymentMethod",
+          "discountAmount",
+          "createdAt"
+        ]
+      },
+      "AdminOrdersResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOrderSummaryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AdminOrderPartyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "object"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "isBlocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "isBlocked"
+        ]
+      },
+      "AdminOrderExecutorPartyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "object"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "isBlocked": {
+            "type": "boolean"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "executorType": {
+            "type": "string",
+            "enum": [
+              "driver",
+              "courier",
+              "cargo_driver"
+            ]
+          },
+          "vehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "carClass": {
+            "type": "object"
+          },
+          "isOnline": {
+            "type": "boolean"
+          },
+          "verificationStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "isBlocked",
+          "userId",
+          "executorType",
+          "isOnline",
+          "verificationStatus"
+        ]
+      },
+      "AdminOrderCityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nameRu": {
+            "type": "string"
+          },
+          "nameKk": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "nameRu",
+          "nameKk",
+          "currency"
+        ]
+      },
+      "AdminOrderRoutePointDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sequenceIndex": {
+            "type": "number"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "address": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "object"
+          },
+          "contactPhone": {
+            "type": "object"
+          },
+          "arrivedAt": {
+            "type": "object"
+          },
+          "completedAt": {
+            "type": "object"
+          },
+          "notes": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "sequenceIndex",
+          "lat",
+          "lng",
+          "address"
+        ]
+      },
+      "AdminOrderDeliveryDetailDto": {
+        "type": "object",
+        "properties": {
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "packageDescription": {
+            "type": "object"
+          },
+          "packagePhotoUrl": {
+            "type": "object"
+          },
+          "declaredValue": {
+            "type": "object"
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "cashOnDelivery": {
+            "type": "object"
+          },
+          "deliveryStatus": {
+            "type": "string",
+            "enum": [
+              "pending_pickup",
+              "picked_up",
+              "in_transit",
+              "at_door",
+              "delivered_confirmed",
+              "delivery_failed",
+              "returning"
+            ]
+          },
+          "proofPhotoUrl": {
+            "type": "object"
+          },
+          "proofSignatureUrl": {
+            "type": "object"
+          },
+          "recipientCode": {
+            "type": "object"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "courierVehicleType",
+          "isFragile",
+          "requiresReturn",
+          "deliveryStatus",
+          "updatedAt"
+        ]
+      },
+      "AdminOrderPaymentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "authorized",
+              "captured",
+              "refunded",
+              "partially_refunded",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "provider": {
+            "type": "object"
+          },
+          "providerTransactionId": {
+            "type": "object"
+          },
+          "refundedAmount": {
+            "type": "string"
+          },
+          "capturedAt": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "method",
+          "amount",
+          "currency",
+          "refundedAmount",
+          "createdAt"
+        ]
+      },
+      "AdminOrderStatusEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fromStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "searching",
+              "accepted",
+              "arriving",
+              "waiting",
+              "in_progress",
+              "delivered",
+              "completed",
+              "cancelled_client",
+              "cancelled_executor",
+              "cancelled_system",
+              "failed"
+            ]
+          },
+          "toStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "searching",
+              "accepted",
+              "arriving",
+              "waiting",
+              "in_progress",
+              "delivered",
+              "completed",
+              "cancelled_client",
+              "cancelled_executor",
+              "cancelled_system",
+              "failed"
+            ]
+          },
+          "actorId": {
+            "type": "object"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "toStatus",
+          "createdAt"
+        ]
+      },
+      "AdminOrderDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "searching",
+              "accepted",
+              "arriving",
+              "waiting",
+              "in_progress",
+              "delivered",
+              "completed",
+              "cancelled_client",
+              "cancelled_executor",
+              "cancelled_system",
+              "failed"
+            ]
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "executorId": {
+            "type": "object"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "estimatedPrice": {
+            "type": "object"
+          },
+          "finalPrice": {
+            "type": "object"
+          },
+          "discountAmount": {
+            "type": "string"
+          },
+          "promoCodeId": {
+            "type": "object"
+          },
+          "promoCodeCode": {
+            "type": "object"
+          },
+          "pickupAddress": {
+            "type": "object"
+          },
+          "destinationAddress": {
+            "type": "object"
+          },
+          "deliveryStatus": {
+            "type": "string",
+            "enum": [
+              "pending_pickup",
+              "picked_up",
+              "in_transit",
+              "at_door",
+              "delivered_confirmed",
+              "delivery_failed",
+              "returning"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "scheduledAt": {
+            "type": "object"
+          },
+          "client": {
+            "$ref": "#/components/schemas/AdminOrderPartyDto"
+          },
+          "executor": {
+            "$ref": "#/components/schemas/AdminOrderExecutorPartyDto"
+          },
+          "city": {
+            "$ref": "#/components/schemas/AdminOrderCityDto"
+          },
+          "distanceMeters": {
+            "type": "object"
+          },
+          "durationSeconds": {
+            "type": "object"
+          },
+          "acceptedAt": {
+            "type": "object"
+          },
+          "startedAt": {
+            "type": "object"
+          },
+          "completedAt": {
+            "type": "object"
+          },
+          "cancelledAt": {
+            "type": "object"
+          },
+          "cancelReason": {
+            "type": "object"
+          },
+          "clientRating": {
+            "type": "object"
+          },
+          "executorRating": {
+            "type": "object"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOrderRoutePointDto"
+            }
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/AdminOrderDeliveryDetailDto"
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOrderPaymentDto"
+            }
+          },
+          "statusEvents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOrderStatusEventDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "serviceType",
+          "status",
+          "clientId",
+          "cityId",
+          "currency",
+          "paymentMethod",
+          "discountAmount",
+          "createdAt",
+          "updatedAt",
+          "routePoints",
+          "payments",
+          "statusEvents"
+        ]
+      },
+      "AssignOrderDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateAdminOrderStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "cancelled_system",
+              "failed"
+            ],
+            "description": "Restricted admin-only terminal transitions for operational incident handling."
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AdminNoteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "order",
+              "user",
+              "executor",
+              "city",
+              "tariff",
+              "promo_code"
+            ]
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "context",
+              "handoff",
+              "escalation"
+            ]
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved",
+              "archived"
+            ]
+          },
+          "createdById": {
+            "type": "object"
+          },
+          "createdByName": {
+            "type": "object"
+          },
+          "assignedToId": {
+            "type": "object"
+          },
+          "assignedToName": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resolvedAt": {
+            "type": "object"
+          },
+          "archivedAt": {
+            "type": "object"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "entityType",
+          "entityId",
+          "body",
+          "kind",
+          "isPinned",
+          "state",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AdminActivityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "city.created",
+              "city.updated",
+              "tariff.created",
+              "tariff.updated",
+              "order.created",
+              "order.creation_requested",
+              "order.assigned",
+              "order.status_updated",
+              "order.dispatch_retried",
+              "note.created",
+              "note.updated",
+              "user.updated",
+              "executor.updated",
+              "executor.verified",
+              "executor.blocked",
+              "promo_code.created",
+              "promo_code.updated",
+              "payment.refunded",
+              "payment.cancelled"
+            ]
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "order",
+              "user",
+              "executor",
+              "city",
+              "tariff",
+              "promo_code",
+              "payment"
+            ]
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "object"
+          },
+          "actorName": {
+            "type": "object"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "entityType",
+          "entityId",
+          "createdAt"
+        ]
+      },
+      "CreateAdminNoteDto": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "order",
+              "user",
+              "executor",
+              "city",
+              "tariff",
+              "promo_code"
+            ]
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "context",
+              "handoff",
+              "escalation"
+            ],
+            "default": "context"
+          },
+          "isPinned": {
+            "type": "boolean",
+            "default": false
+          },
+          "assignedToId": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "entityType",
+          "entityId",
+          "body"
+        ]
+      },
+      "UpdateAdminNoteDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "context",
+              "handoff",
+              "escalation"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved",
+              "archived"
+            ]
+          },
+          "isPinned": {
+            "type": "boolean",
+            "default": false
+          },
+          "assignedToId": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "UserEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateAdminUserDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ExecutorEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateAdminExecutorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "VerifyExecutorDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "BlockEntityDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ExecutorBalanceTopUpEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateBalanceTopUpDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "invoiced",
+              "confirmed",
+              "rejected"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "example": 5000
+          },
+          "adminComment": {
+            "type": "string",
+            "example": "Счёт Kaspi выставлен"
+          }
+        }
+      },
+      "ExecutorPayoutEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateExecutorPayoutDto": {
+        "type": "object",
+        "properties": {
+          "executorId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "example": 10000
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "kaspi",
+              "halyk",
+              "cash"
+            ]
+          },
+          "adminComment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "executorId",
+          "amount"
+        ]
+      },
+      "UpdateExecutorPayoutDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "rejected"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "example": 10000
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "kaspi",
+              "halyk",
+              "cash"
+            ]
+          },
+          "adminComment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "PromoCodeEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "PromoCodeAnalyticsCityBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string"
+          },
+          "cityNameRu": {
+            "type": "string"
+          },
+          "cityNameKk": {
+            "type": "string"
+          },
+          "orderCount": {
+            "type": "number"
+          },
+          "completedOrders": {
+            "type": "number"
+          },
+          "grossTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "discountTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "cityId",
+          "cityNameRu",
+          "cityNameKk",
+          "orderCount",
+          "completedOrders",
+          "grossTotalsByCurrency",
+          "discountTotalsByCurrency"
+        ]
+      },
+      "PromoCodeAnalyticsPaymentMethodBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "orderCount": {
+            "type": "number"
+          },
+          "grossTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "discountTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "paymentMethod",
+          "orderCount",
+          "grossTotalsByCurrency",
+          "discountTotalsByCurrency"
+        ]
+      },
+      "PromoCodeAnalyticsStatusBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "searching",
+              "accepted",
+              "arriving",
+              "waiting",
+              "in_progress",
+              "delivered",
+              "completed",
+              "cancelled_client",
+              "cancelled_executor",
+              "cancelled_system",
+              "failed"
+            ]
+          },
+          "orderCount": {
+            "type": "number"
+          },
+          "grossTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "discountTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "orderCount",
+          "grossTotalsByCurrency",
+          "discountTotalsByCurrency"
+        ]
+      },
+      "PromoCodeAnalyticsDto": {
+        "type": "object",
+        "properties": {
+          "promoCodeId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "object",
+            "nullable": true
+          },
+          "totalOrders": {
+            "type": "number"
+          },
+          "completedOrders": {
+            "type": "number"
+          },
+          "grossTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "discountTotalsByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "taxiOrders": {
+            "type": "number"
+          },
+          "deliveryOrders": {
+            "type": "number"
+          },
+          "uniqueClients": {
+            "type": "number"
+          },
+          "firstTimeRedemptions": {
+            "type": "number"
+          },
+          "repeatRedemptions": {
+            "type": "number"
+          },
+          "usageRate": {
+            "type": "object",
+            "nullable": true
+          },
+          "completionRate": {
+            "type": "number"
+          },
+          "firstOrderConversion": {
+            "type": "number"
+          },
+          "lastRedeemedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "cityBreakdown": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromoCodeAnalyticsCityBreakdownDto"
+            }
+          },
+          "paymentMethodBreakdown": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromoCodeAnalyticsPaymentMethodBreakdownDto"
+            }
+          },
+          "statusBreakdown": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromoCodeAnalyticsStatusBreakdownDto"
+            }
+          }
+        },
+        "required": [
+          "promoCodeId",
+          "totalOrders",
+          "completedOrders",
+          "grossTotalsByCurrency",
+          "discountTotalsByCurrency",
+          "taxiOrders",
+          "deliveryOrders",
+          "uniqueClients",
+          "firstTimeRedemptions",
+          "repeatRedemptions",
+          "completionRate",
+          "firstOrderConversion",
+          "cityBreakdown",
+          "paymentMethodBreakdown",
+          "statusBreakdown"
+        ]
+      },
+      "CreatePromoCodeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdatePromoCodeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RefundPaymentDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Refund amount. Omit to refund the remaining payment amount."
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "PaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "authorized",
+              "captured",
+              "refunded",
+              "partially_refunded",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "provider": {
+            "type": "object"
+          },
+          "providerTransactionId": {
+            "type": "object"
+          },
+          "orderId": {
+            "type": "object"
+          },
+          "capturedAt": {
+            "type": "object"
+          },
+          "refundedAmount": {
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "method",
+          "amount",
+          "currency"
+        ]
+      },
+      "CancelPaymentDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "FinancialReportDto": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "object",
+            "nullable": true
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "paymentsCount": {
+            "type": "number"
+          },
+          "completedOrdersCount": {
+            "type": "number"
+          },
+          "capturedAmountByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "refundedAmountByCurrency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "period",
+          "cityId",
+          "from",
+          "to",
+          "paymentsCount",
+          "completedOrdersCount",
+          "capturedAmountByCurrency",
+          "refundedAmountByCurrency"
+        ]
+      },
+      "OperationsReportDto": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "object",
+            "nullable": true
+          },
+          "totalOrders": {
+            "type": "number"
+          },
+          "ordersByStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "ordersByServiceType": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "activeExecutors": {
+            "type": "number"
+          },
+          "verifiedExecutors": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "period",
+          "from",
+          "to",
+          "cityId",
+          "totalOrders",
+          "ordersByStatus",
+          "ordersByServiceType",
+          "activeExecutors",
+          "verifiedExecutors"
+        ]
+      },
+      "CreateOrderRoutePointDto": {
+        "type": "object",
+        "properties": {
+          "sequenceIndex": {
+            "type": "number",
+            "example": 0
+          },
+          "lat": {
+            "type": "number",
+            "example": 43.238949
+          },
+          "lng": {
+            "type": "number",
+            "example": 76.889709
+          },
+          "address": {
+            "type": "string",
+            "example": "Abay Ave 10"
+          },
+          "contactName": {
+            "type": "string",
+            "example": "Aruzhan"
+          },
+          "contactPhone": {
+            "type": "string",
+            "example": "+77771234567"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sequenceIndex",
+          "lat",
+          "lng",
+          "address"
+        ]
+      },
+      "CreateAdminOrderDto": {
+        "type": "object",
+        "properties": {
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity"
+            ]
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderRoutePointDto"
+            }
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carClass": {
+            "type": "string",
+            "example": "economy"
+          },
+          "promoCode": {
+            "type": "string",
+            "example": "ALMATY10"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "number",
+            "example": 960
+          },
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "packageDescription": {
+            "type": "string"
+          },
+          "packagePhoto": {
+            "type": "string"
+          },
+          "declaredValue": {
+            "type": "number",
+            "example": 50000
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "cashOnDelivery": {
+            "type": "number",
+            "example": 12000
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "recipientCode": {
+            "type": "string"
+          },
+          "clientPhone": {
+            "type": "string",
+            "example": "+77010000000"
+          },
+          "clientName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "serviceType",
+          "routePoints",
+          "paymentMethod",
+          "clientPhone"
+        ]
+      },
+      "OrderDeliveryDetailsDto": {
+        "type": "object",
+        "properties": {
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "packageDescription": {
+            "type": "object"
+          },
+          "packagePhotoUrl": {
+            "type": "object"
+          },
+          "declaredValue": {
+            "type": "object"
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "cashOnDelivery": {
+            "type": "object"
+          },
+          "deliveryStatus": {
+            "type": "string",
+            "enum": [
+              "pending_pickup",
+              "picked_up",
+              "in_transit",
+              "at_door",
+              "delivered_confirmed",
+              "delivery_failed",
+              "returning"
+            ]
+          },
+          "proofPhotoUrl": {
+            "type": "object"
+          },
+          "recipientCode": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "courierVehicleType",
+          "isFragile",
+          "requiresReturn",
+          "deliveryStatus"
+        ]
+      },
+      "OrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "searching",
+              "accepted",
+              "arriving",
+              "waiting",
+              "in_progress",
+              "delivered",
+              "completed",
+              "cancelled_client",
+              "cancelled_executor",
+              "cancelled_system",
+              "failed"
+            ]
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "promoCodeId": {
+            "type": "object"
+          },
+          "discountAmount": {
+            "type": "string"
+          },
+          "executorId": {
+            "type": "object"
+          },
+          "clientName": {
+            "type": "object"
+          },
+          "clientPhone": {
+            "type": "object"
+          },
+          "estimatedPrice": {
+            "type": "object"
+          },
+          "finalPrice": {
+            "type": "object"
+          },
+          "distanceMeters": {
+            "type": "object"
+          },
+          "durationSeconds": {
+            "type": "object"
+          },
+          "carClass": {
+            "type": "object"
+          },
+          "scheduledAt": {
+            "type": "object"
+          },
+          "acceptedAt": {
+            "type": "object"
+          },
+          "startedAt": {
+            "type": "object"
+          },
+          "completedAt": {
+            "type": "object"
+          },
+          "cancelledAt": {
+            "type": "object"
+          },
+          "cancelReason": {
+            "type": "object"
+          },
+          "executorRating": {
+            "type": "object"
+          },
+          "executorName": {
+            "type": "object"
+          },
+          "executorPhone": {
+            "type": "object"
+          },
+          "executorVehicleLabel": {
+            "type": "object"
+          },
+          "executorVehiclePlate": {
+            "type": "object"
+          },
+          "executorProfileRating": {
+            "type": "object"
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderRoutePointDto"
+            }
+          },
+          "deliveryDetails": {
+            "$ref": "#/components/schemas/OrderDeliveryDetailsDto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "serviceType",
+          "status",
+          "cityId",
+          "currency",
+          "paymentMethod",
+          "discountAmount",
+          "routePoints",
+          "createdAt"
+        ]
+      },
+      "CreateTariffDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendOtpDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendOtpResponseDto": {
+        "type": "object",
+        "properties": {
+          "expiresInSeconds": {
+            "type": "number"
+          },
+          "devCode": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "expiresInSeconds"
+        ]
+      },
+      "VerifyOtpDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AuthUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "name": {
+            "type": "object",
+            "nullable": true
+          },
+          "preferredLanguage": {
+            "type": "string"
+          },
+          "preferredCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "name",
+          "preferredLanguage",
+          "preferredCurrency"
+        ]
+      },
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthUserDto"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "user"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "LogoutResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "EstimateRoutePointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 43.238949
+          },
+          "lng": {
+            "type": "number",
+            "example": 76.889709
+          },
+          "address": {
+            "type": "string",
+            "example": "Abay Ave 10"
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ]
+      },
+      "EstimateOrderDto": {
+        "type": "object",
+        "properties": {
+          "promoCode": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "carClass": {
+            "type": "string",
+            "example": "economy"
+          },
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "number",
+            "example": 960
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EstimateRoutePointDto"
+            }
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "declaredValue": {
+            "type": "number",
+            "example": 50000
+          },
+          "cashOnDelivery": {
+            "type": "number",
+            "example": 12000
+          }
+        },
+        "required": [
+          "serviceType",
+          "distanceMeters",
+          "durationSeconds"
+        ]
+      },
+      "EstimateResultDto": {
+        "type": "object",
+        "properties": {
+          "discountAmount": {
+            "type": "number"
+          },
+          "originalPrice": {
+            "type": "number"
+          },
+          "promoCodeId": {
+            "type": "string"
+          },
+          "tariffId": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "vehicleClass": {
+            "type": "object",
+            "example": "economy",
+            "nullable": true
+          },
+          "estimatedPrice": {
+            "type": "number",
+            "example": 1550
+          },
+          "basePrice": {
+            "type": "number",
+            "example": 1550
+          },
+          "surchargeAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "surgeCoefficient": {
+            "type": "number",
+            "example": 1
+          },
+          "nightCoefficient": {
+            "type": "number",
+            "example": 1
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "number",
+            "example": 960
+          },
+          "etaSeconds": {
+            "type": "number",
+            "example": 960
+          }
+        },
+        "required": [
+          "tariffId",
+          "serviceType",
+          "vehicleClass",
+          "estimatedPrice",
+          "basePrice",
+          "surchargeAmount",
+          "currency",
+          "surgeCoefficient",
+          "nightCoefficient",
+          "distanceMeters",
+          "durationSeconds",
+          "etaSeconds"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderRoutePointDto"
+            }
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carClass": {
+            "type": "string",
+            "example": "economy"
+          },
+          "promoCode": {
+            "type": "string",
+            "example": "ALMATY10"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "number",
+            "example": 960
+          },
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "packageDescription": {
+            "type": "string"
+          },
+          "packagePhoto": {
+            "type": "string"
+          },
+          "declaredValue": {
+            "type": "number",
+            "example": 50000
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "cashOnDelivery": {
+            "type": "number",
+            "example": 12000
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "recipientCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "serviceType",
+          "routePoints",
+          "paymentMethod"
+        ]
+      },
+      "OrdersHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderResponseDto"
+            }
+          },
+          "nextCursor": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CancelOrderDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Client changed plans"
+          }
+        }
+      },
+      "OrderChatMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string",
+            "enum": [
+              "client",
+              "executor"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sender",
+          "body",
+          "createdAt"
+        ]
+      },
+      "SendOrderChatMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "RateOrderDto": {
+        "type": "object",
+        "properties": {
+          "executorRating": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "example": "Driver was careful and arrived fast"
+          }
+        },
+        "required": [
+          "executorRating"
+        ]
+      },
+      "UpdateExecutorOrderStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "arriving",
+              "waiting",
+              "in_progress",
+              "completed"
+            ]
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "heading": {
+            "type": "number"
+          },
+          "photo": {
+            "type": "string"
+          },
+          "actualDistanceMeters": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CompleteDeliveryOrderDto": {
+        "type": "object",
+        "properties": {
+          "proofPhoto": {
+            "type": "string"
+          },
+          "recipientCode": {
+            "type": "string"
+          }
+        }
+      },
+      "FailDeliveryOrderDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "IncomingDispatchOfferDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "clientName": {
+            "type": "object",
+            "nullable": true
+          },
+          "clientPhone": {
+            "type": "object",
+            "nullable": true
+          },
+          "estimatedPrice": {
+            "type": "object",
+            "nullable": true,
+            "example": "1500.00"
+          },
+          "distanceMeters": {
+            "type": "object",
+            "nullable": true,
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "object",
+            "nullable": true,
+            "example": 960
+          },
+          "pickupAddress": {
+            "type": "object",
+            "nullable": true
+          },
+          "pickupLat": {
+            "type": "object",
+            "nullable": true
+          },
+          "pickupLng": {
+            "type": "object",
+            "nullable": true
+          },
+          "destinationAddress": {
+            "type": "object",
+            "nullable": true
+          },
+          "destinationLat": {
+            "type": "object",
+            "nullable": true
+          },
+          "destinationLng": {
+            "type": "object",
+            "nullable": true
+          },
+          "offeredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "serviceType",
+          "currency",
+          "paymentMethod",
+          "estimatedPrice",
+          "distanceMeters",
+          "durationSeconds",
+          "pickupAddress",
+          "pickupLat",
+          "pickupLng",
+          "destinationAddress",
+          "destinationLat",
+          "destinationLng",
+          "offeredAt"
+        ]
+      },
+      "AddressSuggestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "title",
+          "subtitle",
+          "lat",
+          "lng"
+        ]
+      },
+      "GeoPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 43.238949
+          },
+          "lng": {
+            "type": "number",
+            "example": 76.889709
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ]
+      },
+      "RouteRequestDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/GeoPointDto"
+          },
+          "to": {
+            "$ref": "#/components/schemas/GeoPointDto"
+          },
+          "waypoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeoPointDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "RouteResponseDto": {
+        "type": "object",
+        "properties": {
+          "polyline": {
+            "type": "string"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeoPointDto"
+            }
+          },
+          "distanceMeters": {
+            "type": "number"
+          },
+          "durationSeconds": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "polyline",
+          "points",
+          "distanceMeters",
+          "durationSeconds"
+        ]
+      },
+      "NearbyExecutorMarkerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "heading": {
+            "type": "object"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "vehicleType": {
+            "type": "object"
+          },
+          "distanceMeters": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "lat",
+          "lng",
+          "label",
+          "distanceMeters"
+        ]
+      },
+      "PaymentCardResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "last4": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "holderName": {
+            "type": "object"
+          },
+          "expMonth": {
+            "type": "object"
+          },
+          "expYear": {
+            "type": "object"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "last4",
+          "brand",
+          "isDefault"
+        ]
+      },
+      "BindCardDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "tok_test_123"
+          },
+          "panMask": {
+            "type": "string",
+            "example": "4000 00** **** 2458"
+          },
+          "holderName": {
+            "type": "string",
+            "example": "ARUZHAN TLEGEN"
+          },
+          "makeDefault": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PayOrderDto": {
+        "type": "object",
+        "properties": {
+          "cardId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "example": "pay-order-123"
+          }
+        },
+        "required": [
+          "cardId",
+          "idempotencyKey"
+        ]
+      },
+      "WebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "processed": {
+            "type": "boolean"
+          },
+          "duplicated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "processed",
+          "duplicated"
+        ]
+      },
+      "KaspiResponseDto": {
+        "type": "object",
+        "properties": {
+          "txn_id": {
+            "type": "string"
+          },
+          "result": {
+            "type": "number",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "comment": {
+            "type": "string"
+          },
+          "prv_txn_id": {
+            "type": "string"
+          },
+          "sum": {
+            "type": "string",
+            "example": "5000.00"
+          }
+        },
+        "required": [
+          "txn_id",
+          "result",
+          "comment"
+        ]
+      },
+      "DriverBonusProgressDto": {
+        "type": "object",
+        "properties": {
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "ordersRequired": {
+            "type": "number"
+          },
+          "bonusAmount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "totalCompletedOrders": {
+            "type": "number"
+          },
+          "completedInCycle": {
+            "type": "number"
+          },
+          "remainingOrders": {
+            "type": "number"
+          },
+          "nextThreshold": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "isEnabled",
+          "ordersRequired",
+          "bonusAmount",
+          "currency",
+          "totalCompletedOrders",
+          "completedInCycle",
+          "remainingOrders",
+          "nextThreshold"
+        ]
+      },
+      "UpdateExecutorProfileDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateExecutorStatusDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateBalanceTopUpDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 5000
+          },
+          "phone": {
+            "type": "string",
+            "example": "+77001234567"
+          }
+        },
+        "required": [
+          "amount",
+          "phone"
+        ]
+      },
+      "ExecutorDocumentEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "SupportMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string",
+            "enum": [
+              "user",
+              "operator"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sender",
+          "body",
+          "createdAt"
+        ]
+      },
+      "SendSupportMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}
