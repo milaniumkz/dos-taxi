@@ -691,6 +691,8 @@ export type AdminDictionary = {
     language: string;
     countryCode: string;
     currency: string;
+    currencyKzt: string;
+    currencyRub: string;
     bonusBalance: string;
     timezone: string;
     isActive: string;
@@ -1598,6 +1600,8 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       language: "Язык",
       countryCode: "Код страны",
       currency: "Валюта",
+      currencyKzt: "Тенге (KZT)",
+      currencyRub: "Российский рубль (RUB)",
       bonusBalance: "Бонусный баланс",
       timezone: "Часовой пояс",
       isActive: "Активен",
@@ -2601,6 +2605,8 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       language: "Тіл",
       countryCode: "Ел коды",
       currency: "Валюта",
+      currencyKzt: "Теңге (KZT)",
+      currencyRub: "Ресей рублі (RUB)",
       bonusBalance: "Бонус балансы",
       timezone: "Уақыт белдеуі",
       isActive: "Белсенді",

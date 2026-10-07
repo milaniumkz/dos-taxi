@@ -111,116 +111,136 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
               ? AppColors.darkBackground
               : AppColors.background,
           body: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  padding: EdgeInsets.only(
-                    left: AppSpacing.lg,
-                    top: AppSpacing.lg,
-                    right: AppSpacing.lg,
-                    bottom:
-                        AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Spacer(),
-                          Center(child: _AuthHero(isDriver: isDriver)),
-                          const SizedBox(height: AppSpacing.xl),
-                          Text(
-                            isDriver
-                                ? l10n.driverWelcomeTitle
-                                : l10n.passengerWelcomeTitle,
-                            style: Theme.of(context).textTheme.headlineLarge
-                                ?.copyWith(
-                                  color: isDriver
-                                      ? AppColors.darkText
-                                      : AppColors.text,
-                                ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          left: AppSpacing.lg,
+                          top: AppSpacing.lg,
+                          right: AppSpacing.lg,
+                          bottom: AppSpacing.lg,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight:
+                                (constraints.maxHeight - 2 * AppSpacing.lg)
+                                    .clamp(0, double.infinity),
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            _showPhoneForm
-                                ? l10n.authPhoneDescription
-                                : isDriver
-                                ? l10n.driverWelcomeSubtitle
-                                : l10n.passengerWelcomeSubtitle,
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: isDriver
-                                      ? AppColors.darkMuted
-                                      : AppColors.muted,
+                          child: IntrinsicHeight(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Spacer(),
+                                Center(child: _AuthHero(isDriver: isDriver)),
+                                const SizedBox(height: AppSpacing.xl),
+                                Text(
+                                  isDriver
+                                      ? l10n.driverWelcomeTitle
+                                      : l10n.passengerWelcomeTitle,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineLarge
+                                      ?.copyWith(
+                                        color: isDriver
+                                            ? AppColors.darkText
+                                            : AppColors.text,
+                                      ),
                                 ),
-                          ),
-                          if (_retrySeconds > 0)
-                            Text(l10n.authRetryAfter(_retrySeconds)),
-                          if (_showPhoneForm) ...[
-                            const SizedBox(height: AppSpacing.lg),
-                            TextField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: const [
-                                KazakhstanPhoneInputFormatter(),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  _showPhoneForm
+                                      ? l10n.authPhoneDescription
+                                      : isDriver
+                                      ? l10n.driverWelcomeSubtitle
+                                      : l10n.passengerWelcomeSubtitle,
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(
+                                        color: isDriver
+                                            ? AppColors.darkMuted
+                                            : AppColors.muted,
+                                      ),
+                                ),
+                                if (_retrySeconds > 0)
+                                  Text(l10n.authRetryAfter(_retrySeconds)),
+                                if (_showPhoneForm) ...[
+                                  const SizedBox(height: AppSpacing.lg),
+                                  TextField(
+                                    controller: _phoneController,
+                                    keyboardType: TextInputType.phone,
+                                    inputFormatters: const [
+                                      KazakhstanPhoneInputFormatter(),
+                                    ],
+                                    decoration: InputDecoration(
+                                      labelText: l10n.authPhoneFieldLabel,
+                                      hintText: l10n.authPhoneFieldHint,
+                                      fillColor: isDriver
+                                          ? AppColors.darkSurface
+                                          : AppColors.surface,
+                                      labelStyle: TextStyle(
+                                        color: isDriver
+                                            ? AppColors.darkMuted
+                                            : AppColors.muted,
+                                      ),
+                                      hintStyle: TextStyle(
+                                        color: isDriver
+                                            ? AppColors.darkMuted
+                                            : AppColors.muted,
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                      color: isDriver
+                                          ? AppColors.darkText
+                                          : AppColors.text,
+                                    ),
+                                  ),
+                                ],
+                                const Spacer(),
                               ],
-                              decoration: InputDecoration(
-                                labelText: l10n.authPhoneFieldLabel,
-                                hintText: l10n.authPhoneFieldHint,
-                                fillColor: isDriver
-                                    ? AppColors.darkSurface
-                                    : AppColors.surface,
-                                labelStyle: TextStyle(
-                                  color: isDriver
-                                      ? AppColors.darkMuted
-                                      : AppColors.muted,
-                                ),
-                                hintStyle: TextStyle(
-                                  color: isDriver
-                                      ? AppColors.darkMuted
-                                      : AppColors.muted,
-                                ),
-                              ),
-                              style: TextStyle(
-                                color: isDriver
-                                    ? AppColors.darkText
-                                    : AppColors.text,
-                              ),
-                            ),
-                          ],
-                          const Spacer(),
-                          if (!isDriver) ...[
-                            Center(
-                              child: _LanguageToggle(
-                                selectedLocale: context
-                                    .watch<ProfileSettingsCubit>()
-                                    .state
-                                    .localeCode,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                          ],
-                          _AuthSubmitButtons(
-                            isDriver: isDriver,
-                            isLoading: state is AuthLoading,
-                            isPhoneForm: _showPhoneForm,
-                            canSubmitPhone:
-                                canSubmitPhone && _retrySeconds == 0,
-                            onShowPhoneForm: () =>
-                                setState(() => _showPhoneForm = true),
-                            onSubmit: () => context.read<AuthCubit>().sendOtp(
-                              normalizedPhone,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!isDriver) ...[
+                        Center(
+                          child: _LanguageToggle(
+                            selectedLocale: context
+                                .watch<ProfileSettingsCubit>()
+                                .state
+                                .localeCode,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      _AuthSubmitButtons(
+                        isDriver: isDriver,
+                        isLoading: state is AuthLoading,
+                        isPhoneForm: _showPhoneForm,
+                        canSubmitPhone: canSubmitPhone && _retrySeconds == 0,
+                        onShowPhoneForm: () =>
+                            setState(() => _showPhoneForm = true),
+                        onSubmit: () =>
+                            context.read<AuthCubit>().sendOtp(normalizedPhone),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         );

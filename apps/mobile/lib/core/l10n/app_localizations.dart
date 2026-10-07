@@ -2453,7 +2453,7 @@ abstract class AppLocalizations {
   /// No description provided for @vehiclePlateFormatHint.
   ///
   /// In ru, this message translates to:
-  /// **'KZ: 123ABC01, A123456, A123BCD; RU: A123BC777'**
+  /// **'Госномер любой страны: буквы и цифры, до 20 символов. Например: F 2025 11, 123ABC01, А123ВС777.'**
   String get vehiclePlateFormatHint;
 
   /// No description provided for @driverChildSeatNotice.

@@ -161,8 +161,8 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
               <label className="field">
                 <span>{dictionary.forms.currency}</span>
                 <select name="currency" defaultValue="KZT">
-                  <option value="KZT">KZT</option>
-                  <option value="RUB">RUB</option>
+                  <option value="KZT">{dictionary.forms.currencyKzt}</option>
+                  <option value="RUB">{dictionary.forms.currencyRub}</option>
                 </select>
               </label>
               <label className="field">

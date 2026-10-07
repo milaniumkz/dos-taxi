@@ -1263,7 +1263,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get vehiclePlateFormatHint =>
-      'KZ: 123ABC01, A123456, A123BCD; RU: A123BC777';
+      'Госномер любой страны: буквы и цифры, до 20 символов. Например: F 2025 11, 123ABC01, А123ВС777.';
 
   @override
   String get driverChildSeatNotice =>

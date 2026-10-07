@@ -216,8 +216,8 @@ export default async function CityDetailPage({
                   <label className="field">
                     <span>{dictionary.forms.currency}</span>
                     <select name="currency" defaultValue={city.currency}>
-                      <option value="KZT">KZT</option>
-                      <option value="RUB">RUB</option>
+                      <option value="KZT">{dictionary.forms.currencyKzt}</option>
+                      <option value="RUB">{dictionary.forms.currencyRub}</option>
                     </select>
                   </label>
                   <label className="field">

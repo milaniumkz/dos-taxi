@@ -1,5 +1,5 @@
-export const vehiclePlatePattern =
-  /^(?:[A-Z]\d{6}|[A-Z]\d{3}[A-Z]{3}|\d{3}[A-Z]{2,3}\d{2}|[A-Z]\d{3}[A-Z]{2}\d{2}|[ABEKMHOPCTYX]\d{3}[ABEKMHOPCTYX]{2}\d{2,3})$/;
+// Accept international registrations without imposing a country-specific layout.
+export const vehiclePlatePattern = /^[\p{L}\p{N}]{1,20}$/u;
 
 const cyrillicPlateLetters: Record<string, string> = {
   А: "A",
