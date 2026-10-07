@@ -497,7 +497,7 @@
   "taxiClassTogether": "Вместе",
   "taxiClassChild": "Детский (с креслом)",
   "authRetryAfter": "Повторить запрос можно через {seconds} сек.",
-  "vehiclePlateFormatHint": "KZ: 123ABC01, A123456, A123BCD; RU: A123BC777",
+  "vehiclePlateFormatHint": "Госномер любой страны: буквы и цифры, до 20 символов. Например: F 2025 11, 123ABC01, А123ВС777.",
   "driverChildSeatNotice": "Включайте «Детский» только при наличии детского кресла.",
   "@authRetryAfter": {
     "placeholders": {

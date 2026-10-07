@@ -497,7 +497,7 @@
   "taxiClassTogether": "Бірге",
   "taxiClassChild": "Балалар (орындықпен)",
   "authRetryAfter": "{seconds} секундтан кейін қайта сұратуға болады.",
-  "vehiclePlateFormatHint": "KZ: 123ABC01, A123456, A123BCD; RU: A123BC777",
+  "vehiclePlateFormatHint": "Кез келген елдің мемлекеттік нөмірі: әріптер мен сандар, 20 таңбаға дейін. Мысалы: F 2025 11, 123ABC01, А123ВС777.",
   "driverChildSeatNotice": "«Балалар» тарифін балалар орындығы болғанда ғана қосыңыз.",
   "@authRetryAfter": {
     "placeholders": {

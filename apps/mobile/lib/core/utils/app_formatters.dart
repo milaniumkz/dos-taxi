@@ -120,9 +120,7 @@ final class AppFormatters {
 
   static bool isValidVehiclePlate(String value) {
     final normalized = normalizeVehiclePlate(value);
-    return RegExp(
-      r'^(?:[A-Z]\d{6}|[A-Z]\d{3}[A-Z]{3}|\d{3}[A-Z]{2,3}\d{2}|[A-Z]\d{3}[A-Z]{2}\d{2}|[ABEKMHOPCTYX]\d{3}[ABEKMHOPCTYX]{2}\d{2,3})$',
-    ).hasMatch(normalized);
+    return RegExp(r'^[\p{L}\p{N}]{1,20}$', unicode: true).hasMatch(normalized);
   }
 
   static String localeTag(BuildContext context) {
@@ -155,8 +153,8 @@ final class VehiclePlateInputFormatter extends TextInputFormatter {
   ) {
     final normalized = AppFormatters.normalizeVehiclePlate(
       newValue.text,
-    ).replaceAll(RegExp(r'[^0-9A-Z]'), '');
-    final trimmed = normalized.substring(0, normalized.length.clamp(0, 9));
+    ).replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
+    final trimmed = String.fromCharCodes(normalized.runes.take(20));
     return TextEditingValue(
       text: trimmed,
       selection: TextSelection.collapsed(offset: trimmed.length),

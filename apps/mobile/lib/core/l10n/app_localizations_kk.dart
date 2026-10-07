@@ -1269,7 +1269,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get vehiclePlateFormatHint =>
-      'KZ: 123ABC01, A123456, A123BCD; RU: A123BC777';
+      'Кез келген елдің мемлекеттік нөмірі: әріптер мен сандар, 20 таңбаға дейін. Мысалы: F 2025 11, 123ABC01, А123ВС777.';
 
   @override
   String get driverChildSeatNotice =>

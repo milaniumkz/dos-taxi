@@ -63,10 +63,10 @@ describe('PricingService', () => {
     );
   });
 
-  it('estimates taxi with base tariff formula', async () => {
+  it.each([Currency.KZT, Currency.RUB])('estimates taxi in its city currency %s', async (currency) => {
     citiesRepository.findOne.mockResolvedValue({
       id: 'city-1',
-      currency: Currency.KZT,
+      currency,
       timezone: 'Asia/Almaty',
       isActive: true,
     } as CityEntity);
@@ -83,7 +83,7 @@ describe('PricingService', () => {
         minimumPrice: '900.00',
         paidWaitingPerMinute: '0',
         freeWaitingSeconds: 180,
-        currency: Currency.KZT,
+        currency,
         validFrom: new Date('2024-01-01T00:00:00Z'),
         validTo: null,
         isActive: true,
@@ -102,7 +102,7 @@ describe('PricingService', () => {
     expect(result.estimatedPrice).toBe(1550);
     expect(result.basePrice).toBe(1550);
     expect(result.surgeCoefficient).toBe(1);
-    expect(result.currency).toBe(Currency.KZT);
+    expect(result.currency).toBe(currency);
   });
 
   it.each(['together', 'child'])(
