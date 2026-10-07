@@ -5,8 +5,8 @@ info:
   description: HTTPS GET check/pay protocol. No request body or card data. Access
     restricted to confirmed bank source IPs.
 servers:
-- url: https://dos.89.126.200.51.sslip.io
-  description: Current production host; confirm with the service owner and bank before enabling
+- url: https://89.126.200.51
+  description: Requested server IP; requires a valid IP TLS certificate and bank acceptance before enabling
 paths:
   /api/v1/payments/kaspi:
     get:
