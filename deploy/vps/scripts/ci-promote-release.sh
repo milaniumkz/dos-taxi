@@ -70,7 +70,11 @@ for role in passenger driver; do
   fi
 done
 
-rsync -a --delete \
+runtime_nginx_excludes=()
+if [[ -f "$target_dir/deploy/vps/nginx/certbot/ip-https/enabled" ]]; then
+  runtime_nginx_excludes+=(--exclude='deploy/vps/nginx/templates/default.conf.template')
+fi
+rsync -a --delete "${runtime_nginx_excludes[@]}" \
   --exclude='_web/' \
   --exclude='_incoming/' \
   --exclude='.git/' \
