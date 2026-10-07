@@ -23,6 +23,8 @@ import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
+import { AdminCreationController } from '../../../src/modules/admin/admin-creation.controller';
+import { AdminBookingService } from '../../../src/modules/admin/admin-booking.service';
 import { AdminController } from '../../../src/modules/admin/admin.controller';
 import { AdminService } from '../../../src/modules/admin/admin.service';
 import { AuthController } from '../../../src/modules/auth/auth.controller';
@@ -41,6 +43,7 @@ import { EstimateOrderDto } from '../../../src/modules/orders/dto/estimate-order
 import { OrderResponseDto } from '../../../src/modules/orders/dto/order-response.dto';
 import { UpdateExecutorOrderStatusDto } from '../../../src/modules/orders/dto/update-executor-order-status.dto';
 import { ExecutorOrdersController } from '../../../src/modules/orders/executor-orders.controller';
+import { OrderChatService } from '../../../src/modules/orders/order-chat.service';
 import { OrdersController } from '../../../src/modules/orders/orders.controller';
 import { OrdersService } from '../../../src/modules/orders/orders.service';
 import { BindCardDto } from '../../../src/modules/payments/dto/bind-card.dto';
@@ -1336,12 +1339,15 @@ export async function createPlatformE2EHarness(): Promise<E2EHarness> {
     controllers: [
       AuthController,
       AdminController,
+      AdminCreationController,
       OrdersController,
       DispatchController,
       ExecutorOrdersController,
       PaymentsController,
     ],
     providers: [
+      { provide: AdminBookingService, useValue: {} },
+      { provide: OrderChatService, useValue: {} },
       Reflector,
       RolesGuard,
       {

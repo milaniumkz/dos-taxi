@@ -35,10 +35,11 @@ final class AuthAuthenticated extends AuthState {
 }
 
 final class AuthError extends AuthState {
-  const AuthError(this.message);
+  const AuthError(this.message, {this.retryAfterSeconds});
 
   final String message;
+  final int? retryAfterSeconds;
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, retryAfterSeconds];
 }

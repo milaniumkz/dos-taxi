@@ -8,7 +8,7 @@ import {
   forwardRef,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, QueryFailedError, Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 
 import { CityEntity } from "../admin/entities/city.entity";
 import { DeliveryDetailEntity } from "../delivery/entities/delivery-detail.entity";
@@ -156,6 +156,8 @@ export class OrdersService {
       this.ordersRepository.create({
         id: orderId,
         clientId,
+        carClass:
+          serviceType === ServiceType.TAXI ? (dto.carClass ?? "economy") : null,
         serviceType,
         status: OrderStatus.DRAFT,
         cityId: city.id,
@@ -787,6 +789,7 @@ export class OrdersService {
   }
 
   private async resolveTaxiCarClass(order: OrderEntity): Promise<string> {
+    if (order.carClass) return order.carClass;
     if (order.executorId) {
       const executor = await this.executorsRepository.findOne({
         where: { id: order.executorId },
@@ -845,11 +848,14 @@ export class OrdersService {
       return;
     }
 
-    const currentBalance = Number(executor.balance ?? 0);
-    executor.balance = (
-      (Number.isFinite(currentBalance) ? currentBalance : 0) - commission.amount
-    ).toFixed(2);
-    await this.executorsRepository.save(executor);
+    await this.executorsRepository.decrement(
+      { id: executor.id },
+      "balance",
+      commission.amount.toFixed(2),
+    );
+    const updated = await this.executorsRepository.findOne({
+      where: { id: executor.id },
+    });
     await this.recordStatusEvent(
       order.id,
       order.status,
@@ -863,7 +869,7 @@ export class OrdersService {
         commissionPercent: commission.percent,
         commissionFixed: commission.fixed,
         currency: commission.currency,
-        balanceAfter: executor.balance,
+        balanceAfter: updated?.balance,
       },
     );
   }
@@ -898,37 +904,39 @@ export class OrdersService {
       return;
     }
 
-    const executor = await this.executorsRepository.findOne({
-      where: { id: order.executorId },
-    });
-    if (!executor) {
-      return;
-    }
-
-    try {
-      await this.driverBonusPayoutsRepository.save(
-        this.driverBonusPayoutsRepository.create({
-          executorId: executor.id,
-          orderId: order.id,
-          thresholdCompletedOrders: milestone,
-          amount: bonusAmount.toFixed(2),
-        }),
-      );
-    } catch (error) {
-      if (error instanceof QueryFailedError) {
-        const code = (error.driverError as { code?: string } | undefined)?.code;
-        if (code === "23505") {
-          return;
-        }
-      }
-      throw error;
-    }
-
-    const currentBalance = Number(executor.balance ?? 0);
-    executor.balance = (
-      (Number.isFinite(currentBalance) ? currentBalance : 0) + bonusAmount
-    ).toFixed(2);
-    await this.executorsRepository.save(executor);
+    const credited = await this.executorsRepository.manager.transaction(
+      async (manager) => {
+        const executors = manager.getRepository(ExecutorEntity);
+        const executor = await executors.findOne({
+          where: { id: order.executorId! },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!executor) return null;
+        const payouts = manager.getRepository(DriverBonusPayoutEntity);
+        const previous = await payouts.findOne({
+          where: {
+            executorId: executor.id,
+            thresholdCompletedOrders: milestone,
+          },
+        });
+        if (previous) return null;
+        await payouts.save(
+          payouts.create({
+            executorId: executor.id,
+            orderId: order.id,
+            thresholdCompletedOrders: milestone,
+            amount: bonusAmount.toFixed(2),
+          }),
+        );
+        await executors.increment(
+          { id: executor.id },
+          "balance",
+          bonusAmount.toFixed(2),
+        );
+        return executors.findOne({ where: { id: executor.id } });
+      },
+    );
+    if (!credited) return;
     await this.recordStatusEvent(
       order.id,
       order.status,
@@ -936,11 +944,11 @@ export class OrdersService {
       order.executorId,
       {
         source: "driver_completion_bonus_paid",
-        executorId: executor.id,
+        executorId: credited.id,
         completedOrders,
         thresholdCompletedOrders: milestone,
         bonusAmount,
-        balanceAfter: executor.balance,
+        balanceAfter: credited.balance,
       },
     );
   }
@@ -1172,10 +1180,7 @@ export class OrdersService {
       finalPrice: order.finalPrice,
       distanceMeters: order.distanceMeters,
       durationSeconds: order.durationSeconds,
-      carClass:
-        routePoints.length > 0 && this.isDriverRideService(order.serviceType)
-          ? null
-          : null,
+      carClass: order.carClass ?? null,
       scheduledAt: order.scheduledAt,
       acceptedAt: order.acceptedAt,
       startedAt: order.startedAt,

@@ -56,7 +56,7 @@ function readStringWithDefault(
 
 function readInteger(
   env: RawEnv,
-  key: keyof typeof DEFAULTS,
+  key: keyof typeof DEFAULTS | string,
   options: {
     min: number;
     fallback: string;
@@ -76,7 +76,7 @@ function readInteger(
 
 function readBoolean(
   env: RawEnv,
-  key: keyof typeof DEFAULTS,
+  key: keyof typeof DEFAULTS | string,
   fallback: string,
 ): string {
   const rawValue = readString(env, key) ?? fallback;
@@ -269,5 +269,12 @@ export function validateEnvironment(env: RawEnv): Record<string, string> {
     validatedEnv.S3_BUCKET = readRequiredString(env, "S3_BUCKET");
   }
 
+  validatedEnv.OTP_IP_MAX_ATTEMPTS = readInteger(env, "OTP_IP_MAX_ATTEMPTS", { min: 1, fallback: "100" });
+  validatedEnv.KASPI_ENABLED = readBoolean(env, "KASPI_ENABLED", "false");
+  const kaspiIps = readString(env, "KASPI_ALLOWED_IPS");
+  if (kaspiIps) validatedEnv.KASPI_ALLOWED_IPS = kaspiIps;
+  if (validatedEnv.KASPI_ENABLED === "true" && !kaspiIps) throw new Error("KASPI_ALLOWED_IPS is required when KASPI_ENABLED=true");
+  const trustProxy = readString(env, "TRUST_PROXY");
+  if (trustProxy) validatedEnv.TRUST_PROXY = trustProxy;
   return validatedEnv;
 }

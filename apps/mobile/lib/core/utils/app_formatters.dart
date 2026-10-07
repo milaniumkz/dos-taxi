@@ -121,7 +121,7 @@ final class AppFormatters {
   static bool isValidVehiclePlate(String value) {
     final normalized = normalizeVehiclePlate(value);
     return RegExp(
-      r'^(?:\d{3}[A-Z]{2,3}\d{2}|[A-Z]\d{3}[A-Z]{2}\d{2}|[ABEKMHOPCTYX]\d{3}[ABEKMHOPCTYX]{2}\d{2,3})$',
+      r'^(?:[A-Z]\d{6}|[A-Z]\d{3}[A-Z]{3}|\d{3}[A-Z]{2,3}\d{2}|[A-Z]\d{3}[A-Z]{2}\d{2}|[ABEKMHOPCTYX]\d{3}[ABEKMHOPCTYX]{2}\d{2,3})$',
     ).hasMatch(normalized);
   }
 

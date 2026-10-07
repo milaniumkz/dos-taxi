@@ -105,6 +105,61 @@ describe('PricingService', () => {
     expect(result.currency).toBe(Currency.KZT);
   });
 
+  it.each(['together', 'child'])(
+    'requires an explicitly configured %s tariff',
+    async (carClass) => {
+      citiesRepository.findOne.mockResolvedValue({
+        id: 'city-1',
+        currency: Currency.KZT,
+        timezone: 'Asia/Almaty',
+        isActive: true,
+      } as CityEntity);
+      redisStoreService.getJson.mockResolvedValue(null);
+      tariffsRepository.find.mockResolvedValue([
+        {
+          vehicleClass: 'economy',
+          validFrom: new Date('2024-01-01'),
+          validTo: null,
+        } as TariffEntity,
+      ]);
+      await expect(
+        pricingService.estimate({
+          cityId: 'city-1',
+          serviceType: ServiceType.TAXI,
+          carClass,
+          distanceMeters: 5000,
+          durationSeconds: 600,
+        }),
+      ).rejects.toMatchObject({ response: { code: 'TARIFF_NOT_FOUND' } });
+    },
+  );
+
+  it('does not derive economy pricing from a together-only tariff', async () => {
+    citiesRepository.findOne.mockResolvedValue({
+      id: 'city-1',
+      currency: Currency.KZT,
+      timezone: 'Asia/Almaty',
+      isActive: true,
+    } as CityEntity);
+    redisStoreService.getJson.mockResolvedValue(null);
+    tariffsRepository.find.mockResolvedValue([
+      {
+        vehicleClass: 'together',
+        validFrom: new Date('2024-01-01'),
+        validTo: null,
+      } as TariffEntity,
+    ]);
+    await expect(
+      pricingService.estimate({
+        cityId: 'city-1',
+        serviceType: ServiceType.TAXI,
+        carClass: 'economy',
+        distanceMeters: 5000,
+        durationSeconds: 600,
+      }),
+    ).rejects.toMatchObject({ response: { code: 'TARIFF_NOT_FOUND' } });
+  });
+
   it('applies surge and taxi class multiplier when only economy tariff exists', async () => {
     citiesRepository.findOne.mockResolvedValue({
       id: 'city-1',

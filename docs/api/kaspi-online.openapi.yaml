@@ -1,0 +1,106 @@
+openapi: 3.0.3
+info:
+  title: DOS / Kaspi online balance API
+  version: 1.0.0
+  description: HTTPS GET check/pay protocol. No request body or card data. Access
+    restricted to confirmed bank source IPs.
+servers:
+- url: https://dos.89.126.200.51.sslip.io
+  description: Current production host; confirm with the service owner and bank before enabling
+paths:
+  /api/v1/payments/kaspi:
+    get:
+      operationId: kaspiOnlinePayment
+      summary: Check driver account or credit balance
+      parameters:
+      - in: query
+        name: command
+        required: true
+        description: 'check: account verification; pay: balance credit'
+        schema:
+          type: string
+          enum:
+          - check
+          - pay
+        example: pay
+      - in: query
+        name: txn_id
+        required: true
+        description: Bank transaction ID, string to retain all 18 digits
+        schema:
+          type: string
+          pattern: ^\d{1,18}$
+        example: '123456789012345678'
+      - in: query
+        name: account
+        required: true
+        description: Verified driver phone, 11 digits without +
+        schema:
+          type: string
+          pattern: ^7\d{10}$
+        example: '77010000000'
+      - in: query
+        name: sum
+        required: true
+        description: KZT with two decimal places; ignored for check
+        schema:
+          type: string
+          pattern: ^\d{1,10}\.\d{2}$
+        example: '5000.00'
+      - in: query
+        name: txn_date
+        required: false
+        description: Required for pay; bank accounting date YYYYMMDDhhmmss
+        schema:
+          type: string
+          pattern: ^\d{14}$
+        example: '20261007140000'
+      responses:
+        '200':
+          description: Bank protocol response; result=0 only after committed payment
+            (pay)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - txn_id
+                - result
+                - comment
+                properties:
+                  txn_id:
+                    type: string
+                  result:
+                    type: integer
+                    enum:
+                    - 0
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                    - 5
+                  comment:
+                    type: string
+                  prv_txn_id:
+                    type: string
+                    description: DOS numeric payment ID, present on successful pay
+                  sum:
+                    type: string
+                    example: '5000.00'
+              examples:
+                check:
+                  value:
+                    txn_id: '123456789012345677'
+                    result: 0
+                    comment: OK
+                pay:
+                  value:
+                    txn_id: '123456789012345678'
+                    prv_txn_id: '2016'
+                    result: 0
+                    sum: '5000.00'
+                    comment: OK
+        '400':
+          description: Invalid query syntax
+        '403':
+          description: Integration disabled or source IP denied

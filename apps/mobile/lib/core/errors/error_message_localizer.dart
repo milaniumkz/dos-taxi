@@ -68,6 +68,7 @@ class ErrorMessageLocalizer {
           ru: 'SMS-код истёк. Запросите новый код.',
           kk: 'SMS кодының мерзімі өтті. Жаңа код сұраңыз.',
         );
+      case 'OTP_RATE_LIMITED':
       case 'AUTH_OTP_RATE_LIMITED':
       case 'TOO_MANY_REQUESTS':
         return pick(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +29,12 @@ class PhoneInputScreen extends StatefulWidget {
 class _PhoneInputScreenState extends State<PhoneInputScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _showPhoneForm = false;
+  Timer? _retryTimer;
+  DateTime? _retryAt;
+  String? _limitedPhone;
+  int get _retrySeconds => _limitedPhone == _phoneController.text
+      ? (_retryAt?.difference(DateTime.now()).inSeconds ?? 0).clamp(0, 3600)
+      : 0;
 
   @override
   void initState() {
@@ -36,6 +44,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
 
   @override
   void dispose() {
+    _retryTimer?.cancel();
     _phoneController.removeListener(_onPhoneChanged);
     _phoneController.dispose();
     super.dispose();
@@ -64,6 +73,23 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
         }
 
         if (state is AuthError) {
+          if (state.retryAfterSeconds != null) {
+            _limitedPhone = _phoneController.text;
+            _retryAt = DateTime.now().add(
+              Duration(seconds: state.retryAfterSeconds!),
+            );
+            _retryTimer?.cancel();
+            _retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+              if (!mounted) {
+                timer.cancel();
+                return;
+              }
+              setState(() {});
+              if (_retryAt == null || !_retryAt!.isAfter(DateTime.now())) {
+                timer.cancel();
+              }
+            });
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(ErrorMessageLocalizer.resolve(l10n, state.message)),
@@ -131,6 +157,8 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                                       : AppColors.muted,
                                 ),
                           ),
+                          if (_retrySeconds > 0)
+                            Text(l10n.authRetryAfter(_retrySeconds)),
                           if (_showPhoneForm) ...[
                             const SizedBox(height: AppSpacing.lg),
                             TextField(
@@ -179,7 +207,8 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                             isDriver: isDriver,
                             isLoading: state is AuthLoading,
                             isPhoneForm: _showPhoneForm,
-                            canSubmitPhone: canSubmitPhone,
+                            canSubmitPhone:
+                                canSubmitPhone && _retrySeconds == 0,
                             onShowPhoneForm: () =>
                                 setState(() => _showPhoneForm = true),
                             onSubmit: () => context.read<AuthCubit>().sendOtp(

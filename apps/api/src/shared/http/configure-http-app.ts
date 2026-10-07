@@ -36,6 +36,8 @@ export function configureHttpApplication(
   options?: ConfigureHttpApplicationOptions,
 ): INestApplication {
   const allowedOrigins = getAllowedOrigins();
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy) app.getHttpAdapter().getInstance().set("trust proxy", trustProxy.split(",").map(value => value.trim()));
 
   app.enableCors({
     credentials: true,

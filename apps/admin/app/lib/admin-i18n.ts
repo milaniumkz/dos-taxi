@@ -706,6 +706,8 @@ export type AdminDictionary = {
     carClassComfort: string;
     carClassComfortPlus: string;
     carClassBusiness: string;
+    carClassTogether: string;
+    carClassChild: string;
     rating: string;
     cancelRate: string;
     balance: string;
@@ -1611,6 +1613,8 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       carClassComfort: "Комфорт",
       carClassComfortPlus: "Комфорт плюс",
       carClassBusiness: "Бизнес",
+      carClassTogether: "Вместе",
+      carClassChild: "Детский (с креслом)",
       rating: "Рейтинг",
       cancelRate: "Доля отмен",
       balance: "Баланс",
@@ -2612,6 +2616,8 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       carClassComfort: "Комфорт",
       carClassComfortPlus: "Комфорт плюс",
       carClassBusiness: "Бизнес",
+      carClassTogether: "Бірге",
+      carClassChild: "Балалар (орындықпен)",
       rating: "Рейтинг",
       cancelRate: "Бас тарту үлесі",
       balance: "Баланс",

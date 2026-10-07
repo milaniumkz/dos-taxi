@@ -365,11 +365,6 @@ class _PassengerOrderPanel extends StatelessWidget {
                   onChanged: onPickupChanged,
                 ),
               ),
-              IconButton(
-                tooltip: l10n.commonCurrentLocation,
-                onPressed: onUseCurrentPickup,
-                icon: const Icon(Icons.my_location_rounded),
-              ),
             ],
           ),
           if (showSearchResults && state.searchingPickup) ...[

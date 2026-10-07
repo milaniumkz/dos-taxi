@@ -14,10 +14,10 @@ export class RedisStoreService implements OnModuleDestroy {
   private readonly logger = new Logger(RedisStoreService.name);
   private client: Redis | null = null;
   private readonly memoryStore = new Map<string, StoredRecord>();
-  private attemptedConnection = false;
+  private connection: Promise<Redis | null> | null = null;
 
   async onModuleDestroy(): Promise<void> {
-    await this.client?.quit();
+    await (await this.connection)?.quit();
   }
 
   async get(key: string): Promise<string | null> {
@@ -82,11 +82,7 @@ export class RedisStoreService implements OnModuleDestroy {
       .map((record) => JSON.parse(record.value) as T);
   }
 
-  async set(
-    key: string,
-    value: string,
-    ttlSeconds?: number,
-  ): Promise<void> {
+  async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     const client = await this.getClient();
     if (client) {
       if (ttlSeconds) {
@@ -119,48 +115,61 @@ export class RedisStoreService implements OnModuleDestroy {
     this.memoryStore.delete(key);
   }
 
-  async increment(
-    key: string,
-    ttlSeconds: number,
-  ): Promise<number> {
+  async increment(key: string, ttlSeconds: number): Promise<number> {
     const client = await this.getClient();
     if (client) {
-      const value = await client.incr(key);
-      if (value === 1) {
-        await client.expire(key, ttlSeconds);
-      }
-      return value;
+      return Number(
+        await client.eval(
+          `local value = redis.call('INCR', KEYS[1])
+         if value == 1 or redis.call('TTL', KEYS[1]) < 0 then
+           redis.call('EXPIRE', KEYS[1], ARGV[1])
+         end
+         return value`,
+          1,
+          key,
+          ttlSeconds,
+        ),
+      );
     }
 
-    const currentValue = Number((await this.getFromMemory(key)) ?? '0') + 1;
+    const currentValue = Number(this.getFromMemory(key) ?? '0') + 1;
+    const oldExpiry = this.memoryStore.get(key)?.expiresAt;
     this.setInMemory(key, String(currentValue), ttlSeconds);
+    if (oldExpiry && oldExpiry > Date.now()) {
+      this.memoryStore.get(key)!.expiresAt = oldExpiry;
+    }
     return currentValue;
   }
 
+  async ttl(key: string): Promise<number> {
+    const client = await this.getClient();
+    if (client) return Math.max(0, await client.ttl(key));
+    const record = this.memoryStore.get(key);
+    return record?.expiresAt
+      ? Math.max(0, Math.ceil((record.expiresAt - Date.now()) / 1000))
+      : 0;
+  }
+
   private async getClient(): Promise<Redis | null> {
-    if (this.client) {
-      return this.client;
-    }
+    if (this.client) return this.client;
+    // Requests during startup must share the pending connection, not a separate memory counter.
+    this.connection ??= this.connectClient();
+    return this.connection;
+  }
 
-    if (this.attemptedConnection) {
-      return null;
-    }
-
-    this.attemptedConnection = true;
+  private async connectClient(): Promise<Redis | null> {
     const redisUrl = this.configService.get<string>('redisUrl');
-    if (!redisUrl) {
-      return null;
-    }
-
+    if (!redisUrl) return null;
+    const client = new Redis(redisUrl, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+    });
     try {
-      const client = new Redis(redisUrl, {
-        lazyConnect: true,
-        maxRetriesPerRequest: 1,
-      });
       await client.connect();
       this.client = client;
       return client;
     } catch {
+      client.disconnect();
       this.logger.warn(
         'Falling back to in-memory cache because Redis is unavailable',
       );
@@ -182,11 +191,7 @@ export class RedisStoreService implements OnModuleDestroy {
     return record.value;
   }
 
-  private setInMemory(
-    key: string,
-    value: string,
-    ttlSeconds?: number,
-  ): void {
+  private setInMemory(key: string, value: string, ttlSeconds?: number): void {
     this.memoryStore.set(key, {
       value,
       expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : null,

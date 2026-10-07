@@ -1,3 +1,4 @@
+import { KaspiTransactionEntity } from '../modules/payments/kaspi/kaspi-transaction.entity';
 import { AdminActivityLogEntity } from "../modules/admin/entities/admin-activity-log.entity";
 import { AdminNoteEntity } from "../modules/admin/entities/admin-note.entity";
 import { CityEntity } from "../modules/admin/entities/city.entity";
@@ -23,6 +24,7 @@ import { PromoCodeEntity } from "../modules/promo-codes/entities/promo-code.enti
 import { UserEntity } from "../modules/users/entities/user.entity";
 
 export const databaseEntities = [
+  KaspiTransactionEntity,
   UserEntity,
   AdminActivityLogEntity,
   AdminNoteEntity,

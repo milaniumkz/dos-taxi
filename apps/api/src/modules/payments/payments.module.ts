@@ -9,6 +9,9 @@ import { UserEntity } from '../users/entities/user.entity';
 
 import { PaymentCardEntity } from './entities/payment-card.entity';
 import { PaymentEntity } from './entities/payment.entity';
+import { KaspiAccessGuard } from './kaspi/kaspi-access.guard';
+import { KaspiController } from './kaspi/kaspi.controller';
+import { KaspiService } from './kaspi/kaspi.service';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { DevStubPaymentProvider } from './providers/dev-stub-payment.provider';
@@ -24,8 +27,10 @@ import { DevStubPaymentProvider } from './providers/dev-stub-payment.provider';
       UserEntity,
     ]),
   ],
-  controllers: [PaymentsController],
+  controllers: [PaymentsController, KaspiController],
   providers: [
+    KaspiService,
+    KaspiAccessGuard,
     PaymentsService,
     DevStubPaymentProvider,
     RedisStoreService,

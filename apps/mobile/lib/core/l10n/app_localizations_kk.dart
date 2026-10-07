@@ -1255,4 +1255,23 @@ class AppLocalizationsKk extends AppLocalizations {
   String driverBonusProgress(int completed, int required, int remaining) {
     return '$required тапсырыстың $completed орындалды. Қалғаны: $remaining.';
   }
+
+  @override
+  String get taxiClassTogether => 'Бірге';
+
+  @override
+  String get taxiClassChild => 'Балалар (орындықпен)';
+
+  @override
+  String authRetryAfter(int seconds) {
+    return '$seconds секундтан кейін қайта сұратуға болады.';
+  }
+
+  @override
+  String get vehiclePlateFormatHint =>
+      'KZ: 123ABC01, A123456, A123BCD; RU: A123BC777';
+
+  @override
+  String get driverChildSeatNotice =>
+      '«Балалар» тарифін балалар орындығы болғанда ғана қосыңыз.';
 }

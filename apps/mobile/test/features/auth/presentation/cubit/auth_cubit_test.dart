@@ -93,6 +93,27 @@ void main() {
   );
 
   blocTest<AuthCubit, AuthState>(
+    'passes the server retry deadline to the phone screen',
+    setUp: () {
+      when(() => sendOtpUseCase('+77010000000')).thenAnswer(
+        (_) async => const Left(
+          Failure(
+            code: 'OTP_RATE_LIMITED',
+            message: 'Too many OTP requests',
+            retryAfterSeconds: 120,
+          ),
+        ),
+      );
+    },
+    build: buildCubit,
+    act: (cubit) => cubit.sendOtp('+77010000000'),
+    expect: () => const [
+      AuthLoading(),
+      AuthError('OTP_RATE_LIMITED', retryAfterSeconds: 120),
+    ],
+  );
+
+  blocTest<AuthCubit, AuthState>(
     'verifyOtp emits authenticated on success',
     setUp: () {
       when(

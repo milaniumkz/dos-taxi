@@ -45,6 +45,9 @@ describe("SMSC OTP HTTP -> Redis worker -> provider", () => {
     await cache.delete("auth:otp:rate:::ffff:127.0.0.1");
     await cache.delete("auth:otp:rate:127.0.0.1");
     await cache.delete(`auth:otp:${phone}`);
+    await cache.delete(`auth:otp:phone:${phone}`);
+    await cache.delete("auth:otp:ip:::ffff:127.0.0.1");
+    await cache.delete("auth:otp:ip:127.0.0.1");
     templates = jest
       .fn()
       .mockResolvedValue([{ subject: null, body: "Код входа DOS: {{code}}." }]);

@@ -13,7 +13,7 @@ type Props = {
   canSave: boolean;
   requestKey?: string;
 };
-const classes = ["economy", "comfort", "comfort_plus", "business"] as const;
+const classes = ["economy", "comfort", "comfort_plus", "business", "together", "child"] as const;
 
 function usePreservedForm() {
   const ref = useRef<HTMLFormElement>(null);

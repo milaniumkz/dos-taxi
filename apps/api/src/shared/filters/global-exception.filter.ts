@@ -38,6 +38,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const payload = this.normalizeException(exception, traceId, statusCode);
 
     response.setHeader(TRACE_ID_HEADER, traceId);
+    if (statusCode === 429 && typeof payload.details.retryAfterSeconds === "number") {
+      response.setHeader("Retry-After", String(payload.details.retryAfterSeconds));
+    }
 
     if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
