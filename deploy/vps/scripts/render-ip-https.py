@@ -26,6 +26,13 @@ def render(text, address, certificate_names):
     http = next((body for _, _, body in servers if re.search(r"listen\s+80(?:\s|;)", body)), None)
     if http is None or "location /api/" not in http:
         raise ValueError("Expected the existing single-host HTTP routing configuration")
+    # HTTP may redirect the admin root to HTTPS. Reuse the established TLS
+    # routes instead, excluding an older IP host when reapplying this setup.
+    template = next((body for _, _, body in servers
+                     if re.search(r"listen\s+443", body)
+                     and not re.search(r"server_name\s+" + re.escape(address) + r"\s*;", body)), http)
+    if re.search(r"return\s+30[1278]\s+https://", template):
+        raise ValueError("TLS routing template contains an HTTPS redirect")
     replacements = []
     for start, end, body in servers:
         names = re.search(r"server_name\s+([^;]+);", body)
@@ -43,7 +50,8 @@ def render(text, address, certificate_names):
             replacements.append((start, end, body))
     for start, end, body in reversed(replacements):
         text = text[:start] + body + text[end:]
-    tls = re.sub(r"listen\s+80[^;]*;", "listen 443 ssl default_server;", http)
+    tls = re.sub(r"listen\s+(?:80|443)[^;]*;", "listen 443 ssl default_server;", template)
+    tls = re.sub(r"^[ \t]*ssl_certificate(?:_key)?\s+[^;]+;[ \t]*\n?", "", tls, flags=re.MULTILINE)
     tls = re.sub(r"server_name\s+[^;]+;", f"server_name {address};\n  ssl_certificate /etc/letsencrypt/live/dos-ip/fullchain.pem;\n  ssl_certificate_key /etc/letsencrypt/live/dos-ip/privkey.pem;", tls)
     return text.rstrip() + "\n\n" + tls.strip() + "\n"
 

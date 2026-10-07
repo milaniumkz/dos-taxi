@@ -13,7 +13,7 @@ compose=(docker compose --env-file .env -f docker-compose.yml)
 
 if [[ "$operation" == status ]]; then
   echo "Runtime user ID: $(id -u)"
-  "${compose[@]}" exec -T nginx nginx -T 2>&1 | awk '/^[[:space:]]*(listen|server_name|ssl_certificate|ssl_certificate_key)[[:space:]]/ {print}'
+  "${compose[@]}" exec -T nginx nginx -T 2>&1 | awk '/^[[:space:]]*(listen|server_name|ssl_certificate|ssl_certificate_key|location|return|proxy_pass)[[:space:]]/ {print}'
   for certificate in nginx/certbot/conf/live/*/fullchain.pem; do
     [[ -f "$certificate" ]] || continue
     openssl x509 -in "$certificate" -noout -subject -issuer -dates -ext subjectAltName
