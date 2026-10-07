@@ -6,7 +6,7 @@ info:
     restricted to confirmed bank source IPs.
 servers:
 - url: https://89.126.200.51
-  description: Requested server IP; requires a valid IP TLS certificate and bank acceptance before enabling
+  description: Verified IP HTTPS endpoint with automatic certificate renewal; bank acceptance required before enabling
 paths:
   /api/v1/payments/kaspi:
     get:
