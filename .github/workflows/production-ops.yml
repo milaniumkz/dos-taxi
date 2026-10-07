@@ -85,3 +85,11 @@ jobs:
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 3 https://89.126.200.51/api/v1/health/ready
           curl --fail --silent --show-error https://dos.89.126.200.51.sslip.io/api/v1/health
+          for url in https://89.126.200.51/ https://dos.89.126.200.51.sslip.io/; do
+            status=$(curl --silent --show-error --location --max-redirs 5 --max-time 30 --output /dev/null --write-out '%{http_code}' "$url")
+            echo "Admin entry $url: HTTP $status"
+            case "$status" in
+              200|401) ;;
+              *) echo "Unexpected admin entry response"; exit 1 ;;
+            esac
+          done
