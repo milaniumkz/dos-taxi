@@ -331,6 +331,9 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
   }
 
   String? _resolveError(AppLocalizations l10n, String? codeOrMessage) {
+    if (codeOrMessage == null || codeOrMessage.trim().isEmpty) return null;
+    final configured = ErrorMessageLocalizer.configured(l10n, codeOrMessage);
+    if (configured != null) return configured;
     switch (codeOrMessage) {
       case 'DELIVERY_ADDRESSES_REQUIRED':
         return l10n.deliveryErrorAddresses;

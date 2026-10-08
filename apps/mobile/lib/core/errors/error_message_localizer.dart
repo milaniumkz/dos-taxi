@@ -1,19 +1,20 @@
+import 'server_error_catalog.dart';
 import '../l10n/app_localizations.dart';
 
 class ErrorMessageLocalizer {
   const ErrorMessageLocalizer._();
 
+  static String? configured(AppLocalizations l10n, String code) =>
+      ServerErrorCatalog.lookup(code.trim().toUpperCase(), l10n.localeName);
+
   static String resolve(AppLocalizations l10n, String? codeOrMessage) {
     final raw = codeOrMessage?.trim();
-    if (raw == null || raw.isEmpty) {
-      return _pick(
-        l10n,
-        ru: 'Что-то пошло не так',
-        kk: 'Бірдеңе дұрыс болмады',
-      );
-    }
+    // No error is present when an order succeeds or its status changes.
+    if (raw == null || raw.isEmpty) return '';
 
     final key = raw.toUpperCase();
+    final configured = ServerErrorCatalog.lookup(key, l10n.localeName);
+    if (configured != null) return configured;
     switch (key) {
       case 'PROMO_CODE_NOT_FOUND':
         return l10n.promoNotFound;
@@ -189,10 +190,4 @@ class ErrorMessageLocalizer {
 
     return raw;
   }
-
-  static String _pick(
-    AppLocalizations l10n, {
-    required String ru,
-    required String kk,
-  }) => l10n.localeName.toLowerCase().startsWith('kk') ? kk : ru;
 }

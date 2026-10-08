@@ -12,6 +12,7 @@ on:
           - logs
           - restart
           - rollback
+          - booking-diagnostics
           - https-status
           - https-ip
       rollback_backup:
@@ -59,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$OPERATION" in
-            health|logs|restart|rollback|https-status|https-ip) ;;
+            health|logs|restart|rollback|https-status|https-ip|booking-diagnostics) ;;
             *) echo "Unsupported operation"; exit 1 ;;
           esac
           if [[ "$OPERATION" == https-* ]]; then
@@ -76,6 +77,16 @@ jobs:
           command = shlex.join(["bash", script, mode, f'{os.environ["VPS_PATH"]}/deploy/vps', "89.126.200.51", renderer])
           subprocess.run(["ssh", "-p", port, host, command], check=True)
           PY
+          elif [[ "$OPERATION" == booking-diagnostics ]]; then
+            python3 - <<'PYBOOK'
+          import os, shlex, subprocess
+          host = f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}'
+          port = os.environ.get("VPS_PORT") or "22"
+          script = f'/tmp/dos-booking-{os.environ["GITHUB_SHA"]}.cjs'
+          subprocess.run(["scp", "-P", port, "deploy/vps/scripts/booking-diagnostics.cjs", f"{host}:{script}"], check=True)
+          command = "cd " + shlex.quote(os.environ["VPS_PATH"] + "/deploy/vps") + " && docker compose --env-file .env -f docker-compose.yml exec -T api node < " + shlex.quote(script)
+          subprocess.run(["ssh", "-p", port, host, command], check=True)
+          PYBOOK
           else
             ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
               "cd '$VPS_PATH/deploy/vps' && bash scripts/ci-ops.sh '$OPERATION' '$ROLLBACK_BACKUP'"

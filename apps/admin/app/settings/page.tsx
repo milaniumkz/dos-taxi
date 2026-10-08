@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppFrame } from "../components/app-frame";
 import { FlashBanner } from "../components/flash-banner";
 import { SectionShell } from "../components/section-shell";
@@ -55,6 +56,8 @@ export default async function SettingsPage({
             <p>{dictionary.settingsPage.description}</p>
           </div>
         </section>
+
+        <Link className="action-button" href={`/settings/error-messages?lang=${locale}`}>{dictionary.settingsPage.errorMessagesTitle}</Link>
 
         <SectionShell
           eyebrow={dictionary.settingsPage.dispatchEyebrow}

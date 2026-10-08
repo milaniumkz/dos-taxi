@@ -1,3 +1,6 @@
+import '../core/errors/server_error_catalog.dart';
+import '../core/api/api_client.dart';
+import '../core/storage/token_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -11,6 +14,10 @@ Future<void> bootstrap(AppConfig config) async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
   await configureDependencies(config);
+  await ServerErrorCatalog.initialize(
+    serviceLocator<ApiClient>().dio,
+    serviceLocator<TokenStorage>(),
+  );
   runApp(DosApp(config: config));
 }
 

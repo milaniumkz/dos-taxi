@@ -86,6 +86,12 @@ export type AdminDictionary = {
     pendingExecutorsAside: (count: number) => string;
   };
   settingsPage: {
+    errorMessagesRussian: string;
+    errorMessagesKazakh: string;
+    errorMessagesTitle: string;
+    errorMessagesDescription: string;
+    errorMessagesSaved: string;
+    errorMessagesSearch: string;
     title: string;
     description: string;
     dispatchEyebrow: string;
@@ -897,6 +903,12 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       pendingExecutorsAside: (count) => `${count} ожидают решения`,
     },
     settingsPage: {
+      errorMessagesRussian: "Русский",
+      errorMessagesKazakh: "Қазақша",
+      errorMessagesTitle: "Тексты ошибок",
+      errorMessagesDescription: "Редактируйте сообщения на русском и казахском. Сервер применяет изменения в течение 5 секунд; приложение с поддержкой каталога — в течение 5 минут.",
+      errorMessagesSaved: "Текст ошибки сохранён",
+      errorMessagesSearch: "Поиск по коду или тексту",
       title: "Настройки системы",
       description:
         "Операционные параметры, которые backend применяет без пересборки приложений.",
@@ -1899,6 +1911,12 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       pendingExecutorsAside: (count) => `${count} шешім күтуде`,
     },
     settingsPage: {
+      errorMessagesRussian: "Русский",
+      errorMessagesKazakh: "Қазақша",
+      errorMessagesTitle: "Қате мәтіндері",
+      errorMessagesDescription: "Орысша және қазақша хабарламаларды өңдеңіз. Сервер өзгерісті 5 секунд ішінде, каталогты қолдайтын қолданба 5 минут ішінде қолданады.",
+      errorMessagesSaved: "Қате мәтіні сақталды",
+      errorMessagesSearch: "Код немесе мәтін бойынша іздеу",
       title: "Жүйе баптаулары",
       description:
         "Backend қолданбаларды қайта жинамай қолданатын операциялық параметрлер.",

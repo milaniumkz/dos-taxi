@@ -11,7 +11,7 @@ class GlobalExceptionHandler {
             ? (responseData['details']['retryAfterSeconds'] as num?)?.toInt()
             : null),
         code: responseData['code'] as String? ?? 'API_ERROR',
-        message: responseData['message'] as String? ?? 'Ошибка API',
+        message: responseData['message'] as String? ?? 'API_ERROR',
       );
     }
 
@@ -21,18 +21,15 @@ class GlobalExceptionHandler {
       case DioExceptionType.receiveTimeout:
         return const Failure(
           code: 'NETWORK_TIMEOUT',
-          message: 'Превышено время ожидания сети',
+          message: 'NETWORK_TIMEOUT',
         );
       case DioExceptionType.connectionError:
         return const Failure(
           code: 'NETWORK_UNAVAILABLE',
-          message: 'Нет подключения к сети',
+          message: 'NETWORK_UNAVAILABLE',
         );
       default:
-        return const Failure(
-          code: 'UNKNOWN_ERROR',
-          message: 'Неизвестная ошибка',
-        );
+        return const Failure(code: 'UNKNOWN_ERROR', message: 'UNKNOWN_ERROR');
     }
   }
 }

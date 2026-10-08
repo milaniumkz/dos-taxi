@@ -34,6 +34,11 @@ class TokenStorage {
 
   Future<String?> readUserJson() => _read(_userJsonKey);
 
+  Future<String?> readErrorCatalog() =>
+      _read('settings.error_catalog', scoped: false);
+  Future<void> writeErrorCatalog(String value) =>
+      _write('settings.error_catalog', value, scoped: false);
+
   Future<String?> readLocaleCode() => _read(_localeCodeKey, scoped: false);
 
   Future<void> writeLocaleCode(String value) =>

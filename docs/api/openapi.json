@@ -3799,6 +3799,101 @@
           }
         ]
       }
+    },
+    "/api/v1/admin/error-messages": {
+      "get": {
+        "operationId": "AdminErrorMessagesController_get",
+        "summary": "Get editable error message catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCatalogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin error messages"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/error-messages/{code}": {
+      "put": {
+        "operationId": "AdminErrorMessagesController_update",
+        "summary": "Replace Russian and Kazakh text for an error code",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateErrorMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCatalogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin error messages"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/config/error-messages": {
+      "get": {
+        "operationId": "PublicErrorMessagesController_get",
+        "summary": "Get Russian and Kazakh error messages for mobile clients",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCatalogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Error messages"
+        ]
+      }
     }
   },
   "info": {
@@ -6594,6 +6689,44 @@
       "UpdateProfileDto": {
         "type": "object",
         "properties": {}
+      },
+      "ErrorCatalogDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "version",
+          "messages"
+        ]
+      },
+      "UpdateErrorMessageDto": {
+        "type": "object",
+        "properties": {
+          "ru": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "kk": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "ru",
+          "kk"
+        ]
       }
     }
   }

@@ -81,6 +81,9 @@ class DeliveryVehicleScreen extends StatelessWidget {
   }
 
   String? _resolveError(AppLocalizations l10n, String? codeOrMessage) {
+    if (codeOrMessage == null || codeOrMessage.trim().isEmpty) return null;
+    final configured = ErrorMessageLocalizer.configured(l10n, codeOrMessage);
+    if (configured != null) return configured;
     switch (codeOrMessage) {
       case 'DELIVERY_VEHICLE_REQUIRED':
         return l10n.deliveryErrorVehicle;

@@ -758,3 +758,17 @@ export async function updateExecutorPayoutAction(formData: FormData) {
     redirectWithFlash(returnPath, "error", failureMessage(locale, error));
   }
 }
+
+export async function updateErrorMessageAction(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const returnPath = `/settings/error-messages?lang=${locale}`;
+  try {
+    await adminApiRequest(`admin/error-messages/${encodeURIComponent(getString(formData, 'code'))}`, {
+      method: 'PUT', body: JSON.stringify({ ru: getString(formData, 'ru'), kk: getString(formData, 'kk') }),
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, 'error', failureMessage(locale, error));
+  }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(returnPath, 'notice', getAdminDictionary(locale).settingsPage.errorMessagesSaved);
+}
