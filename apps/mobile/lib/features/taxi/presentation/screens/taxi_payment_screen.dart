@@ -195,6 +195,9 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
   }
 
   String? _resolveError(AppLocalizations l10n, String? codeOrMessage) {
+    if (codeOrMessage == null || codeOrMessage.trim().isEmpty) return null;
+    final configured = ErrorMessageLocalizer.configured(l10n, codeOrMessage);
+    if (configured != null) return configured;
     switch (codeOrMessage) {
       case 'TAXI_CLASS_NOT_SELECTED':
         return l10n.taxiErrorSelectClass;

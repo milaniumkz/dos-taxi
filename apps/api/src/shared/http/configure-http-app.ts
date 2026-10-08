@@ -1,22 +1,24 @@
-import { ValidationPipe } from '@nestjs/common';
-import type { INestApplication } from '@nestjs/common';
+import { ErrorMessagesService } from "../../modules/error-messages/error-messages.service";
+import { ValidationPipe } from "@nestjs/common";
+import type { INestApplication } from "@nestjs/common";
 
-import { GlobalExceptionFilter } from '../filters/global-exception.filter';
+import { GlobalExceptionFilter } from "../filters/global-exception.filter";
 
-import { requestLoggingMiddleware } from './request-logging.middleware';
-import { traceIdMiddleware } from './trace-id.middleware';
+import { requestLoggingMiddleware } from "./request-logging.middleware";
+import { traceIdMiddleware } from "./trace-id.middleware";
 
 type ConfigureHttpApplicationOptions = {
   apiPrefix?: string;
+  errorMessages?: ErrorMessagesService;
 };
 
 const defaultAllowedOrigins = [
-  'https://dos-taxi.web.app',
-  'https://dos-taxi.firebaseapp.com',
-  'https://dos-taxi-passenger.web.app',
-  'https://dos-taxi-passenger.firebaseapp.com',
-  'https://dos-taxi-driver.web.app',
-  'https://dos-taxi-driver.firebaseapp.com',
+  "https://dos-taxi.web.app",
+  "https://dos-taxi.firebaseapp.com",
+  "https://dos-taxi-passenger.web.app",
+  "https://dos-taxi-passenger.firebaseapp.com",
+  "https://dos-taxi-driver.web.app",
+  "https://dos-taxi-driver.firebaseapp.com",
 ];
 
 function getAllowedOrigins(): string[] {
@@ -26,7 +28,7 @@ function getAllowedOrigins(): string[] {
   }
 
   return envOrigins
-    .split(',')
+    .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
 }
@@ -37,7 +39,14 @@ export function configureHttpApplication(
 ): INestApplication {
   const allowedOrigins = getAllowedOrigins();
   const trustProxy = process.env.TRUST_PROXY;
-  if (trustProxy) app.getHttpAdapter().getInstance().set("trust proxy", trustProxy.split(",").map(value => value.trim()));
+  if (trustProxy)
+    app
+      .getHttpAdapter()
+      .getInstance()
+      .set(
+        "trust proxy",
+        trustProxy.split(",").map((value) => value.trim()),
+      );
 
   app.enableCors({
     credentials: true,
@@ -50,7 +59,7 @@ export function configureHttpApplication(
       callback(null, false);
     },
   });
-  app.setGlobalPrefix(options?.apiPrefix ?? 'api/v1');
+  app.setGlobalPrefix(options?.apiPrefix ?? "api/v1");
   app.use(traceIdMiddleware);
   app.use(requestLoggingMiddleware);
   app.useGlobalPipes(
@@ -60,6 +69,6 @@ export function configureHttpApplication(
       forbidNonWhitelisted: true,
     }),
   );
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(options?.errorMessages));
   return app;
 }

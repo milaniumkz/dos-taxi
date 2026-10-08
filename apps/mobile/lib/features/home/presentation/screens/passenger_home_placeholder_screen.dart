@@ -260,6 +260,8 @@ class _PassengerHomePlaceholderScreenState
   }
 
   String _resolveHomeError(AppLocalizations l10n, String codeOrMessage) {
+    final configured = ErrorMessageLocalizer.configured(l10n, codeOrMessage);
+    if (configured != null) return configured;
     switch (codeOrMessage) {
       case 'HOME_LOCATION_SERVICE_DISABLED':
         return l10n.homeLocationServiceDisabled;

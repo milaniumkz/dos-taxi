@@ -1,3 +1,4 @@
+import { ErrorMessagesModule } from "./modules/error-messages/error-messages.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
@@ -28,6 +29,7 @@ import { UsersModule } from "./modules/users/users.module";
       validate: validateEnvironment,
     }),
     DatabaseModule,
+    ErrorMessagesModule,
     AdminModule,
     AuthModule,
     DispatchModule,

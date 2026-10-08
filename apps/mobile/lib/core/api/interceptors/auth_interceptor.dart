@@ -12,6 +12,8 @@ class AuthInterceptor extends QueuedInterceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    options.headers['Accept-Language'] =
+        await _tokenStorage.readLocaleCode() ?? 'ru';
     final accessToken = await _tokenStorage.readAccessToken();
     if (accessToken != null && accessToken.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $accessToken';
