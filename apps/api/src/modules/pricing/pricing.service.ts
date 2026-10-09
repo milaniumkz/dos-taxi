@@ -2,7 +2,7 @@ import { CourierVehicleType, Currency, ServiceType } from "@dos/shared-types";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { IsNull, Not, Repository } from "typeorm";
 
 import { RedisStoreService } from "../../shared/cache/redis-store.service";
 import { CityEntity } from "../admin/entities/city.entity";
@@ -267,11 +267,11 @@ export class PricingService {
       await this.redisStoreService.getJson<ResolvedTariff>(cacheKey);
 
     const candidates = await this.tariffsRepository.find({
-      where: {
-        cityId,
-        serviceType,
-        isActive: true,
-      },
+      withDeleted: true,
+      where: [
+        { cityId, serviceType, isActive: true },
+        { cityId, serviceType, deletedAt: Not(IsNull()) },
+      ],
       order: {
         validFrom: "DESC",
       },
@@ -279,20 +279,37 @@ export class PricingService {
 
     const activeCandidates = candidates.filter(
       (tariff) =>
+        !tariff.deletedAt &&
         tariff.validFrom <= requestedAt &&
         (!tariff.validTo || tariff.validTo > requestedAt),
     );
 
+    const exactMatch = activeCandidates.find(
+      (tariff) => (tariff.vehicleClass ?? null) === vehicleClass,
+    );
+    // A removed class must not be recreated implicitly from another class's price,
+    // including cached fallback estimates created before deletion.
+    if (
+      !exactMatch &&
+      candidates.some(
+        (tariff) =>
+          tariff.deletedAt && (tariff.vehicleClass ?? null) === vehicleClass,
+      )
+    ) {
+      throw new NotFoundException({
+        code: "TARIFF_NOT_FOUND",
+        message: "No active tariff found for the requested estimate",
+      });
+    }
+
     if (
       cached?.tariff?.id &&
+      (!exactMatch || cached.tariff.id === exactMatch.id) &&
       activeCandidates.some((tariff) => tariff.id === cached.tariff.id)
     ) {
       return cached;
     }
 
-    const exactMatch = activeCandidates.find(
-      (tariff) => (tariff.vehicleClass ?? null) === vehicleClass,
-    );
     if (exactMatch) {
       const result = {
         tariff: this.toTariffSnapshot(exactMatch),
