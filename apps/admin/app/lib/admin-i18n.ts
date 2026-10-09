@@ -790,10 +790,16 @@ export type AdminDictionary = {
     scopeFinancialReport: string;
     scopeOperationsReport: string;
   };
+  tariffDeletion: {
+    remove: string;
+    removing: string;
+    confirm: (name: string) => string;
+  };
   feedback: {
     cityCreated: string;
     cityUpdated: string;
     tariffCreated: string;
+    tariffDeleted: string;
     tariffUpdated: string;
     promoCreated: string;
     promoUpdated: string;
@@ -1708,10 +1714,16 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       scopeFinancialReport: "финансовый отчёт",
       scopeOperationsReport: "операционный отчёт",
     },
+    tariffDeletion: {
+      remove: "Удалить",
+      removing: "Удаление…",
+      confirm: (name) => `Удалить тариф «${name}»? Он станет недоступен для новых заказов. История поездок сохранится.`,
+    },
     feedback: {
       cityCreated: "Город создан.",
       cityUpdated: "Город обновлён.",
       tariffCreated: "Тариф создан.",
+      tariffDeleted: "Тариф удалён. История поездок сохранена.",
       tariffUpdated: "Тариф обновлён.",
       promoCreated: "Промокод создан.",
       promoUpdated: "Промокод обновлён.",
@@ -2719,10 +2731,16 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       scopeFinancialReport: "қаржылық есепті",
       scopeOperationsReport: "операциялық есепті",
     },
+    tariffDeletion: {
+      remove: "Жою",
+      removing: "Жойылуда…",
+      confirm: (name) => `«${name}» тарифін жою керек пе? Жаңа тапсырыстар үшін қолжетімсіз болады. Сапарлар тарихы сақталады.`,
+    },
     feedback: {
       cityCreated: "Қала құрылды.",
       cityUpdated: "Қала жаңартылды.",
       tariffCreated: "Тариф құрылды.",
+      tariffDeleted: "Тариф жойылды. Сапарлар тарихы сақталды.",
       tariffUpdated: "Тариф жаңартылды.",
       promoCreated: "Промокод құрылды.",
       promoUpdated: "Промокод жаңартылды.",

@@ -74,6 +74,7 @@ function successMessage(
     | "cityUpdated"
     | "tariffCreated"
     | "tariffUpdated"
+    | "tariffDeleted"
     | "promoCreated"
     | "promoUpdated"
     | "orderAssigned"
@@ -241,6 +242,25 @@ export async function toggleTariffActiveAction(formData: FormData) {
     returnPath,
     "notice",
     successMessage(locale, "tariffUpdated"),
+  );
+}
+
+export async function deleteTariffAction(formData: FormData) {
+  const locale = getLocale(formData);
+  const returnPath = normalizeReturnPath(getString(formData, "returnPath"));
+  try {
+    await adminApiRequest(`admin/tariffs/${getString(formData, "tariffId")}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, "error", failureMessage(locale, error));
+  }
+  revalidatePath("/tariffs");
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(
+    returnPath,
+    "notice",
+    successMessage(locale, "tariffDeleted"),
   );
 }
 

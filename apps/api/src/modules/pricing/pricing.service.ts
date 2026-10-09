@@ -265,9 +265,6 @@ export class PricingService {
     const cacheKey = `pricing:tariff:v2:${cityId}:${serviceType}:${vehicleClass ?? "default"}`;
     const cached =
       await this.redisStoreService.getJson<ResolvedTariff>(cacheKey);
-    if (cached?.tariff?.id) {
-      return cached;
-    }
 
     const candidates = await this.tariffsRepository.find({
       where: {
@@ -285,6 +282,13 @@ export class PricingService {
         tariff.validFrom <= requestedAt &&
         (!tariff.validTo || tariff.validTo > requestedAt),
     );
+
+    if (
+      cached?.tariff?.id &&
+      activeCandidates.some((tariff) => tariff.id === cached.tariff.id)
+    ) {
+      return cached;
+    }
 
     const exactMatch = activeCandidates.find(
       (tariff) => (tariff.vehicleClass ?? null) === vehicleClass,
