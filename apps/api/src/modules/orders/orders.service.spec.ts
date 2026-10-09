@@ -50,6 +50,7 @@ describe("OrdersService.transition", () => {
 
   beforeEach(() => {
     citiesRepository = {
+      find: jest.fn(),
       findOne: jest.fn(),
     } as unknown as jest.Mocked<Repository<CityEntity>>;
     ordersRepository = {
@@ -89,6 +90,7 @@ describe("OrdersService.transition", () => {
       findOne: jest.fn(),
     } as unknown as jest.Mocked<Repository<UserEntity>>;
     geoService = {
+      reverse: jest.fn(),
       route: jest.fn(),
     } as unknown as jest.Mocked<GeoService>;
     pricingService = {
@@ -123,6 +125,90 @@ describe("OrdersService.transition", () => {
       dispatchQueueService,
       {} as import("../promo-codes/promo-codes.service").PromoCodesService,
     );
+  });
+
+  it.each([
+    ["Аральск", "Арал", "Арал", 46.796, 61.665],
+    ["Айтеке-Би", "Әйтеке би", "посёлок Айтеке Би", 45.847, 62.156],
+  ])(
+    "estimates pickup in unzoned %s using its own tariffs, sharing concurrent geocoding",
+    async (nameRu, nameKk, locality, lat, lng) => {
+      const target = {
+        id: "target-city",
+        nameRu,
+        nameKk,
+        isActive: true,
+        serviceZone: null,
+      } as CityEntity;
+      citiesRepository.find.mockResolvedValue([
+        {
+          id: "wrong-city",
+          nameRu: "Павлодар",
+          nameKk: "Павлодар",
+          isActive: true,
+          serviceZone: null,
+        } as CityEntity,
+        target,
+      ]);
+      citiesRepository.findOne.mockResolvedValue({
+        id: "wrong-city",
+      } as CityEntity);
+      geoService.reverse.mockResolvedValue({
+        title: "Улица 1",
+        subtitle: String(locality),
+        lat: Number(lat),
+        lng: Number(lng),
+      });
+      pricingService.estimate.mockResolvedValue({
+        estimatedPrice: 1000,
+      } as Awaited<ReturnType<PricingService["estimate"]>>);
+      const dto = {
+        serviceType: ServiceType.TAXI,
+        distanceMeters: 1000,
+        durationSeconds: 120,
+        routePoints: [
+          { lat: Number(lat), lng: Number(lng) },
+          { lat: Number(lat), lng: Number(lng) + 0.001 },
+        ],
+      };
+      await Promise.all(
+        ["economy", "comfort", "comfort_plus", "business"].map((carClass) =>
+          ordersService.estimate({ ...dto, carClass }),
+        ),
+      );
+      expect(geoService.reverse).toHaveBeenCalledTimes(1);
+      expect(pricingService.estimate).toHaveBeenCalledTimes(4);
+      for (const [params] of pricingService.estimate.mock.calls)
+        expect(params.cityId).toBe(target.id);
+      expect(citiesRepository.findOne).not.toHaveBeenCalled();
+    },
+  );
+  it("does not use an unrelated first city for an unknown unzoned pickup", async () => {
+    citiesRepository.find.mockResolvedValue([
+      {
+        id: "wrong-city",
+        nameRu: "Павлодар",
+        nameKk: "Павлодар",
+        isActive: true,
+        serviceZone: null,
+      } as CityEntity,
+    ]);
+    geoService.reverse.mockResolvedValue({
+      title: "Улица",
+      subtitle: "Другой город",
+      lat: 46,
+      lng: 61,
+    });
+    await expect(
+      ordersService.estimate({
+        serviceType: ServiceType.TAXI,
+        carClass: "comfort",
+        distanceMeters: 1000,
+        durationSeconds: 120,
+        routePoints: [{ lat: 46, lng: 61 }],
+      }),
+    ).rejects.toMatchObject({ response: { code: "CITY_NOT_FOUND" } });
+    expect(pricingService.estimate).not.toHaveBeenCalled();
   });
 
   it("moves a searching order to accepted and stamps acceptedAt", async () => {

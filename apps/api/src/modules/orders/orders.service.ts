@@ -42,6 +42,10 @@ import { OrdersRealtimeService } from "./orders-realtime.service";
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
+  private readonly pickupAddressLookups = new Map<
+    string,
+    ReturnType<GeoService["reverse"]>
+  >();
 
   constructor(
     @InjectRepository(CityEntity)
@@ -1048,6 +1052,43 @@ export class OrdersService {
       );
       if (matchedCity) {
         return matchedCity;
+      }
+
+      const unzonedCities = activeCities.filter(
+        (city) => !this.hasCityServiceZone(city),
+      );
+      if (unzonedCities.length > 0) {
+        const key = `${pickupPoint.lat.toFixed(5)}:${pickupPoint.lng.toFixed(5)}`;
+        let lookup = this.pickupAddressLookups.get(key);
+        if (!lookup) {
+          lookup = this.geoService.reverse(pickupPoint.lat, pickupPoint.lng);
+          this.pickupAddressLookups.set(key, lookup);
+        }
+        let address;
+        try {
+          address = await lookup;
+        } finally {
+          if (this.pickupAddressLookups.get(key) === lookup)
+            this.pickupAddressLookups.delete(key);
+        }
+        const normalize = (value: string) =>
+          value
+            .toLocaleLowerCase("ru")
+            .replace(/^(город|г\.|пос[её]лок|п\.|село)\s+/u, "")
+            .replace(/[^\p{L}\p{N}]/gu, "");
+        const localities = [address.title, address.subtitle].flatMap((value) =>
+          value.split(",").map(normalize),
+        );
+        const matches = unzonedCities.filter((city) =>
+          [city.nameRu, city.nameKk].some(
+            (name) => name && localities.includes(normalize(name)),
+          ),
+        );
+        if (matches.length === 1) return matches[0];
+        throw new NotFoundException({
+          code: "CITY_NOT_FOUND",
+          message: "No unique active city matches the pickup address",
+        });
       }
     }
 
