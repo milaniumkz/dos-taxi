@@ -1248,7 +1248,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String driverBonusConditions(int orders, String amount) {
-    return 'Әрбір $orders аяқталған тапсырыс үшін — $amount';
+    return 'Тәулігіне $orders аяқталған тапсырыс үшін — $amount';
   }
 
   @override

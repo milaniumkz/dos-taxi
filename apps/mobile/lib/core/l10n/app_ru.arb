@@ -469,7 +469,7 @@
   "driverBonusUnavailable": "Не удалось загрузить условия бонусов",
   "driverBonusDisabled": "Бонусная программа сейчас отключена",
   "driverBonusRefresh": "Обновить прогресс бонуса",
-  "driverBonusConditions": "За каждые {orders} завершённых заказов — {amount}",
+  "driverBonusConditions": "За {orders} завершённых заказов за сутки — {amount}",
   "driverBonusProgress": "Выполнено {completed} из {required}. Осталось {remaining}.",
   "@driverBonusConditions": {
     "placeholders": {

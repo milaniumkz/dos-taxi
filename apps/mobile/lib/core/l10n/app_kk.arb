@@ -469,7 +469,7 @@
   "driverBonusUnavailable": "Бонус шарттарын жүктеу мүмкін болмады",
   "driverBonusDisabled": "Бонус бағдарламасы қазір өшірілген",
   "driverBonusRefresh": "Бонус барысын жаңарту",
-  "driverBonusConditions": "Әрбір {orders} аяқталған тапсырыс үшін — {amount}",
+  "driverBonusConditions": "Тәулігіне {orders} аяқталған тапсырыс үшін — {amount}",
   "driverBonusProgress": "{required} тапсырыстың {completed} орындалды. Қалғаны: {remaining}.",
   "@driverBonusConditions": {
     "placeholders": {

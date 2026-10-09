@@ -12,7 +12,10 @@ import { OrderEntity } from "../../orders/entities/order.entity";
 import { ExecutorEntity } from "./executor.entity";
 
 @Entity({ name: "driver_bonus_payouts" })
-@Index("IDX_driver_bonus_payouts_executor_threshold", ["executorId", "thresholdCompletedOrders"], { unique: true })
+@Index("IDX_driver_bonus_payouts_executor_day", ["executorId", "bonusDate"], {
+  unique: true,
+  where: "bonus_date IS NOT NULL",
+})
 export class DriverBonusPayoutEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -30,6 +33,9 @@ export class DriverBonusPayoutEntity {
 
   @Column({ name: "order_id", type: "uuid" })
   orderId!: string;
+
+  @Column({ name: "bonus_date", type: "date", nullable: true })
+  bonusDate!: string | null;
 
   @Column({ name: "threshold_completed_orders", type: "int" })
   thresholdCompletedOrders!: number;

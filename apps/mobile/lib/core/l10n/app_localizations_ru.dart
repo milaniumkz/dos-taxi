@@ -1242,7 +1242,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String driverBonusConditions(int orders, String amount) {
-    return 'За каждые $orders завершённых заказов — $amount';
+    return 'За $orders завершённых заказов за сутки — $amount';
   }
 
   @override

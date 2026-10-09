@@ -2423,7 +2423,7 @@ abstract class AppLocalizations {
   /// No description provided for @driverBonusConditions.
   ///
   /// In ru, this message translates to:
-  /// **'За каждые {orders} завершённых заказов — {amount}'**
+  /// **'За {orders} завершённых заказов за сутки — {amount}'**
   String driverBonusConditions(int orders, String amount);
 
   /// No description provided for @driverBonusProgress.
