@@ -507,7 +507,7 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
   int _tabIndex = 0;
   final _mapKey = GlobalKey();
   final _headerKey = GlobalKey();
-  final _homePanelKey = GlobalKey();
+  GlobalKey _homePanelKey = GlobalKey();
   EdgeInsets _mapOcclusion = EdgeInsets.zero;
 
   void _measureMapViewport() {
@@ -649,7 +649,10 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
                         DosBottomNavItem(
                           icon: Icons.home_rounded,
                           label: l10n.navTaxi,
-                          onTap: () => setState(() => _tabIndex = 0),
+                          onTap: () => setState(() {
+                            if (_tabIndex != 0) _homePanelKey = GlobalKey();
+                            _tabIndex = 0;
+                          }),
                         ),
                         DosBottomNavItem(
                           icon: Icons.bar_chart_rounded,

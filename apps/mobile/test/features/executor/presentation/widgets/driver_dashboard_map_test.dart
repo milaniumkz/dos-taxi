@@ -1,3 +1,4 @@
+import 'package:dos_mobile/features/order_history/domain/repositories/order_history_repository.dart';
 import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
@@ -38,6 +39,10 @@ void main() {
         final status = _Status();
         final incoming = _Incoming();
         final repository = _Repository();
+        when(() => repository.fetchOrderHistory(limit: 50)).thenAnswer(
+          (_) async =>
+              const Right(OrderHistoryPage(items: [], nextCursor: null)),
+        );
         final pending = Completer<Either<Failure, DriverBonusProgress>>();
         serviceLocator.registerSingleton<ExecutorRepository>(repository);
         when(
@@ -120,6 +125,10 @@ void main() {
             ),
           ),
         );
+        await check();
+        await tester.tap(find.byIcon(Icons.bar_chart_rounded));
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.tap(find.byIcon(Icons.home_rounded));
         await check();
         await tester.pumpWidget(const SizedBox());
       },
