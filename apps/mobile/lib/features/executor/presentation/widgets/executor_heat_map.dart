@@ -9,9 +9,11 @@ class ExecutorHeatMap extends StatefulWidget {
   const ExecutorHeatMap({
     required this.currentLocation,
     this.recenterRequestId = 0,
+    this.viewportOcclusion = EdgeInsets.zero,
     super.key,
   });
 
+  final EdgeInsets viewportOcclusion;
   final LatLng currentLocation;
   final int recenterRequestId;
 
@@ -26,7 +28,8 @@ class _ExecutorHeatMapState extends State<ExecutorHeatMap> {
   void didUpdateWidget(covariant ExecutorHeatMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_isSamePoint(oldWidget.currentLocation, widget.currentLocation) &&
-        oldWidget.recenterRequestId == widget.recenterRequestId) {
+        oldWidget.recenterRequestId == widget.recenterRequestId &&
+        oldWidget.viewportOcclusion == widget.viewportOcclusion) {
       return;
     }
 
@@ -34,8 +37,26 @@ class _ExecutorHeatMapState extends State<ExecutorHeatMap> {
       if (!mounted) {
         return;
       }
-      _mapController.move(widget.currentLocation, _mapController.camera.zoom);
+      _recenter();
     });
+  }
+
+  void _recenter() {
+    final padding = widget.viewportOcclusion;
+    _mapController.move(
+      widget.currentLocation,
+      _mapController.camera.zoom,
+      offset: Offset(
+        (padding.left - padding.right) / 2,
+        (padding.top - padding.bottom) / 2,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
   @override
@@ -47,6 +68,7 @@ class _ExecutorHeatMapState extends State<ExecutorHeatMap> {
             child: FlutterMap(
               mapController: _mapController,
               options: MapOptions(
+                onMapReady: _recenter,
                 initialCenter: widget.currentLocation,
                 initialZoom: 15,
                 interactionOptions: const InteractionOptions(

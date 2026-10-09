@@ -113,7 +113,16 @@ fi
 docker compose --env-file .env -f docker-compose.yml build api admin
 run_db_migrations="$(awk -F= '$1 == "RUN_DB_MIGRATIONS" { print $2 }' .env 2>/dev/null | tail -n 1 | tr -d '\r\"' | tr -d "'")"
 if [[ "${run_db_migrations:-true}" == "true" ]]; then
-  scripts/migrate.sh
+  # Avoid legacy order/bonus writes while financial uniqueness rules change.
+  # Images are already built, keeping this pause limited to migration/startup.
+  docker compose --env-file .env -f docker-compose.yml stop api
+  if scripts/migrate.sh; then
+    :
+  else
+    migration_status=$?
+    docker compose --env-file .env -f docker-compose.yml start api || true
+    exit "$migration_status"
+  fi
 fi
 docker compose --env-file .env -f docker-compose.yml up -d api admin nginx
 

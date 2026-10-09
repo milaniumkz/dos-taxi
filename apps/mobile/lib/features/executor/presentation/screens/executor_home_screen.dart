@@ -505,6 +505,35 @@ class _ExecutorDashboardScreen extends StatefulWidget {
 
 class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
   int _tabIndex = 0;
+  final _mapKey = GlobalKey();
+  final _headerKey = GlobalKey();
+  GlobalKey _homePanelKey = GlobalKey();
+  EdgeInsets _mapOcclusion = EdgeInsets.zero;
+
+  void _measureMapViewport() {
+    if (!mounted || _tabIndex != 0) return;
+    final map = _mapKey.currentContext?.findRenderObject();
+    final header = _headerKey.currentContext?.findRenderObject();
+    final panel = _homePanelKey.currentContext?.findRenderObject();
+    if (map is! RenderBox ||
+        header is! RenderBox ||
+        panel is! RenderBox ||
+        !map.hasSize ||
+        !panel.hasSize) {
+      return;
+    }
+    final origin = map.localToGlobal(Offset.zero);
+    final top =
+        (header.localToGlobal(Offset(0, header.size.height)).dy -
+                origin.dy +
+                AppSpacing.sm)
+            .clamp(0.0, map.size.height);
+    final bottom =
+        (map.size.height - (panel.localToGlobal(Offset.zero).dy - origin.dy))
+            .clamp(0.0, map.size.height - top);
+    final next = EdgeInsets.only(top: top, bottom: bottom);
+    if (next != _mapOcclusion) setState(() => _mapOcclusion = next);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -517,118 +546,137 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
       return const _ExecutorLoadingScreen();
     }
 
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureMapViewport());
+
     final heartbeatLabel = statusState.lastPresenceAt == null
         ? '—'
         : AppFormatters.formatTime(context, statusState.lastPresenceAt!);
 
-    return Scaffold(
-      backgroundColor: AppColors.darkBackground,
-      body: Stack(
-        children: [
-          if (_tabIndex == 0)
-            Positioned.fill(
-              child: ExecutorHeatMap(
-                currentLocation: statusState.currentLocation,
-                recenterRequestId: statusState.recenterRequestId,
-              ),
-            )
-          else
-            const Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF07090B), Color(0xFF101419)],
+    return NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: (_) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _measureMapViewport(),
+        );
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.darkBackground,
+        body: Stack(
+          children: [
+            if (_tabIndex == 0)
+              Positioned.fill(
+                child: ExecutorHeatMap(
+                  key: _mapKey,
+                  viewportOcclusion: _mapOcclusion,
+                  currentLocation: statusState.currentLocation,
+                  recenterRequestId: statusState.recenterRequestId,
+                ),
+              )
+            else
+              const Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF07090B), Color(0xFF101419)],
+                    ),
                   ),
                 ),
               ),
-            ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const SizedBox(width: 40, height: 40),
-                      const Spacer(),
-                      _OnlineSwitchPill(
-                        isOnline: profile.isOnline,
-                        isBusy:
-                            incomingState.activeOrderSession != null ||
-                            statusState.isUpdatingOnline,
-                        onChanged: (value) => context
-                            .read<ExecutorStatusCubit>()
-                            .updateOnline(value),
-                      ),
-                      const Spacer(),
-                      CircleAvatar(
-                        backgroundColor: AppColors.darkSurface,
-                        child: IconButton(
-                          onPressed: () {
-                            context.read<IncomingOrderCubit>().stopListening();
-                            context
-                                .read<ExecutorStatusCubit>()
-                                .resetLocalSession();
-                            context.read<AuthCubit>().signOut();
-                            context.go(PhoneInputScreen.routePath);
-                          },
-                          icon: const Icon(
-                            Icons.logout_rounded,
-                            color: AppColors.darkText,
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  children: [
+                    Row(
+                      key: _headerKey,
+                      children: [
+                        const SizedBox(width: 40, height: 40),
+                        const Spacer(),
+                        _OnlineSwitchPill(
+                          isOnline: profile.isOnline,
+                          isBusy:
+                              incomingState.activeOrderSession != null ||
+                              statusState.isUpdatingOnline,
+                          onChanged: (value) => context
+                              .read<ExecutorStatusCubit>()
+                              .updateOnline(value),
+                        ),
+                        const Spacer(),
+                        CircleAvatar(
+                          backgroundColor: AppColors.darkSurface,
+                          child: IconButton(
+                            onPressed: () {
+                              context
+                                  .read<IncomingOrderCubit>()
+                                  .stopListening();
+                              context
+                                  .read<ExecutorStatusCubit>()
+                                  .resetLocalSession();
+                              context.read<AuthCubit>().signOut();
+                              context.go(PhoneInputScreen.routePath);
+                            },
+                            icon: const Icon(
+                              Icons.logout_rounded,
+                              color: AppColors.darkText,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: _DriverTabBody(
-                        key: ValueKey(_tabIndex),
-                        tabIndex: _tabIndex,
-                        profile: profile,
-                        heartbeatLabel: heartbeatLabel,
-                        hasActiveOrder:
-                            incomingState.activeOrderSession != null,
-                        onOpenActiveOrder: () =>
-                            context.push(ExecutorActiveOrderScreen.routePath),
+                      ],
+                    ),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        child: _DriverTabBody(
+                          key: ValueKey(_tabIndex),
+                          homePanelKey: _homePanelKey,
+                          tabIndex: _tabIndex,
+                          profile: profile,
+                          heartbeatLabel: heartbeatLabel,
+                          hasActiveOrder:
+                              incomingState.activeOrderSession != null,
+                          onOpenActiveOrder: () =>
+                              context.push(ExecutorActiveOrderScreen.routePath),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  DosBottomNav(
-                    selectedIndex: _tabIndex,
-                    dark: true,
-                    items: [
-                      DosBottomNavItem(
-                        icon: Icons.home_rounded,
-                        label: l10n.navTaxi,
-                        onTap: () => setState(() => _tabIndex = 0),
-                      ),
-                      DosBottomNavItem(
-                        icon: Icons.bar_chart_rounded,
-                        label: l10n.driverEarningsTitle,
-                        onTap: () => setState(() => _tabIndex = 1),
-                      ),
-                      DosBottomNavItem(
-                        icon: Icons.receipt_long_rounded,
-                        label: l10n.driverHistoryTitle,
-                        onTap: () => setState(() => _tabIndex = 2),
-                      ),
-                      DosBottomNavItem(
-                        icon: Icons.person_rounded,
-                        label: l10n.navProfile,
-                        onTap: () => setState(() => _tabIndex = 3),
-                      ),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.sm),
+                    DosBottomNav(
+                      selectedIndex: _tabIndex,
+                      dark: true,
+                      items: [
+                        DosBottomNavItem(
+                          icon: Icons.home_rounded,
+                          label: l10n.navTaxi,
+                          onTap: () => setState(() {
+                            if (_tabIndex != 0) _homePanelKey = GlobalKey();
+                            _tabIndex = 0;
+                          }),
+                        ),
+                        DosBottomNavItem(
+                          icon: Icons.bar_chart_rounded,
+                          label: l10n.driverEarningsTitle,
+                          onTap: () => setState(() => _tabIndex = 1),
+                        ),
+                        DosBottomNavItem(
+                          icon: Icons.receipt_long_rounded,
+                          label: l10n.driverHistoryTitle,
+                          onTap: () => setState(() => _tabIndex = 2),
+                        ),
+                        DosBottomNavItem(
+                          icon: Icons.person_rounded,
+                          label: l10n.navProfile,
+                          onTap: () => setState(() => _tabIndex = 3),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -636,6 +684,7 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
 
 class _DriverTabBody extends StatelessWidget {
   const _DriverTabBody({
+    required this.homePanelKey,
     required this.tabIndex,
     required this.profile,
     required this.heartbeatLabel,
@@ -644,6 +693,7 @@ class _DriverTabBody extends StatelessWidget {
     super.key,
   });
 
+  final Key homePanelKey;
   final int tabIndex;
   final ExecutorProfile profile;
   final String heartbeatLabel;
@@ -663,94 +713,122 @@ class _DriverTabBody extends StatelessWidget {
       default:
         return Align(
           alignment: Alignment.bottomCenter,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FloatingActionButton.small(
-                    heroTag: 'driver-location',
-                    tooltip: l10n.commonCurrentLocation,
-                    backgroundColor: AppColors.surface,
-                    foregroundColor: AppColors.text,
-                    onPressed:
-                        context.watch<ExecutorStatusCubit>().state.isLocating
-                        ? null
-                        : context
-                              .read<ExecutorStatusCubit>()
-                              .centerOnCurrentLocation,
-                    child: context.watch<ExecutorStatusCubit>().state.isLocating
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.my_location_rounded),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                DosCard(
-                  color: AppColors.darkSurface,
-                  borderColor: const Color(0x22FFFFFF),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.driverDashboardTitle,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.darkText,
-                        ),
+          child: _DriverHomePanel(
+            child: SingleChildScrollView(
+              key: homePanelKey,
+              child: SizeChangedLayoutNotifier(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FloatingActionButton.small(
+                        heroTag: 'driver-location',
+                        tooltip: l10n.commonCurrentLocation,
+                        backgroundColor: AppColors.surface,
+                        foregroundColor: AppColors.text,
+                        onPressed:
+                            context
+                                .watch<ExecutorStatusCubit>()
+                                .state
+                                .isLocating
+                            ? null
+                            : context
+                                  .read<ExecutorStatusCubit>()
+                                  .centerOnCurrentLocation,
+                        child:
+                            context
+                                .watch<ExecutorStatusCubit>()
+                                .state
+                                .isLocating
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.my_location_rounded),
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      Row(
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    DosCard(
+                      color: AppColors.darkSurface,
+                      borderColor: const Color(0x22FFFFFF),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _DriverMetric(
-                              label: l10n.driverDashboardBalanceLabel,
-                              value: AppFormatters.formatCurrency(
-                                context,
-                                profile.balance,
-                                currencyCode: profile.cityCurrency,
+                          Text(
+                            l10n.driverDashboardTitle,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(color: AppColors.darkText),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DriverMetric(
+                                  label: l10n.driverDashboardBalanceLabel,
+                                  value: AppFormatters.formatCurrency(
+                                    context,
+                                    profile.balance,
+                                    currencyCode: profile.cityCurrency,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: _DriverMetric(
+                                  label: l10n.driverDashboardHeartbeatLabel,
+                                  value: heartbeatLabel,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: _DriverMetric(
-                              label: l10n.driverDashboardHeartbeatLabel,
-                              value: heartbeatLabel,
+                          const SizedBox(height: AppSpacing.md),
+                          DriverBonusProgressCard(balance: profile.balance),
+                          const SizedBox(height: AppSpacing.md),
+                          if (hasActiveOrder)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: onOpenActiveOrder,
+                                child: Text(
+                                  l10n.driverDashboardOpenActiveOrder,
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              l10n.driverDashboardWaitingOffer,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.darkMuted),
                             ),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      DriverBonusProgressCard(balance: profile.balance),
-                      const SizedBox(height: AppSpacing.md),
-                      if (hasActiveOrder)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: onOpenActiveOrder,
-                            child: Text(l10n.driverDashboardOpenActiveOrder),
-                          ),
-                        )
-                      else
-                        Text(
-                          l10n.driverDashboardWaitingOffer,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppColors.darkMuted),
-                        ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );
     }
   }
+}
+
+/// Keep a usable map area on small screens and when accessibility text grows.
+class _DriverHomePanel extends StatelessWidget {
+  const _DriverHomePanel({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.65),
+      child: child,
+    ),
+  );
 }
 
 class _DriverEarningsTab extends StatelessWidget {

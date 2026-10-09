@@ -1,3 +1,7 @@
+import {
+  driverBonusDay,
+  driverBonusTimezone,
+} from "../executors/driver-bonus-day";
 import { DeliveryStatus, OrderStatus, ServiceType } from "@dos/shared-types";
 import {
   BadRequestException,
@@ -8,7 +12,7 @@ import {
   forwardRef,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { In, Repository } from "typeorm";
+import { And, MoreThanOrEqual, LessThan, In, Repository } from "typeorm";
 
 import { CityEntity } from "../admin/entities/city.entity";
 import { DeliveryDetailEntity } from "../delivery/entities/delivery-detail.entity";
@@ -891,19 +895,7 @@ export class OrdersService {
       return;
     }
 
-    const completedOrders = await this.ordersRepository.count({
-      where: {
-        executorId: order.executorId,
-        status: OrderStatus.COMPLETED,
-      },
-    });
-    const milestone =
-      Math.floor(completedOrders / settings.ordersRequired) *
-      settings.ordersRequired;
-    if (milestone <= 0 || completedOrders < milestone) {
-      return;
-    }
-
+    const milestone = settings.ordersRequired;
     const credited = await this.executorsRepository.manager.transaction(
       async (manager) => {
         const executors = manager.getRepository(ExecutorEntity);
@@ -912,11 +904,29 @@ export class OrdersService {
           lock: { mode: "pessimistic_write" },
         });
         if (!executor) return null;
+        const city = executor.cityId
+          ? await manager
+              .getRepository(CityEntity)
+              .findOneBy({ id: executor.cityId })
+          : null;
+        const day = await driverBonusDay(
+          manager,
+          driverBonusTimezone(city?.timezone),
+          order.completedAt ?? new Date(),
+        );
+        const completedOrders = await manager.getRepository(OrderEntity).count({
+          where: {
+            executorId: executor.id,
+            status: OrderStatus.COMPLETED,
+            completedAt: And(MoreThanOrEqual(day.start), LessThan(day.end)),
+          },
+        });
+        if (completedOrders < milestone) return null;
         const payouts = manager.getRepository(DriverBonusPayoutEntity);
         const previous = await payouts.findOne({
           where: {
             executorId: executor.id,
-            thresholdCompletedOrders: milestone,
+            bonusDate: day.day,
           },
         });
         if (previous) return null;
@@ -925,6 +935,7 @@ export class OrdersService {
             executorId: executor.id,
             orderId: order.id,
             thresholdCompletedOrders: milestone,
+            bonusDate: day.day,
             amount: bonusAmount.toFixed(2),
           }),
         );
@@ -933,7 +944,13 @@ export class OrdersService {
           "balance",
           bonusAmount.toFixed(2),
         );
-        return executors.findOne({ where: { id: executor.id } });
+        return {
+          executor: await executors.findOneOrFail({
+            where: { id: executor.id },
+          }),
+          completedOrders,
+          bonusDate: day.day,
+        };
       },
     );
     if (!credited) return;
@@ -944,11 +961,12 @@ export class OrdersService {
       order.executorId,
       {
         source: "driver_completion_bonus_paid",
-        executorId: credited.id,
-        completedOrders,
+        executorId: credited.executor.id,
+        bonusDate: credited.bonusDate,
+        completedOrders: credited.completedOrders,
         thresholdCompletedOrders: milestone,
         bonusAmount,
-        balanceAfter: credited.balance,
+        balanceAfter: credited.executor.balance,
       },
     );
   }

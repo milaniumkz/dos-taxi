@@ -1,3 +1,4 @@
+import { driverBonusDay } from "../../src/modules/executors/driver-bonus-day";
 import { randomUUID } from "node:crypto";
 import {
   Currency,
@@ -167,44 +168,38 @@ describe("Promo redemption and driver bonus progress", () => {
     );
     client = await db.getRepository(UserEntity).save({ phone: "+77000000101" });
     driver = await db.getRepository(UserEntity).save({ phone: "+77000000102" });
-    city = await db
-      .getRepository(CityEntity)
-      .save({
-        nameRu: "Алматы",
-        nameKk: "Алматы",
-        countryCode: "KZ",
-        currency: Currency.KZT,
-        timezone: "Asia/Almaty",
-        isActive: true,
-      });
+    city = await db.getRepository(CityEntity).save({
+      nameRu: "Алматы",
+      nameKk: "Алматы",
+      countryCode: "KZ",
+      currency: Currency.KZT,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    });
     pricing.estimate.mockResolvedValue(estimate);
     dispatch.enqueueDispatchOrder.mockClear();
   });
   async function coupon(values: Partial<PromoCodeEntity> = {}) {
-    return db
-      .getRepository(PromoCodeEntity)
-      .save({
-        code: "WELCOME",
-        discountType: "fixed",
-        discountValue: "200",
-        isActive: true,
-        maxUses: null,
-        validTo: null,
-        ...values,
-      });
+    return db.getRepository(PromoCodeEntity).save({
+      code: "WELCOME",
+      discountType: "fixed",
+      discountValue: "200",
+      isActive: true,
+      maxUses: null,
+      validTo: null,
+      ...values,
+    });
   }
   function draft() {
-    return db
-      .getRepository(OrderEntity)
-      .create({
-        clientId: client.id,
-        cityId: city.id,
-        serviceType: ServiceType.TAXI,
-        status: OrderStatus.DRAFT,
-        currency: Currency.KZT,
-        estimatedPrice: "1200.00",
-        paymentMethod: PaymentMethod.CASH,
-      });
+    return db.getRepository(OrderEntity).create({
+      clientId: client.id,
+      cityId: city.id,
+      serviceType: ServiceType.TAXI,
+      status: OrderStatus.DRAFT,
+      currency: Currency.KZT,
+      estimatedPrice: "1200.00",
+      paymentMethod: PaymentMethod.CASH,
+    });
   }
   function body() {
     return {
@@ -287,16 +282,14 @@ describe("Promo redemption and driver bonus progress", () => {
       expect(result.status).toBe(400);
       expect(result.body.code).toBe(test.code);
       expect(await db.getRepository(OrderEntity).count()).toBe(before);
-      await db
-        .getRepository(OrderEntity)
-        .delete({
-          promoCodeId:
-            (
-              await db
-                .getRepository(PromoCodeEntity)
-                .findOne({ where: { code: "WELCOME" } })
-            )?.id ?? randomUUID(),
-        });
+      await db.getRepository(OrderEntity).delete({
+        promoCodeId:
+          (
+            await db
+              .getRepository(PromoCodeEntity)
+              .findOne({ where: { code: "WELCOME" } })
+          )?.id ?? randomUUID(),
+      });
       await db.getRepository(PromoCodeEntity).delete({ code: "WELCOME" });
     }
     expect(dispatch.enqueueDispatchOrder).not.toHaveBeenCalled();
@@ -320,12 +313,10 @@ describe("Promo redemption and driver bonus progress", () => {
   it("preserves the redeemed discount when the taxi meter calculates the final fare", async () => {
     await coupon();
     const order = await promos.saveOrder(draft(), "WELCOME");
-    await db
-      .getRepository(OrderEntity)
-      .update(order.id, {
-        status: OrderStatus.IN_PROGRESS,
-        startedAt: new Date(),
-      });
+    await db.getRepository(OrderEntity).update(order.id, {
+      status: OrderStatus.IN_PROGRESS,
+      startedAt: new Date(),
+    });
     await db
       .getRepository(RoutePointEntity)
       .save(routePoints.map((point) => ({ ...point, orderId: order.id })));
@@ -340,37 +331,30 @@ describe("Promo redemption and driver bonus progress", () => {
     expect(completed.discountAmount).toBe("200.00");
   });
   it("returns current bonus conditions and counts only the driver's completed orders", async () => {
-    const executor = await db
-      .getRepository(ExecutorEntity)
-      .save({
-        userId: driver.id,
-        cityId: city.id,
-        executorType: ExecutorType.DRIVER,
-      });
-    await db
-      .getRepository(DriverBonusSettingEntity)
-      .save({
-        key: "default",
-        isEnabled: true,
-        ordersRequired: 20,
-        bonusAmount: "5000",
-      });
-    await db
-      .getRepository(OrderEntity)
-      .save(
-        Array.from({ length: 7 }, () => ({
-          ...draft(),
-          executorId: executor.id,
-          status: OrderStatus.COMPLETED,
-        })),
-      );
-    await db
-      .getRepository(OrderEntity)
-      .save({
+    const executor = await db.getRepository(ExecutorEntity).save({
+      userId: driver.id,
+      cityId: city.id,
+      executorType: ExecutorType.DRIVER,
+    });
+    await db.getRepository(DriverBonusSettingEntity).save({
+      key: "default",
+      isEnabled: true,
+      ordersRequired: 20,
+      bonusAmount: "5000",
+    });
+    await db.getRepository(OrderEntity).save(
+      Array.from({ length: 7 }, () => ({
         ...draft(),
         executorId: executor.id,
-        status: OrderStatus.CANCELLED_CLIENT,
-      });
+        status: OrderStatus.COMPLETED,
+        completedAt: new Date(),
+      })),
+    );
+    await db.getRepository(OrderEntity).save({
+      ...draft(),
+      executorId: executor.id,
+      status: OrderStatus.CANCELLED_CLIENT,
+    });
     const result = await request(app.getHttpServer())
       .get("/api/v1/executor/bonuses/progress")
       .set("x-user-id", driver.id);
@@ -452,13 +436,44 @@ describe("Promo redemption and driver bonus progress", () => {
     ).toBe("6460.00");
     expect(await db.getRepository(DriverBonusPayoutEntity).count()).toBe(1);
   });
-  it("starts the next bonus cycle at a completed milestone", async () => {
+  it("shows a completed daily target without starting another same-day cycle", async () => {
+    const executor = await db.getRepository(ExecutorEntity).save({
+      userId: driver.id,
+      cityId: city.id,
+      executorType: ExecutorType.DRIVER,
+    });
+    await db.getRepository(DriverBonusSettingEntity).save({
+      key: "default",
+      isEnabled: true,
+      ordersRequired: 2,
+      bonusAmount: "700",
+    });
+    await db.getRepository(OrderEntity).save(
+      Array.from({ length: 2 }, () => ({
+        ...draft(),
+        executorId: executor.id,
+        status: OrderStatus.COMPLETED,
+        completedAt: new Date(),
+      })),
+    );
+    const result = await request(app.getHttpServer())
+      .get("/api/v1/executor/bonuses/progress")
+      .set("x-user-id", driver.id);
+    expect(result.body).toMatchObject({
+      completedInCycle: 2,
+      remainingOrders: 0,
+      totalCompletedOrders: 2,
+      nextThreshold: 2,
+    });
+  });
+  it("does not carry yesterday's orders forward and pays at most once each day", async () => {
     const executor = await db
       .getRepository(ExecutorEntity)
       .save({
         userId: driver.id,
         cityId: city.id,
         executorType: ExecutorType.DRIVER,
+        balance: "1000.00",
       });
     await db
       .getRepository(DriverBonusSettingEntity)
@@ -466,26 +481,100 @@ describe("Promo redemption and driver bonus progress", () => {
         key: "default",
         isEnabled: true,
         ordersRequired: 2,
-        bonusAmount: "700",
+        bonusAmount: "700.00",
       });
+    const day = await driverBonusDay(db.manager, city.timezone, new Date());
+    const yesterday = new Date(new Date(day.start).getTime() - 1000);
+    const old = await db
+      .getRepository(OrderEntity)
+      .save({
+        ...draft(),
+        executorId: executor.id,
+        status: OrderStatus.COMPLETED,
+        completedAt: yesterday,
+      });
+    const oldDay = await driverBonusDay(db.manager, city.timezone, yesterday);
     await db
+      .getRepository(DriverBonusPayoutEntity)
+      .save({
+        executorId: executor.id,
+        orderId: old.id,
+        thresholdCompletedOrders: 2,
+        bonusDate: oldDay.day,
+        amount: "700.00",
+      });
+    const rides = await db
       .getRepository(OrderEntity)
       .save(
-        Array.from({ length: 2 }, () => ({
+        Array.from({ length: 3 }, () => ({
           ...draft(),
           executorId: executor.id,
-          status: OrderStatus.COMPLETED,
+          status: OrderStatus.IN_PROGRESS,
+          startedAt: new Date(),
         })),
       );
-    const result = await request(app.getHttpServer())
-      .get("/api/v1/executor/bonuses/progress")
-      .set("x-user-id", driver.id);
-    expect(result.body).toMatchObject({
-      completedInCycle: 0,
-      remainingOrders: 2,
-      totalCompletedOrders: 2,
-      nextThreshold: 4,
+    await db
+      .getRepository(RoutePointEntity)
+      .save(
+        rides.flatMap((ride) =>
+          routePoints.map((point) => ({ ...point, orderId: ride.id })),
+        ),
+      );
+    await orders.transition(rides[0].id, OrderStatus.COMPLETED, client.id, {
+      actualDistanceMeters: 2000,
     });
+    expect(await db.getRepository(DriverBonusPayoutEntity).count()).toBe(1);
+    const progress = await request(app.getHttpServer())
+      .get("/api/v1/executor/bonuses/progress")
+      .set("x-user-id", driver.id)
+      .expect(200);
+    expect(progress.body).toMatchObject({
+      totalCompletedOrders: 1,
+      completedInCycle: 1,
+      remainingOrders: 1,
+      bonusDate: day.day,
+    });
+    await orders.transition(rides[1].id, OrderStatus.COMPLETED, client.id, {
+      actualDistanceMeters: 2000,
+    });
+    await orders.transition(rides[2].id, OrderStatus.COMPLETED, client.id, {
+      actualDistanceMeters: 2000,
+    });
+    expect(await db.getRepository(DriverBonusPayoutEntity).count()).toBe(2);
+    expect(
+      (
+        await db
+          .getRepository(ExecutorEntity)
+          .findOneByOrFail({ id: executor.id })
+      ).balance,
+    ).toBe("1340.00");
+  });
+  it("uses local calendar boundaries, including days of 23 and 25 hours", async () => {
+    const spring = await driverBonusDay(
+      db.manager,
+      "Europe/Berlin",
+      new Date("2026-03-29T12:00:00Z"),
+    );
+    const autumn = await driverBonusDay(
+      db.manager,
+      "Europe/Berlin",
+      new Date("2026-10-25T12:00:00Z"),
+    );
+    expect(
+      new Date(spring.end).getTime() - new Date(spring.start).getTime(),
+    ).toBe(23 * 3600000);
+    expect(
+      new Date(autumn.end).getTime() - new Date(autumn.start).getTime(),
+    ).toBe(25 * 3600000);
+    const local = await driverBonusDay(
+      db.manager,
+      "Asia/Almaty",
+      new Date("2026-10-08T19:00:00Z"),
+    );
+    expect(local.day).toBe("2026-10-09");
+    expect(new Date(local.start).toISOString()).toBe(
+      "2026-10-08T19:00:00.000Z",
+    );
   });
   it("persists the selected special tariff instead of replacing it with the driver's car class", async () => {
     const created = await orders.createOrder(client.id, {
@@ -501,14 +590,12 @@ describe("Promo redemption and driver bonus progress", () => {
       .getRepository(OrderEntity)
       .findOneByOrFail({ id: created.id });
     expect(stored.carClass).toBe("together");
-    const executor = await db
-      .getRepository(ExecutorEntity)
-      .save({
-        userId: driver.id,
-        cityId: city.id,
-        executorType: ExecutorType.DRIVER,
-        carClass: "economy",
-      });
+    const executor = await db.getRepository(ExecutorEntity).save({
+      userId: driver.id,
+      cityId: city.id,
+      executorType: ExecutorType.DRIVER,
+      carClass: "economy",
+    });
     await db
       .getRepository(OrderEntity)
       .update(created.id, { executorId: executor.id });

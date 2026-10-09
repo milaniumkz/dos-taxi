@@ -1,12 +1,14 @@
 import { Currency, OrderStatus } from "@dos/shared-types";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { And, MoreThanOrEqual, LessThan, Repository } from "typeorm";
 
 import { OrderEntity } from "../orders/entities/order.entity";
 import { DriverBonusProgressDto } from "./dto/driver-bonus-progress.dto";
 import { DriverBonusSettingEntity } from "./entities/driver-bonus-setting.entity";
 import { ExecutorEntity } from "./entities/executor.entity";
+
+import { driverBonusDay, driverBonusTimezone } from "./driver-bonus-day";
 
 @Injectable()
 export class DriverBonusesService {
@@ -30,8 +32,14 @@ export class DriverBonusesService {
         message: "Executor profile not found",
       });
     const setting = await this.settings.findOne({ where: { key: "default" } });
+    const timezone = driverBonusTimezone(executor.city?.timezone);
+    const day = await driverBonusDay(this.orders.manager, timezone, new Date());
     const total = await this.orders.count({
-      where: { executorId: executor.id, status: OrderStatus.COMPLETED },
+      where: {
+        executorId: executor.id,
+        status: OrderStatus.COMPLETED,
+        completedAt: And(MoreThanOrEqual(day.start), LessThan(day.end)),
+      },
     });
     const required = setting?.ordersRequired ?? 0;
     const amount = Number(setting?.bonusAmount ?? 0);
@@ -41,16 +49,18 @@ export class DriverBonusesService {
       Number.isFinite(amount) &&
       amount > 0,
     );
-    const completed = enabled ? total % required : 0;
+    const completed = enabled ? Math.min(total, required) : 0;
     return {
+      bonusDate: day.day,
+      timezone,
       isEnabled: enabled,
       ordersRequired: required,
       bonusAmount: Number.isFinite(amount) ? amount : 0,
       currency: executor.city?.currency ?? Currency.KZT,
       totalCompletedOrders: total,
       completedInCycle: completed,
-      remainingOrders: enabled ? required - completed : 0,
-      nextThreshold: enabled ? total - completed + required : total,
+      remainingOrders: enabled ? Math.max(0, required - completed) : 0,
+      nextThreshold: enabled ? required : total,
     };
   }
 }
