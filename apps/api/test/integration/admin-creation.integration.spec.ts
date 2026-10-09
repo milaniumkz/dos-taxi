@@ -28,7 +28,10 @@ class TestAuth implements CanActivate {
 describe("Admin creation and full staff access", () => {
   let app: INestApplication;
   const booking = { create: jest.fn(async () => ({ id: "order-1" })) };
-  const admin = { createTariff: jest.fn(async () => ({ id: "tariff-1" })) };
+  const admin = {
+    deleteTariff: jest.fn(async () => ({ deleted: true })),
+    createTariff: jest.fn(async () => ({ id: "tariff-1" })),
+  };
   const key = "10000000-0000-4000-8000-000000000001";
   const order = {
     cityId: key,
@@ -54,7 +57,7 @@ describe("Admin creation and full staff access", () => {
   };
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      controllers: [AdminCreationController],
+      controllers: [AdminCreationController, AdminController],
       providers: [
         Reflector,
         RolesGuard,
@@ -101,6 +104,30 @@ describe("Admin creation and full staff access", () => {
           .expect(403);
     },
   );
+  it.each([UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT])(
+    "%s can delete a tariff",
+    async (role) => {
+      await request(app.getHttpServer())
+        .delete(`/api/v1/admin/tariffs/${key}`)
+        .set("x-role", role)
+        .expect(200);
+      expect(admin.deleteTariff).toHaveBeenCalledWith(key, "staff-1");
+    },
+  );
+  it.each([UserRole.CLIENT, UserRole.EXECUTOR])(
+    "%s cannot delete tariffs",
+    async (role) => {
+      await request(app.getHttpServer())
+        .delete(`/api/v1/admin/tariffs/${key}`)
+        .set("x-role", role)
+        .expect(403);
+    },
+  );
+  it("rejects unauthenticated deletion", async () => {
+    await request(app.getHttpServer())
+      .delete(`/api/v1/admin/tariffs/${key}`)
+      .expect(401);
+  });
   it("rejects unauthenticated, invalid recipient, invalid coordinates, and missing idempotency key", async () => {
     await request(app.getHttpServer())
       .post("/api/v1/admin/orders")

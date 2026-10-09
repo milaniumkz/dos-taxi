@@ -437,6 +437,43 @@ export class AdminService {
     return this.getTariff(tariffId);
   }
 
+  async deleteTariff(
+    tariffId: string,
+    actorId: string,
+  ): Promise<{ deleted: boolean }> {
+    return this.dataSource.transaction(async (manager) => {
+      const tariffs = manager.getRepository(TariffEntity);
+      const tariff = await tariffs.findOne({
+        where: { id: tariffId },
+        withDeleted: true,
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!tariff) throw new NotFoundException("TARIFF_NOT_FOUND");
+      if (tariff.deletedAt) return { deleted: true };
+      tariff.isActive = false;
+      tariff.deletedAt = new Date();
+      await tariffs.save(tariff);
+      const actor = await this.resolveAdminActorId(
+        actorId,
+        manager.getRepository(UserEntity),
+      );
+      await manager
+        .getRepository(AdminActivityLogEntity)
+        .save({
+          actorId: actor,
+          action: "tariff.deleted",
+          entityType: "tariff",
+          entityId: tariff.id,
+          metadata: {
+            cityId: tariff.cityId,
+            nameRu: tariff.nameRu,
+            actorSubject: actorId,
+          },
+        });
+      return { deleted: true };
+    });
+  }
+
   async updateTariff(
     tariffId: string,
     actorId: string,

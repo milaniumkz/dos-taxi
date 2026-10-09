@@ -1,8 +1,9 @@
+import { TariffDeletion1710000000033 } from "../../src/database/migrations/1710000000033-TariffDeletion";
 import { randomUUID } from "node:crypto";
 import { Currency, ServiceType } from "@dos/shared-types";
 import { Test } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
-import { DataSource } from "typeorm";
+import { DataSource, IsNull } from "typeorm";
 import { databaseEntities } from "../../src/database/entities";
 import { AdminService } from "../../src/modules/admin/admin.service";
 import { CityEntity } from "../../src/modules/admin/entities/city.entity";
@@ -34,6 +35,10 @@ describe("tariff creation with service and registered admin subjects", () => {
     await db.initialize();
     await db.query(`CREATE SCHEMA "${schema}"`);
     await db.synchronize();
+    const runner = db.createQueryRunner();
+    await runner.query("ALTER TABLE tariffs DROP COLUMN deleted_at");
+    await new TariffDeletion1710000000033().up(runner);
+    await runner.release();
     const module = await Test.createTestingModule({
       providers: [
         AdminService,
@@ -131,11 +136,46 @@ describe("tariff creation with service and registered admin subjects", () => {
       currency: Currency.KZT,
     });
     expect(tariff.createdById).toBe(user.id);
+    const otherCityTariff = await db
+      .getRepository(TariffEntity)
+      .findOneByOrFail({ nameRu: "Тест", createdById: IsNull() });
+    await Promise.all([
+      admin.deleteTariff(tariff.id, user.id),
+      admin.deleteTariff(tariff.id, user.id),
+    ]);
+    expect(
+      await db.getRepository(TariffEntity).findOneBy({ id: tariff.id }),
+    ).toBeNull();
+    expect(
+      (await admin.listTariffs({ cityId: city.id })).some(
+        (row) => row.id === tariff.id,
+      ),
+    ).toBe(false);
+    const retained = await db
+      .getRepository(TariffEntity)
+      .findOne({ where: { id: tariff.id }, withDeleted: true });
+    expect(retained?.deletedAt).toBeInstanceOf(Date);
+    expect(retained?.isActive).toBe(false);
+    expect(retained?.basePrice).toBe(tariff.basePrice);
+    expect(
+      await db
+        .getRepository(TariffEntity)
+        .findOneBy({ id: otherCityTariff.id }),
+    ).not.toBeNull();
+    expect(
+      await db
+        .getRepository(AdminActivityLogEntity)
+        .countBy({ entityId: tariff.id, action: "tariff.deleted" }),
+    ).toBe(1);
+    await expect(
+      admin.updateTariff(tariff.id, user.id, { isActive: true }),
+    ).rejects.toThrow();
+
     expect(
       (
         await db
           .getRepository(AdminActivityLogEntity)
-          .findOneByOrFail({ entityId: tariff.id })
+          .findOneByOrFail({ entityId: tariff.id, action: "tariff.created" })
       ).actorId,
     ).toBe(user.id);
   });

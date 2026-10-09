@@ -2,6 +2,7 @@ import { Currency, ServiceType } from "@dos/shared-types";
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -115,6 +116,9 @@ export class TariffEntity {
 
   @Column({ name: "created_by", type: "uuid", nullable: true })
   createdById!: string | null;
+
+  @DeleteDateColumn({ name: "deleted_at", type: "timestamptz", nullable: true })
+  deletedAt!: Date | null;
 
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;

@@ -105,6 +105,29 @@ describe('PricingService', () => {
     expect(result.currency).toBe(currency);
   });
 
+  it("rejects a deleted tariff even while its price remains in Redis", async () => {
+    citiesRepository.findOne.mockResolvedValue({
+      id: "city-1",
+      currency: Currency.KZT,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    } as CityEntity);
+    redisStoreService.getJson.mockResolvedValue({
+      tariff: { id: "removed-tariff" },
+      vehicleMultiplier: 1,
+    });
+    tariffsRepository.find.mockResolvedValue([]);
+    await expect(
+      pricingService.estimate({
+        cityId: "city-1",
+        serviceType: ServiceType.TAXI,
+        carClass: "economy",
+        distanceMeters: 5000,
+        durationSeconds: 600,
+      }),
+    ).rejects.toMatchObject({ response: { code: "TARIFF_NOT_FOUND" } });
+  });
+
   it.each(['together', 'child'])(
     'requires an explicitly configured %s tariff',
     async (carClass) => {

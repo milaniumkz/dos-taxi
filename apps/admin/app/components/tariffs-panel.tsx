@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DeleteTariffButton } from "./delete-tariff-button";
 
 import { TariffSnapshot } from "../lib/backoffice";
 import {
@@ -99,6 +100,13 @@ export function TariffsPanel({
               </dd>
             </div>
           </dl>
+          {showActions && returnPath ? (
+            <DeleteTariffButton
+              tariff={tariff}
+              locale={locale}
+              returnPath={returnPath}
+            />
+          ) : null}
           {showActions && returnPath ? (
             <form action={toggleTariffActiveAction} className="inline-form">
               <input type="hidden" name="locale" value={locale} />

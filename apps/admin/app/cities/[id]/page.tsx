@@ -266,6 +266,8 @@ export default async function CityDetailPage({
               <div className="button-row"><a className="action-button" href={`/tariffs/new?cityId=${city.id}&lang=${locale}`}>{getCreationLabels(locale).newTariff}</a><a className="action-button action-button--soft" href={`/orders/new?cityId=${city.id}&lang=${locale}`}>{getCreationLabels(locale).newOrder}</a></div>
               <TariffsPanel
                 tariffs={relatedTariffs}
+                showActions
+                returnPath={`/cities/${city.id}?lang=${locale}`}
                 locale={locale}
                 dictionary={dictionary}
               />

@@ -2,6 +2,7 @@ import { UserRole } from "@dos/shared-types";
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -176,6 +177,22 @@ export class AdminController {
   @ApiOkResponse({ type: TariffEntity })
   getTariff(@Param("id") tariffId: string): Promise<TariffEntity> {
     return this.adminService.getTariffDetail(tariffId);
+  }
+
+  @Delete("tariffs/:id")
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPPORT)
+  @ApiOperation({
+    summary:
+      "Remove tariff from new bookings and admin lists, preserving history",
+  })
+  @ApiOkResponse({
+    schema: { type: "object", properties: { deleted: { type: "boolean" } } },
+  })
+  deleteTariff(
+    @CurrentUser() user: JwtPayload,
+    @Param("id") tariffId: string,
+  ): Promise<{ deleted: boolean }> {
+    return this.adminService.deleteTariff(tariffId, user.sub);
   }
 
   @Patch("tariffs/:id")
