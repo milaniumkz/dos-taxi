@@ -1071,11 +1071,18 @@ export class OrdersService {
           if (this.pickupAddressLookups.get(key) === lookup)
             this.pickupAddressLookups.delete(key);
         }
-        const normalize = (value: string) =>
-          value
+        const normalize = (value: string) => {
+          const normalized = value
             .toLocaleLowerCase("ru")
             .replace(/^(город|г\.|пос[её]лок|п\.|село)\s+/u, "")
             .replace(/[^\p{L}\p{N}]/gu, "");
+          // Common official Russian/Kazakh locality names used by map providers.
+          const aliases: Record<string, string> = {
+            аральск: "арал",
+            әйтекеби: "айтекеби",
+          };
+          return aliases[normalized] ?? normalized;
+        };
         const localities = [address.title, address.subtitle].flatMap((value) =>
           value.split(",").map(normalize),
         );

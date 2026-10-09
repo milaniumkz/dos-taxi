@@ -128,7 +128,8 @@ describe("OrdersService.transition", () => {
   });
 
   it.each([
-    ["Аральск", "Арал", "Арал", 46.796, 61.665],
+    ["Аральск", "Аральск", "Арал", 46.796, 61.665],
+    ["Айтеке-Би", "Айтеке-Би", "Әйтеке би", 45.847, 62.156],
     ["Айтеке-Би", "Әйтеке би", "посёлок Айтеке Би", 45.847, 62.156],
   ])(
     "estimates pickup in unzoned %s using its own tariffs, sharing concurrent geocoding",
