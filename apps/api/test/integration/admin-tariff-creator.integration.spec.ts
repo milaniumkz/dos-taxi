@@ -1,3 +1,7 @@
+import { ConfigService } from "@nestjs/config";
+import { PricingService } from "../../src/modules/pricing/pricing.service";
+import { CurrencyService } from "../../src/modules/pricing/currency.service";
+import { RedisStoreService } from "../../src/shared/cache/redis-store.service";
 import { TariffDeletion1710000000033 } from "../../src/database/migrations/1710000000033-TariffDeletion";
 import { randomUUID } from "node:crypto";
 import { Currency, ServiceType } from "@dos/shared-types";
@@ -111,6 +115,71 @@ describe("tariff creation with service and registered admin subjects", () => {
       }),
     ).toBe(1);
   });
+  it("hides removed classes from estimates despite economy fallback and stale cache, and permits intentional recreation", async () => {
+    const subject = randomUUID();
+    const city = await admin.createCity(subject, {
+      nameRu: "Тарифы",
+      nameKk: "Тарифтер",
+      countryCode: "KZ",
+      currency: Currency.KZT,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    });
+    const tariffs = db.getRepository(TariffEntity);
+    const economy = await tariffs.findOneByOrFail({
+      cityId: city.id,
+      vehicleClass: "economy",
+    });
+    const cached = { tariff: economy, vehicleMultiplier: 1.4 };
+    const cache = {
+      getJson: jest.fn(async (key: string) =>
+        key.startsWith("pricing:") ? cached : null,
+      ),
+      setJson: jest.fn(),
+    } as unknown as RedisStoreService;
+    const pricing = new PricingService(
+      db.getRepository(CityEntity),
+      tariffs,
+      cache,
+      { getRate: jest.fn(async () => 1) } as unknown as CurrencyService,
+      new ConfigService(),
+    );
+    const params = {
+      cityId: city.id,
+      serviceType: ServiceType.TAXI,
+      distanceMeters: 1000,
+      durationSeconds: 120,
+    };
+    for (const carClass of ["comfort", "comfort_plus", "business"]) {
+      const tariff = await tariffs.findOneByOrFail({
+        cityId: city.id,
+        vehicleClass: carClass,
+      });
+      await admin.deleteTariff(tariff.id, subject);
+      await expect(
+        pricing.estimate({ ...params, carClass }),
+      ).rejects.toMatchObject({ response: { code: "TARIFF_NOT_FOUND" } });
+    }
+    expect(
+      (await pricing.estimate({ ...params, carClass: "economy" })).tariffId,
+    ).toBe(economy.id);
+    const recreated = await admin.createTariff(subject, {
+      cityId: city.id,
+      serviceType: ServiceType.TAXI,
+      vehicleClass: "comfort",
+      nameRu: "Новый комфорт",
+      nameKk: "Жаңа комфорт",
+      basePrice: 500,
+      pricePerKm: 100,
+      pricePerMinute: 20,
+      minimumPrice: 500,
+      currency: Currency.KZT,
+    });
+    expect(
+      (await pricing.estimate({ ...params, carClass: "comfort" })).tariffId,
+    ).toBe(recreated.id);
+  });
+
   it("retains genuine user attribution for registered admins", async () => {
     const user = await db
       .getRepository(UserEntity)
