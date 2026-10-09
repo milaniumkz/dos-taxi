@@ -4,7 +4,7 @@ async function main() {
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   await db.query('BEGIN READ ONLY');
-  const cities = (await db.query('SELECT id, name_ru, is_active, currency, service_zone FROM cities ORDER BY created_at')).rows;
+  const cities = (await db.query('SELECT id, name_ru, name_kk, is_active, currency, service_zone FROM cities ORDER BY created_at')).rows;
   const promos = (await db.query("SELECT code, discount_type, discount_value, is_active, valid_to, max_uses, (SELECT count(*) FROM orders WHERE promo_code_id = promo_codes.id) AS uses FROM promo_codes WHERE upper(code) = 'DOSTAXI2026'")).rows;
   console.log('PROMO', JSON.stringify(promos));
   const tariffs = (await db.query('SELECT city_id, service_type, vehicle_class, currency, is_active FROM tariffs WHERE is_active = true')).rows;
