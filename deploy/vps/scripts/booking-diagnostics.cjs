@@ -9,6 +9,8 @@ async function main() {
   console.log('PROMO', JSON.stringify(promos));
   const tariffs = (await db.query('SELECT city_id, service_type, vehicle_class, currency, is_active FROM tariffs WHERE is_active = true')).rows;
   console.log('CITIES', JSON.stringify(cities.map(city => ({ ...city, tariffs: tariffs.filter(t => t.city_id === city.id) }))));
+  const versions = (await db.query("SELECT t.id, c.name_ru AS city, t.vehicle_class, t.name_ru, t.currency, t.is_active, t.deleted_at, t.created_at FROM tariffs t JOIN cities c ON c.id=t.city_id WHERE t.service_type='taxi' ORDER BY c.name_ru, t.vehicle_class, t.created_at DESC")).rows;
+  console.log('TARIFF_VERSIONS', JSON.stringify(versions));
   const pool = (await db.query("SELECT e.city_id, e.executor_type, e.is_online, e.verification_status, count(*) AS accounts, count(*) FILTER (WHERE NOT u.is_blocked AND e.balance >= 100) AS eligible_accounts FROM executors e JOIN users u ON u.id = e.user_id GROUP BY e.city_id, e.executor_type, e.is_online, e.verification_status")).rows;
   console.log('DISPATCH_POOL', JSON.stringify(pool));
   const statuses = (await db.query("SELECT status, count(*) AS orders FROM orders WHERE created_at > now() - interval '1 day' GROUP BY status")).rows;
