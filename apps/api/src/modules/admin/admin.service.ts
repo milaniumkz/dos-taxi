@@ -270,6 +270,7 @@ export class AdminService {
       return;
     }
 
+    const createdById = await this.resolveAdminActorId(actorId);
     await this.tariffsRepository.save(
       defaults.map((tariff) =>
         this.tariffsRepository.create({
@@ -290,7 +291,7 @@ export class AdminService {
           validFrom,
           validTo: null,
           isActive: true,
-          createdById: actorId,
+          createdById,
         }),
       ),
     );
@@ -390,6 +391,10 @@ export class AdminService {
           }
         }
       }
+      const createdById = await this.resolveAdminActorId(
+        actorId,
+        manager.getRepository(UserEntity),
+      );
       const tariff = await repository.save(
         repository.create({
           cityId: city.id,
@@ -409,15 +414,20 @@ export class AdminService {
           validFrom,
           validTo,
           isActive: dto.isActive !== false,
-          createdById: actorId,
+          createdById,
         }),
       );
       await manager.getRepository(AdminActivityLogEntity).save({
-        actorId,
+        actorId: createdById,
         action: "tariff.created",
         entityType: "tariff",
         entityId: tariff.id,
-        metadata: { cityId: city.id, requestKey, payloadHash },
+        metadata: {
+          cityId: city.id,
+          requestKey,
+          payloadHash,
+          actorSubject: actorId,
+        },
       });
       return tariff;
     });
@@ -2402,8 +2412,11 @@ export class AdminService {
     );
   }
 
-  private async resolveAdminActorId(actorId: string): Promise<string | null> {
-    const exists = await this.usersRepository.exists({
+  private async resolveAdminActorId(
+    actorId: string,
+    users = this.usersRepository,
+  ): Promise<string | null> {
+    const exists = await users.exists({
       where: { id: actorId },
     });
     return exists ? actorId : null;
