@@ -770,6 +770,7 @@ export class OrdersService {
       carClass,
       distanceMeters: actualDistanceMeters,
       durationSeconds: actualDurationSeconds,
+      allowLegacyFallback: true,
     });
 
     order.distanceMeters = actualDistanceMeters;

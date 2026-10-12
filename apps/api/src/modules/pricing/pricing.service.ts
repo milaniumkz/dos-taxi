@@ -23,6 +23,8 @@ type EstimatePricingParams = {
   declaredValue?: number;
   cashOnDelivery?: number;
   requestedAt?: Date;
+  /** Internal completion compatibility; never forwarded from booking DTOs. */
+  allowLegacyFallback?: boolean;
 };
 
 type TariffSnapshot = {
@@ -83,6 +85,7 @@ export class PricingService {
       serviceType: params.serviceType,
       vehicleClass: requestedVehicleClass,
       requestedAt,
+      allowLegacyFallback: params.allowLegacyFallback,
     });
 
     const baseFare = this.calculateBaseFare(
@@ -155,6 +158,7 @@ export class PricingService {
         durationSeconds: 0,
       }),
       requestedAt,
+      allowLegacyFallback: true,
     });
     const percent = Number(resolvedTariff.tariff.commissionPercent);
     const fixed = Number(resolvedTariff.tariff.commissionFixed);
@@ -256,11 +260,13 @@ export class PricingService {
     serviceType,
     vehicleClass,
     requestedAt,
+    allowLegacyFallback = false,
   }: {
     cityId: string;
     serviceType: ServiceType;
     vehicleClass: string | null;
     requestedAt: Date;
+    allowLegacyFallback?: boolean;
   }): Promise<ResolvedTariff> {
     const cacheKey = `pricing:tariff:v2:${cityId}:${serviceType}:${vehicleClass ?? "default"}`;
     const cached =
@@ -291,7 +297,7 @@ export class PricingService {
     // contains a synthetic estimate derived from another class.
     if (
       !exactMatch &&
-      (serviceType === ServiceType.TAXI ||
+      ((serviceType === ServiceType.TAXI && !allowLegacyFallback) ||
         candidates.some(
           (tariff) =>
             tariff.deletedAt && (tariff.vehicleClass ?? null) === vehicleClass,
@@ -318,6 +324,29 @@ export class PricingService {
       };
       await this.redisStoreService.setJson(cacheKey, result, 300);
       return result;
+    }
+
+    if (
+      allowLegacyFallback &&
+      serviceType === ServiceType.TAXI &&
+      vehicleClass !== "together" &&
+      vehicleClass !== "child"
+    ) {
+      const fallbackTaxiTariff =
+        activeCandidates.find((tariff) => tariff.vehicleClass === "economy") ??
+        activeCandidates.find(
+          (tariff) =>
+            tariff.vehicleClass !== "together" &&
+            tariff.vehicleClass !== "child",
+        );
+      if (fallbackTaxiTariff) {
+        const result = {
+          tariff: this.toTariffSnapshot(fallbackTaxiTariff),
+          vehicleMultiplier: this.getTaxiClassMultiplier(vehicleClass),
+        };
+        await this.redisStoreService.setJson(cacheKey, result, 300);
+        return result;
+      }
     }
 
     if (
@@ -362,6 +391,22 @@ export class PricingService {
       createdById: tariff.createdById,
       createdAt: tariff.createdAt,
     };
+  }
+
+  private getTaxiClassMultiplier(vehicleClass: string | null): number {
+    switch (vehicleClass) {
+      case "business":
+        return 1.8;
+      case "comfort_plus":
+        return 1.55;
+      case "comfort":
+        return 1.35;
+      case "economy":
+      case null:
+        return 1;
+      default:
+        return 1.15;
+    }
   }
 
   private isDriverRideService(serviceType: ServiceType): boolean {
