@@ -287,14 +287,15 @@ export class PricingService {
     const exactMatch = activeCandidates.find(
       (tariff) => (tariff.vehicleClass ?? null) === vehicleClass,
     );
-    // A removed class must not be recreated implicitly from another class's price,
-    // including cached fallback estimates created before deletion.
+    // Taxi classes must have their own active tariff, including when Redis still
+    // contains a synthetic estimate derived from another class.
     if (
       !exactMatch &&
-      candidates.some(
-        (tariff) =>
-          tariff.deletedAt && (tariff.vehicleClass ?? null) === vehicleClass,
-      )
+      (serviceType === ServiceType.TAXI ||
+        candidates.some(
+          (tariff) =>
+            tariff.deletedAt && (tariff.vehicleClass ?? null) === vehicleClass,
+        ))
     ) {
       throw new NotFoundException({
         code: "TARIFF_NOT_FOUND",
@@ -317,28 +318,6 @@ export class PricingService {
       };
       await this.redisStoreService.setJson(cacheKey, result, 300);
       return result;
-    }
-
-    if (
-      serviceType === ServiceType.TAXI &&
-      vehicleClass !== "together" &&
-      vehicleClass !== "child"
-    ) {
-      const fallbackTaxiTariff =
-        activeCandidates.find((tariff) => tariff.vehicleClass === "economy") ??
-        activeCandidates.find(
-          (tariff) =>
-            tariff.vehicleClass !== "together" &&
-            tariff.vehicleClass !== "child",
-        );
-      if (fallbackTaxiTariff) {
-        const result = {
-          tariff: this.toTariffSnapshot(fallbackTaxiTariff),
-          vehicleMultiplier: this.getTaxiClassMultiplier(vehicleClass),
-        };
-        await this.redisStoreService.setJson(cacheKey, result, 300);
-        return result;
-      }
     }
 
     if (
@@ -383,22 +362,6 @@ export class PricingService {
       createdById: tariff.createdById,
       createdAt: tariff.createdAt,
     };
-  }
-
-  private getTaxiClassMultiplier(vehicleClass: string | null): number {
-    switch (vehicleClass) {
-      case "business":
-        return 1.8;
-      case "comfort_plus":
-        return 1.55;
-      case "comfort":
-        return 1.35;
-      case "economy":
-      case null:
-        return 1;
-      default:
-        return 1.15;
-    }
   }
 
   private isDriverRideService(serviceType: ServiceType): boolean {

@@ -183,7 +183,7 @@ describe('PricingService', () => {
     ).rejects.toMatchObject({ response: { code: 'TARIFF_NOT_FOUND' } });
   });
 
-  it('applies surge and taxi class multiplier when only economy tariff exists', async () => {
+  it('applies surge to the explicitly configured business tariff', async () => {
     citiesRepository.findOne.mockResolvedValue({
       id: 'city-1',
       currency: Currency.KZT,
@@ -199,10 +199,10 @@ describe('PricingService', () => {
     });
     tariffsRepository.find.mockResolvedValue([
       {
-        id: 'tariff-economy',
+        id: 'tariff-business',
         cityId: 'city-1',
         serviceType: ServiceType.TAXI,
-        vehicleClass: 'economy',
+        vehicleClass: 'business',
         basePrice: '600.00',
         pricePerKm: '120.0000',
         pricePerMinute: '35.0000',
@@ -227,7 +227,7 @@ describe('PricingService', () => {
 
     expect(result.basePrice).toBe(1550);
     expect(result.surgeCoefficient).toBe(1.25);
-    expect(result.estimatedPrice).toBe(3487.5);
+    expect(result.estimatedPrice).toBe(1937.5);
   });
 
   it('adds delivery surcharges for fragile, return and COD scenarios', async () => {
