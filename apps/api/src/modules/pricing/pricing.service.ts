@@ -23,6 +23,8 @@ type EstimatePricingParams = {
   declaredValue?: number;
   cashOnDelivery?: number;
   requestedAt?: Date;
+  /** Internal completion compatibility; never forwarded from booking DTOs. */
+  allowLegacyFallback?: boolean;
 };
 
 type TariffSnapshot = {
@@ -83,6 +85,7 @@ export class PricingService {
       serviceType: params.serviceType,
       vehicleClass: requestedVehicleClass,
       requestedAt,
+      allowLegacyFallback: params.allowLegacyFallback,
     });
 
     const baseFare = this.calculateBaseFare(
@@ -155,6 +158,7 @@ export class PricingService {
         durationSeconds: 0,
       }),
       requestedAt,
+      allowLegacyFallback: true,
     });
     const percent = Number(resolvedTariff.tariff.commissionPercent);
     const fixed = Number(resolvedTariff.tariff.commissionFixed);
@@ -256,11 +260,13 @@ export class PricingService {
     serviceType,
     vehicleClass,
     requestedAt,
+    allowLegacyFallback = false,
   }: {
     cityId: string;
     serviceType: ServiceType;
     vehicleClass: string | null;
     requestedAt: Date;
+    allowLegacyFallback?: boolean;
   }): Promise<ResolvedTariff> {
     const cacheKey = `pricing:tariff:v2:${cityId}:${serviceType}:${vehicleClass ?? "default"}`;
     const cached =
@@ -287,14 +293,15 @@ export class PricingService {
     const exactMatch = activeCandidates.find(
       (tariff) => (tariff.vehicleClass ?? null) === vehicleClass,
     );
-    // A removed class must not be recreated implicitly from another class's price,
-    // including cached fallback estimates created before deletion.
+    // Taxi classes must have their own active tariff, including when Redis still
+    // contains a synthetic estimate derived from another class.
     if (
       !exactMatch &&
-      candidates.some(
-        (tariff) =>
-          tariff.deletedAt && (tariff.vehicleClass ?? null) === vehicleClass,
-      )
+      ((serviceType === ServiceType.TAXI && !allowLegacyFallback) ||
+        candidates.some(
+          (tariff) =>
+            tariff.deletedAt && (tariff.vehicleClass ?? null) === vehicleClass,
+        ))
     ) {
       throw new NotFoundException({
         code: "TARIFF_NOT_FOUND",
@@ -320,6 +327,7 @@ export class PricingService {
     }
 
     if (
+      allowLegacyFallback &&
       serviceType === ServiceType.TAXI &&
       vehicleClass !== "together" &&
       vehicleClass !== "child"

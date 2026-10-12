@@ -183,7 +183,7 @@ describe('PricingService', () => {
     ).rejects.toMatchObject({ response: { code: 'TARIFF_NOT_FOUND' } });
   });
 
-  it('applies surge and taxi class multiplier when only economy tariff exists', async () => {
+  it('applies surge to the explicitly configured business tariff', async () => {
     citiesRepository.findOne.mockResolvedValue({
       id: 'city-1',
       currency: Currency.KZT,
@@ -199,10 +199,10 @@ describe('PricingService', () => {
     });
     tariffsRepository.find.mockResolvedValue([
       {
-        id: 'tariff-economy',
+        id: 'tariff-business',
         cityId: 'city-1',
         serviceType: ServiceType.TAXI,
-        vehicleClass: 'economy',
+        vehicleClass: 'business',
         basePrice: '600.00',
         pricePerKm: '120.0000',
         pricePerMinute: '35.0000',
@@ -227,7 +227,59 @@ describe('PricingService', () => {
 
     expect(result.basePrice).toBe(1550);
     expect(result.surgeCoefficient).toBe(1.25);
-    expect(result.estimatedPrice).toBe(3487.5);
+    expect(result.estimatedPrice).toBe(1937.5);
+  });
+
+  it('preserves synthetic legacy ride pricing and commission during completion only', async () => {
+    citiesRepository.findOne.mockResolvedValue({
+      id: 'city-1',
+      currency: Currency.KZT,
+      timezone: 'Asia/Almaty',
+      isActive: true,
+    } as CityEntity);
+    redisStoreService.getJson.mockImplementation(async (key: string) =>
+      key.startsWith('demand_zones:') ? { surgeCoefficient: 1.25 } : null,
+    );
+    tariffsRepository.find.mockResolvedValue([
+      {
+        id: 'economy',
+        cityId: 'city-1',
+        serviceType: ServiceType.TAXI,
+        vehicleClass: 'economy',
+        basePrice: '600',
+        pricePerKm: '120',
+        pricePerMinute: '35',
+        minimumPrice: '900',
+        currency: Currency.KZT,
+        isActive: true,
+        validFrom: new Date('2024-01-01'),
+        validTo: null,
+        commissionPercent: '10',
+        commissionFixed: '20',
+      } as TariffEntity,
+    ]);
+    const params = {
+      cityId: 'city-1',
+      serviceType: ServiceType.TAXI,
+      carClass: 'business',
+      distanceMeters: 5000,
+      durationSeconds: 600,
+      requestedAt: new Date('2025-02-01T12:00:00Z'),
+    };
+    await expect(pricingService.estimate(params)).rejects.toMatchObject({
+      response: { code: 'TARIFF_NOT_FOUND' },
+    });
+    const legacy = await pricingService.estimate({
+      ...params,
+      allowLegacyFallback: true,
+    });
+    expect(legacy.estimatedPrice).toBe(3487.5);
+    const commission = await pricingService.calculateExecutorCommission({
+      ...params,
+      orderAmount: legacy.estimatedPrice,
+    });
+    expect(commission.amount).toBe(368.75);
+    expect(commission.tariffId).toBe('economy');
   });
 
   it('adds delivery surcharges for fragile, return and COD scenarios', async () => {

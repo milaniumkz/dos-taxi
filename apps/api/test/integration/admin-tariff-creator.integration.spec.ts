@@ -180,6 +180,84 @@ describe("tariff creation with service and registered admin subjects", () => {
     ).toBe(recreated.id);
   });
 
+  it("offers only configured city classes, rejecting never-created and inactive classes even with cached economy prices", async () => {
+    const subject = randomUUID();
+    const city = await db
+      .getRepository(CityEntity)
+      .save({
+        nameRu: "Арал проверка",
+        nameKk: "Арал",
+        countryCode: "KZ",
+        currency: Currency.KZT,
+        timezone: "Asia/Almaty",
+        isActive: true,
+      });
+    const dto = {
+      cityId: city.id,
+      serviceType: ServiceType.TAXI,
+      nameRu: "Тест",
+      nameKk: "Тест",
+      basePrice: 500,
+      pricePerKm: 100,
+      pricePerMinute: 20,
+      minimumPrice: 500,
+      currency: Currency.KZT,
+    };
+    const economy = await admin.createTariff(subject, {
+      ...dto,
+      vehicleClass: "economy",
+    });
+    const together = await admin.createTariff(subject, {
+      ...dto,
+      vehicleClass: "together",
+      basePrice: 450,
+    });
+    await admin.createTariff(subject, {
+      ...dto,
+      vehicleClass: "comfort_plus",
+      isActive: false,
+    });
+    const cache = {
+      getJson: jest.fn(async (key: string) =>
+        key.startsWith("pricing:")
+          ? { tariff: economy, vehicleMultiplier: 1.55 }
+          : null,
+      ),
+      setJson: jest.fn(),
+    } as unknown as RedisStoreService;
+    const pricing = new PricingService(
+      db.getRepository(CityEntity),
+      db.getRepository(TariffEntity),
+      cache,
+      { getRate: jest.fn(async () => 1) } as unknown as CurrencyService,
+      new ConfigService(),
+    );
+    const params = {
+      cityId: city.id,
+      serviceType: ServiceType.TAXI,
+      distanceMeters: 1000,
+      durationSeconds: 120,
+    };
+    for (const carClass of ["comfort", "comfort_plus", "business", "child"]) {
+      await expect(
+        pricing.estimate({ ...params, carClass }),
+      ).rejects.toMatchObject({ response: { code: "TARIFF_NOT_FOUND" } });
+    }
+    expect(
+      (await pricing.estimate({ ...params, carClass: "economy" })).tariffId,
+    ).toBe(economy.id);
+    expect(
+      (await pricing.estimate({ ...params, carClass: "together" })).tariffId,
+    ).toBe(together.id);
+    const business = await admin.createTariff(subject, {
+      ...dto,
+      vehicleClass: "business",
+    });
+    expect(
+      (await pricing.estimate({ ...params, carClass: "business" })).tariffId,
+    ).toBe(business.id);
+  });
+
   it("retains genuine user attribution for registered admins", async () => {
     const user = await db
       .getRepository(UserEntity)
