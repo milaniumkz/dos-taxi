@@ -88,6 +88,7 @@ class ActiveOrderRemoteDataSource {
       ActiveOrderSessionModel snapshot,
     ) {
       return ActiveOrderTrackingEvent.statusChanged(
+        session: snapshot,
         orderStatus: snapshot.initialOrderStatus,
         executorName: snapshot.executorName,
         executorRating: snapshot.executorRating,

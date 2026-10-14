@@ -1,3 +1,5 @@
+import '../../../ride_marketplace/presentation/ride_city_picker.dart';
+import '../../../ride_marketplace/presentation/ride_feed_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
@@ -563,7 +565,7 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
         backgroundColor: AppColors.darkBackground,
         body: Stack(
           children: [
-            if (_tabIndex == 0)
+            if (_tabIndex == 0 && profile.isCourier)
               Positioned.fill(
                 child: ExecutorHeatMap(
                   key: _mapKey,
@@ -711,6 +713,17 @@ class _DriverTabBody extends StatelessWidget {
       case 3:
         return _DriverProfileTab(profile: profile);
       default:
+        if (!profile.isCourier && !hasActiveOrder) {
+          return Theme(
+            data: ThemeData.dark(useMaterial3: true).copyWith(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: AppColors.primary,
+                brightness: Brightness.dark,
+              ),
+            ),
+            child: const RideFeedScreen(),
+          );
+        }
         return Align(
           alignment: Alignment.bottomCenter,
           child: _DriverHomePanel(
@@ -1803,6 +1816,8 @@ class _DriverVehicleSettingsSheetState
   late final TextEditingController _colorController;
   late final TextEditingController _plateController;
   late Set<String> _enabledTariffs;
+  late int _capacity;
+  String? _cityId;
 
   @override
   void initState() {
@@ -1822,6 +1837,8 @@ class _DriverVehicleSettingsSheetState
     _plateController = TextEditingController(
       text: widget.profile.vehiclePlate ?? '',
     );
+    _capacity = widget.profile.passengerCapacity;
+    _cityId = widget.profile.cityId;
     _enabledTariffs = widget.profile.enabledTariffs.toSet();
     if (_enabledTariffs.isEmpty) {
       _enabledTariffs.add('economy');
@@ -1972,43 +1989,19 @@ class _DriverVehicleSettingsSheetState
               helperText: l10n.vehiclePlateFormatHint,
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.driverTariffsTitle,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.darkText,
-                fontWeight: FontWeight.w800,
-              ),
+            RideCityPicker(
+              initialCityId: _cityId,
+              onChanged: (id) => _cityId = id,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              l10n.driverChildSeatNotice,
-              style: const TextStyle(color: AppColors.darkMuted),
-            ),
-            for (final tariff in _tariffKeys)
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _enabledTariffs.contains(tariff),
-                activeColor: AppColors.primary,
-                checkColor: AppColors.text,
-                title: Text(
-                  _tariffLabel(l10n, tariff),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: AppColors.darkText),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    if (value == true) {
-                      _enabledTariffs.add(tariff);
-                    } else {
-                      _enabledTariffs.remove(tariff);
-                    }
-                    if (_enabledTariffs.isEmpty) {
-                      _enabledTariffs.add('economy');
-                    }
-                  });
-                },
+            _DarkDropdownField<int>(
+              value: _capacity,
+              label: l10n.rideCapacity,
+              items: List.generate(
+                8,
+                (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
               ),
+              onChanged: (v) => setState(() => _capacity = v ?? 4),
+            ),
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
@@ -2064,6 +2057,8 @@ class _DriverVehicleSettingsSheetState
           vehicleYear: year,
           vehicleColor: color,
           vehiclePlate: plate,
+          cityId: _cityId,
+          passengerCapacity: _capacity,
           enabledTariffs: _enabledTariffs.toList(growable: false),
         );
     if (!mounted) {
@@ -2076,17 +2071,6 @@ class _DriverVehicleSettingsSheetState
       context,
     ).showSnackBar(SnackBar(content: Text(l10n.driverVehicleSaveSuccess)));
     Navigator.of(context).pop();
-  }
-
-  String _tariffLabel(AppLocalizations l10n, String tariff) {
-    return switch (tariff) {
-      'comfort' => l10n.taxiClassComfort,
-      'comfort_plus' => l10n.taxiClassComfortPlus,
-      'business' => l10n.taxiClassBusiness,
-      'together' => l10n.taxiClassTogether,
-      'child' => l10n.taxiClassChild,
-      _ => l10n.taxiClassEconomy,
-    };
   }
 
   String? get _selectedMake => VehicleCatalog.makeValue(_makeController.text);
@@ -2102,15 +2086,6 @@ class _DriverVehicleSettingsSheetState
 
   String? get _selectedColor =>
       VehicleCatalog.colorValue(_colorController.text);
-
-  static const _tariffKeys = [
-    'economy',
-    'comfort',
-    'comfort_plus',
-    'business',
-    'together',
-    'child',
-  ];
 }
 
 class _DarkTextField extends StatelessWidget {

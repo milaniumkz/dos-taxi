@@ -416,7 +416,7 @@ void main() {
     );
   });
   testWidgets(
-    'driver dashboard shows bonus progress and a tappable location icon',
+    'driver dashboard keeps daily bonus progress and explains going online',
     (tester) async {
       final status = _MockExecutorStatusCubit();
       final incoming = _MockIncomingOrderCubit();
@@ -482,13 +482,10 @@ void main() {
           )
           .single;
       expect(bar.value, 0.35);
-      final icon = find.widgetWithIcon(
-        FloatingActionButton,
-        Icons.my_location_rounded,
+      expect(
+        find.text('Өтінімдерді көру үшін желіге қосылыңыз'),
+        findsOneWidget,
       );
-      expect(icon, findsOneWidget);
-      await tester.tap(icon);
-      verify(() => status.centerOnCurrentLocation()).called(1);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },

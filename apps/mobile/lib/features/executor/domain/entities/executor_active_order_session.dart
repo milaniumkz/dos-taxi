@@ -15,6 +15,12 @@ class ExecutorActiveOrderSession extends Equatable {
     required this.pickupLocation,
     required this.destinationAddress,
     required this.destinationLocation,
+    this.isNegotiated = false,
+    this.passengerCount = 1,
+    this.pickupEntrance,
+    this.pickupComment,
+    this.needsChildSeat = false,
+    this.sharedRide = false,
     this.distanceMeters,
     this.durationSeconds,
     this.clientName,
@@ -42,6 +48,9 @@ class ExecutorActiveOrderSession extends Equatable {
     );
   }
 
+  final bool isNegotiated, needsChildSeat, sharedRide;
+  final int passengerCount;
+  final String? pickupEntrance, pickupComment;
   final String orderId;
   final String serviceType;
   final String status;
@@ -69,6 +78,12 @@ class ExecutorActiveOrderSession extends Equatable {
     Object? recipientCode = _unset,
   }) {
     return ExecutorActiveOrderSession(
+      isNegotiated: isNegotiated,
+      passengerCount: passengerCount,
+      pickupEntrance: pickupEntrance,
+      pickupComment: pickupComment,
+      needsChildSeat: needsChildSeat,
+      sharedRide: sharedRide,
       orderId: orderId,
       serviceType: serviceType,
       status: status ?? this.status,
@@ -98,6 +113,12 @@ class ExecutorActiveOrderSession extends Equatable {
 
   @override
   List<Object?> get props => [
+    isNegotiated,
+    passengerCount,
+    pickupEntrance,
+    pickupComment,
+    needsChildSeat,
+    sharedRide,
     orderId,
     serviceType,
     status,

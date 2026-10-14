@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Currency } from "@dos/shared-types";
 import { Type } from "class-transformer";
 import {
@@ -7,6 +8,9 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsNumber,
+  Min,
+  Max,
   Length,
 } from "class-validator";
 
@@ -42,4 +46,33 @@ export class CreateCityDto {
   @IsOptional()
   @IsObject()
   serviceZone?: Record<string, unknown> | null;
+  @ApiPropertyOptional({ enum: ["seat", "salon"], default: "seat" })
+  @IsOptional()
+  @IsIn(["seat", "salon"])
+  ridePricingBasis?: "seat" | "salon";
+  @ApiPropertyOptional({ type: Number })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  rideMinimumOrderKzt?: string;
+  @ApiPropertyOptional({ type: Number })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  rideExchangeRate?: string;
+  @ApiPropertyOptional({ type: Number })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  ridePriceStepKzt?: string;
+  @ApiPropertyOptional({ type: Number })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  rideCommissionPercent?: string;
 }

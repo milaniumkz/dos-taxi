@@ -1,6 +1,1608 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/ride-requests/cities": {
+      "get": {
+        "operationId": "RideMarketplaceController_cities",
+        "summary": "List active cities for selecting a driver service city",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RideCityResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/quote": {
+      "post": {
+        "operationId": "RideMarketplaceController_quote",
+        "summary": "Get city pricing basis, minimum price and price-button step",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RideQuoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RideQuoteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/feed": {
+      "get": {
+        "operationId": "RideMarketplaceController_feed",
+        "summary": "List eligible passenger requests by nearest pickup first",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 30,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RideFeedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests": {
+      "post": {
+        "operationId": "RideMarketplaceController_create",
+        "summary": "Submit an unassigned passenger request with a proposed price",
+        "parameters": [
+          {
+            "name": "x-idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "description": "UUID generated once for a request submission",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRideRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/{id}/offers": {
+      "get": {
+        "operationId": "RideMarketplaceController_offers",
+        "summary": "Get driver price proposals and vehicle details for own request",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RideOffersResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "RideMarketplaceController_submit",
+        "summary": "Propose or revise a price using button-step increments; identical retries do not duplicate an offer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRideOfferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RideOfferResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/{id}/offers/withdraw": {
+      "post": {
+        "operationId": "RideMarketplaceController_withdraw",
+        "summary": "Withdraw own pending driver proposal idempotently",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proposal withdrawn"
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/{id}/offers/{offerId}/accept": {
+      "post": {
+        "operationId": "RideMarketplaceController_accept",
+        "summary": "Passenger selects an unchanged proposal; locks prevent multiple assigned drivers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptRideOfferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/send-otp": {
+      "post": {
+        "operationId": "AuthController_sendOtp",
+        "summary": "Generate and send a one-time password",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendOtpResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-otp": {
+      "post": {
+        "operationId": "AuthController_verifyOtp",
+        "summary": "Verify OTP and issue access/refresh tokens",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "summary": "Rotate refresh token and issue new session",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "summary": "Invalidate current refresh token",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/estimate": {
+      "post": {
+        "operationId": "OrdersController_estimate",
+        "summary": "Estimate taxi or delivery order price",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders": {
+      "post": {
+        "operationId": "OrdersController_createOrder",
+        "summary": "Create a taxi or delivery order and move it to searching",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/active": {
+      "get": {
+        "operationId": "OrdersController_getActiveOrder",
+        "summary": "Get active order for current client",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/history": {
+      "get": {
+        "operationId": "OrdersController_getHistory",
+        "summary": "Get cursor-based order history for current client",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdersHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}": {
+      "get": {
+        "operationId": "OrdersController_getOrder",
+        "summary": "Get order details for current client",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/cancel": {
+      "patch": {
+        "operationId": "OrdersController_cancelOrder",
+        "summary": "Cancel an existing order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/messages": {
+      "get": {
+        "operationId": "OrdersController_listMessages",
+        "summary": "List current client order chat messages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderChatMessageDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "OrdersController_sendMessage",
+        "summary": "Send current client order chat message",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendOrderChatMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderChatMessageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/rate": {
+      "post": {
+        "operationId": "OrdersController_rateOrder",
+        "summary": "Rate a completed order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/active": {
+      "get": {
+        "operationId": "ExecutorOrdersController_getActiveOrder",
+        "summary": "Get active order for current executor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Executor has no active order"
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/history": {
+      "get": {
+        "operationId": "ExecutorOrdersController_getHistory",
+        "summary": "Get cursor-based order history for current executor",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdersHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/messages": {
+      "get": {
+        "operationId": "ExecutorOrdersController_listMessages",
+        "summary": "List current executor order chat messages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderChatMessageDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "ExecutorOrdersController_sendMessage",
+        "summary": "Send current executor order chat message",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendOrderChatMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderChatMessageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/status": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_updateOrderStatus",
+        "summary": "Update active executor order status",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExecutorOrderStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/pickup": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_pickupDelivery",
+        "summary": "Mark delivery order as picked up",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/at-door": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_markDeliveryAtDoor",
+        "summary": "Mark delivery courier as at recipient door",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/complete": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_completeDelivery",
+        "summary": "Complete delivery with proof and recipient code",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteDeliveryOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/delivery/failed": {
+      "patch": {
+        "operationId": "ExecutorOrdersController_failDelivery",
+        "summary": "Mark delivery as failed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FailDeliveryOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders-status"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/incoming": {
+      "get": {
+        "operationId": "DispatchController_getIncomingOffers",
+        "summary": "Get incoming order offers for executor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IncomingDispatchOfferDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor-orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/accept": {
+      "post": {
+        "operationId": "DispatchController_acceptOrder",
+        "summary": "Accept incoming order offer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order accepted"
+          }
+        },
+        "tags": [
+          "executor-orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/orders/{id}/reject": {
+      "post": {
+        "operationId": "DispatchController_rejectOrder",
+        "summary": "Reject incoming order offer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Offer rejected"
+          }
+        },
+        "tags": [
+          "executor-orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/geo/autocomplete": {
+      "get": {
+        "operationId": "GeoController_autocomplete",
+        "summary": "Find address suggestions via OSM/Nominatim",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "Абая 10",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "city-uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 43.238949,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 76.889709,
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ru",
+              "enum": [
+                "ru",
+                "kk"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AddressSuggestionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/geo/reverse": {
+      "get": {
+        "operationId": "GeoController_reverse",
+        "summary": "Reverse geocode coordinates via OSM/Nominatim",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 43.238949,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 76.889709,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ru",
+              "enum": [
+                "ru",
+                "kk"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressSuggestionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/geo/route": {
+      "post": {
+        "operationId": "GeoController_route",
+        "summary": "Build route via OSRM",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/geo/executors-nearby": {
+      "get": {
+        "operationId": "GeoController_executorsNearby",
+        "summary": "Return generalized nearby executor markers",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 43.238949,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 76.889709,
+              "type": "number"
+            }
+          },
+          {
+            "name": "serviceType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "taxi",
+                "intercity",
+                "delivery"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "vehicleType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "bicycle",
+                "moped",
+                "scooter",
+                "car"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NearbyExecutorMarkerDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ]
+      }
+    },
+    "/api/v1/admin/error-messages": {
+      "get": {
+        "operationId": "AdminErrorMessagesController_get",
+        "summary": "Get editable error message catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCatalogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin error messages"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/error-messages/{code}": {
+      "put": {
+        "operationId": "AdminErrorMessagesController_update",
+        "summary": "Replace Russian and Kazakh text for an error code",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateErrorMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCatalogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin error messages"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/config/error-messages": {
+      "get": {
+        "operationId": "PublicErrorMessagesController_get",
+        "summary": "Get Russian and Kazakh error messages for mobile clients",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCatalogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Error messages"
+        ]
+      }
+    },
     "/api/v1/admin/settings/dispatch": {
       "get": {
         "operationId": "AdminController_getDispatchSettings",
@@ -388,6 +1990,45 @@
           }
         ]
       },
+      "delete": {
+        "operationId": "AdminController_deleteTariff",
+        "summary": "Remove tariff from new bookings and admin lists, preserving history",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "patch": {
         "operationId": "AdminController_updateTariff",
         "summary": "Update tariff with versioning",
@@ -418,45 +2059,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TariffEntity"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "AdminController_deleteTariff",
-        "summary": "Remove tariff from new bookings and admin lists, preserving history",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "deleted": {
-                      "type": "boolean"
-                    }
-                  }
                 }
               }
             }
@@ -1966,1166 +3568,6 @@
         ]
       }
     },
-    "/api/v1/auth/send-otp": {
-      "post": {
-        "operationId": "AuthController_sendOtp",
-        "summary": "Generate and send a one-time password",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendOtpDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SendOtpResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/api/v1/auth/verify-otp": {
-      "post": {
-        "operationId": "AuthController_verifyOtp",
-        "summary": "Verify OTP and issue access/refresh tokens",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyOtpDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/api/v1/auth/refresh": {
-      "post": {
-        "operationId": "AuthController_refresh",
-        "summary": "Rotate refresh token and issue new session",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshTokenDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/api/v1/auth/logout": {
-      "post": {
-        "operationId": "AuthController_logout",
-        "summary": "Invalidate current refresh token",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LogoutResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "auth"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders/estimate": {
-      "post": {
-        "operationId": "OrdersController_estimate",
-        "summary": "Estimate taxi or delivery order price",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EstimateOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EstimateResultDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders": {
-      "post": {
-        "operationId": "OrdersController_createOrder",
-        "summary": "Create a taxi or delivery order and move it to searching",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders/active": {
-      "get": {
-        "operationId": "OrdersController_getActiveOrder",
-        "summary": "Get active order for current client",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders/history": {
-      "get": {
-        "operationId": "OrdersController_getHistory",
-        "summary": "Get cursor-based order history for current client",
-        "parameters": [
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrdersHistoryResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders/{id}": {
-      "get": {
-        "operationId": "OrdersController_getOrder",
-        "summary": "Get order details for current client",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders/{id}/cancel": {
-      "patch": {
-        "operationId": "OrdersController_cancelOrder",
-        "summary": "Cancel an existing order",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders/{id}/messages": {
-      "get": {
-        "operationId": "OrdersController_listMessages",
-        "summary": "List current client order chat messages",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OrderChatMessageDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "post": {
-        "operationId": "OrdersController_sendMessage",
-        "summary": "Send current client order chat message",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendOrderChatMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderChatMessageDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/orders/{id}/rate": {
-      "post": {
-        "operationId": "OrdersController_rateOrder",
-        "summary": "Rate a completed order",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RateOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/active": {
-      "get": {
-        "operationId": "ExecutorOrdersController_getActiveOrder",
-        "summary": "Get active order for current executor",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Executor has no active order"
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/history": {
-      "get": {
-        "operationId": "ExecutorOrdersController_getHistory",
-        "summary": "Get cursor-based order history for current executor",
-        "parameters": [
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrdersHistoryResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/messages": {
-      "get": {
-        "operationId": "ExecutorOrdersController_listMessages",
-        "summary": "List current executor order chat messages",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OrderChatMessageDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "post": {
-        "operationId": "ExecutorOrdersController_sendMessage",
-        "summary": "Send current executor order chat message",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendOrderChatMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderChatMessageDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/status": {
-      "patch": {
-        "operationId": "ExecutorOrdersController_updateOrderStatus",
-        "summary": "Update active executor order status",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateExecutorOrderStatusDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/delivery/pickup": {
-      "patch": {
-        "operationId": "ExecutorOrdersController_pickupDelivery",
-        "summary": "Mark delivery order as picked up",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/delivery/at-door": {
-      "patch": {
-        "operationId": "ExecutorOrdersController_markDeliveryAtDoor",
-        "summary": "Mark delivery courier as at recipient door",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/delivery/complete": {
-      "patch": {
-        "operationId": "ExecutorOrdersController_completeDelivery",
-        "summary": "Complete delivery with proof and recipient code",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompleteDeliveryOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/delivery/failed": {
-      "patch": {
-        "operationId": "ExecutorOrdersController_failDelivery",
-        "summary": "Mark delivery as failed",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FailDeliveryOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders-status"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/incoming": {
-      "get": {
-        "operationId": "DispatchController_getIncomingOffers",
-        "summary": "Get incoming order offers for executor",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/IncomingDispatchOfferDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "executor-orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/accept": {
-      "post": {
-        "operationId": "DispatchController_acceptOrder",
-        "summary": "Accept incoming order offer",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Order accepted"
-          }
-        },
-        "tags": [
-          "executor-orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/executor/orders/{id}/reject": {
-      "post": {
-        "operationId": "DispatchController_rejectOrder",
-        "summary": "Reject incoming order offer",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Offer rejected"
-          }
-        },
-        "tags": [
-          "executor-orders"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/geo/autocomplete": {
-      "get": {
-        "operationId": "GeoController_autocomplete",
-        "summary": "Find address suggestions via OSM/Nominatim",
-        "parameters": [
-          {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "example": "Абая 10",
-              "type": "string"
-            }
-          },
-          {
-            "name": "cityId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": "city-uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "lat",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 43.238949,
-              "type": "number"
-            }
-          },
-          {
-            "name": "lng",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 76.889709,
-              "type": "number"
-            }
-          },
-          {
-            "name": "radiusKm",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 20,
-              "example": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "lang",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": "ru",
-              "enum": [
-                "ru",
-                "kk"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AddressSuggestionResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "geo"
-        ]
-      }
-    },
-    "/api/v1/geo/reverse": {
-      "get": {
-        "operationId": "GeoController_reverse",
-        "summary": "Reverse geocode coordinates via OSM/Nominatim",
-        "parameters": [
-          {
-            "name": "lat",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "example": 43.238949,
-              "type": "number"
-            }
-          },
-          {
-            "name": "lng",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "example": 76.889709,
-              "type": "number"
-            }
-          },
-          {
-            "name": "lang",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": "ru",
-              "enum": [
-                "ru",
-                "kk"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AddressSuggestionResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "geo"
-        ]
-      }
-    },
-    "/api/v1/geo/route": {
-      "post": {
-        "operationId": "GeoController_route",
-        "summary": "Build route via OSRM",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RouteRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RouteResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "geo"
-        ]
-      }
-    },
-    "/api/v1/geo/executors-nearby": {
-      "get": {
-        "operationId": "GeoController_executorsNearby",
-        "summary": "Return generalized nearby executor markers",
-        "parameters": [
-          {
-            "name": "lat",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "example": 43.238949,
-              "type": "number"
-            }
-          },
-          {
-            "name": "lng",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "example": 76.889709,
-              "type": "number"
-            }
-          },
-          {
-            "name": "serviceType",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "taxi",
-                "intercity",
-                "delivery"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "vehicleType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "bicycle",
-                "moped",
-                "scooter",
-                "car"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NearbyExecutorMarkerDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "geo"
-        ]
-      }
-    },
     "/api/v1/payments/methods": {
       "get": {
         "operationId": "PaymentsController_getPaymentMethods",
@@ -3838,101 +4280,6 @@
           }
         ]
       }
-    },
-    "/api/v1/admin/error-messages": {
-      "get": {
-        "operationId": "AdminErrorMessagesController_get",
-        "summary": "Get editable error message catalog",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorCatalogDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Admin error messages"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/error-messages/{code}": {
-      "put": {
-        "operationId": "AdminErrorMessagesController_update",
-        "summary": "Replace Russian and Kazakh text for an error code",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateErrorMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorCatalogDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Admin error messages"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/config/error-messages": {
-      "get": {
-        "operationId": "PublicErrorMessagesController_get",
-        "summary": "Get Russian and Kazakh error messages for mobile clients",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorCatalogDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Error messages"
-        ]
-      }
     }
   },
   "info": {
@@ -3952,6 +4299,1494 @@
       }
     },
     "schemas": {
+      "RideCityResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nameRu": {
+            "type": "string"
+          },
+          "nameKk": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "nameRu",
+          "nameKk",
+          "currency"
+        ]
+      },
+      "RideRequestPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "address": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "address"
+        ]
+      },
+      "RideQuoteDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "intercity"
+            ]
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideRequestPointDto"
+            }
+          },
+          "passengerCount": {
+            "type": "number",
+            "default": 1
+          }
+        },
+        "required": [
+          "serviceType",
+          "routePoints"
+        ]
+      },
+      "RideQuoteResponseDto": {
+        "type": "object",
+        "properties": {
+          "termsKey": {
+            "type": "string",
+            "description": "Fingerprint to pass unchanged when submitting"
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "pricingBasis": {
+            "type": "string",
+            "enum": [
+              "seat",
+              "salon"
+            ]
+          },
+          "passengerCount": {
+            "type": "number"
+          },
+          "minimumOrderPrice": {
+            "type": "string",
+            "example": "500.00"
+          },
+          "minimumUnitPrice": {
+            "type": "string",
+            "example": "250.00"
+          },
+          "priceStep": {
+            "type": "string",
+            "example": "50.00"
+          },
+          "exchangeRate": {
+            "type": "number",
+            "example": 7
+          },
+          "commissionPercent": {
+            "type": "string"
+          },
+          "commissionFixed": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "termsKey",
+          "cityId",
+          "cityName",
+          "currency",
+          "pricingBasis",
+          "passengerCount",
+          "minimumOrderPrice",
+          "minimumUnitPrice",
+          "priceStep",
+          "exchangeRate",
+          "commissionPercent",
+          "commissionFixed"
+        ]
+      },
+      "RideOfferResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "executorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priceSteps": {
+            "type": "number"
+          },
+          "unitPrice": {
+            "type": "string",
+            "example": "300.00"
+          },
+          "totalPrice": {
+            "type": "string",
+            "example": "600.00"
+          },
+          "hasChildSeat": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "withdrawn",
+              "superseded"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "driverName": {
+            "type": "string"
+          },
+          "driverRating": {
+            "type": "string"
+          },
+          "vehicleMake": {
+            "type": "string"
+          },
+          "vehicleModel": {
+            "type": "string"
+          },
+          "vehicleColor": {
+            "type": "string"
+          },
+          "vehiclePlate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "executorId",
+          "priceSteps",
+          "unitPrice",
+          "totalPrice",
+          "hasChildSeat",
+          "version",
+          "status",
+          "expiresAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "RideFeedItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "totalPrice": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "minimumUnitPrice": {
+            "type": "string"
+          },
+          "priceStep": {
+            "type": "string"
+          },
+          "pricingBasis": {
+            "type": "string",
+            "enum": [
+              "seat",
+              "salon"
+            ]
+          },
+          "passengerCount": {
+            "type": "number"
+          },
+          "pickupEntrance": {
+            "type": "object",
+            "nullable": true
+          },
+          "pickupComment": {
+            "type": "object",
+            "nullable": true
+          },
+          "needsChildSeat": {
+            "type": "boolean"
+          },
+          "sharedRide": {
+            "type": "boolean"
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideRequestPointDto"
+            }
+          },
+          "pickupDistanceMeters": {
+            "type": "number"
+          },
+          "myOffer": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RideOfferResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "serviceType",
+          "currency",
+          "paymentMethod",
+          "totalPrice",
+          "unitPrice",
+          "minimumUnitPrice",
+          "priceStep",
+          "pricingBasis",
+          "passengerCount",
+          "needsChildSeat",
+          "sharedRide",
+          "routePoints",
+          "pickupDistanceMeters"
+        ]
+      },
+      "RideFeedResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideFeedItemDto"
+            }
+          },
+          "nextOffset": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextOffset"
+        ]
+      },
+      "CreateRideRequestDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "intercity"
+            ]
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideRequestPointDto"
+            }
+          },
+          "passengerCount": {
+            "type": "number",
+            "default": 1
+          },
+          "termsKey": {
+            "type": "string",
+            "description": "Quote terms fingerprint"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "priceSteps": {
+            "type": "number",
+            "description": "Number of positive price-button steps above the minimum",
+            "default": 0
+          },
+          "pickupEntrance": {
+            "type": "string"
+          },
+          "pickupComment": {
+            "type": "string"
+          },
+          "needsChildSeat": {
+            "type": "boolean"
+          },
+          "sharedRide": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "serviceType",
+          "routePoints",
+          "termsKey",
+          "paymentMethod",
+          "priceSteps"
+        ]
+      },
+      "CreateOrderRoutePointDto": {
+        "type": "object",
+        "properties": {
+          "sequenceIndex": {
+            "type": "number",
+            "example": 0
+          },
+          "lat": {
+            "type": "number",
+            "example": 43.238949
+          },
+          "lng": {
+            "type": "number",
+            "example": 76.889709
+          },
+          "address": {
+            "type": "string",
+            "example": "Abay Ave 10"
+          },
+          "contactName": {
+            "type": "string",
+            "example": "Aruzhan"
+          },
+          "contactPhone": {
+            "type": "string",
+            "example": "+77771234567"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sequenceIndex",
+          "lat",
+          "lng",
+          "address"
+        ]
+      },
+      "OrderDeliveryDetailsDto": {
+        "type": "object",
+        "properties": {
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "packageDescription": {
+            "type": "object"
+          },
+          "packagePhotoUrl": {
+            "type": "object"
+          },
+          "declaredValue": {
+            "type": "object"
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "cashOnDelivery": {
+            "type": "object"
+          },
+          "deliveryStatus": {
+            "type": "string",
+            "enum": [
+              "pending_pickup",
+              "picked_up",
+              "in_transit",
+              "at_door",
+              "delivered_confirmed",
+              "delivery_failed",
+              "returning"
+            ]
+          },
+          "proofPhotoUrl": {
+            "type": "object"
+          },
+          "recipientCode": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "courierVehicleType",
+          "isFragile",
+          "requiresReturn",
+          "deliveryStatus"
+        ]
+      },
+      "OrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "searching",
+              "accepted",
+              "arriving",
+              "waiting",
+              "in_progress",
+              "delivered",
+              "completed",
+              "cancelled_client",
+              "cancelled_executor",
+              "cancelled_system",
+              "failed"
+            ]
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "promoCodeId": {
+            "type": "object"
+          },
+          "discountAmount": {
+            "type": "string"
+          },
+          "executorId": {
+            "type": "object"
+          },
+          "clientName": {
+            "type": "object"
+          },
+          "clientPhone": {
+            "type": "object"
+          },
+          "estimatedPrice": {
+            "type": "object"
+          },
+          "finalPrice": {
+            "type": "object"
+          },
+          "distanceMeters": {
+            "type": "object"
+          },
+          "durationSeconds": {
+            "type": "object"
+          },
+          "carClass": {
+            "type": "object"
+          },
+          "isNegotiated": {
+            "type": "boolean"
+          },
+          "passengerCount": {
+            "type": "number"
+          },
+          "ridePricingBasis": {
+            "type": "object"
+          },
+          "rideUnitPrice": {
+            "type": "object"
+          },
+          "pickupEntrance": {
+            "type": "object"
+          },
+          "pickupComment": {
+            "type": "object"
+          },
+          "needsChildSeat": {
+            "type": "boolean"
+          },
+          "sharedRide": {
+            "type": "boolean"
+          },
+          "scheduledAt": {
+            "type": "object"
+          },
+          "acceptedAt": {
+            "type": "object"
+          },
+          "startedAt": {
+            "type": "object"
+          },
+          "completedAt": {
+            "type": "object"
+          },
+          "cancelledAt": {
+            "type": "object"
+          },
+          "cancelReason": {
+            "type": "object"
+          },
+          "executorRating": {
+            "type": "object"
+          },
+          "executorName": {
+            "type": "object"
+          },
+          "executorPhone": {
+            "type": "object"
+          },
+          "executorVehicleLabel": {
+            "type": "object"
+          },
+          "executorVehiclePlate": {
+            "type": "object"
+          },
+          "executorProfileRating": {
+            "type": "object"
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderRoutePointDto"
+            }
+          },
+          "deliveryDetails": {
+            "$ref": "#/components/schemas/OrderDeliveryDetailsDto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "serviceType",
+          "status",
+          "cityId",
+          "currency",
+          "paymentMethod",
+          "discountAmount",
+          "routePoints",
+          "createdAt"
+        ]
+      },
+      "RideOffersResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/OrderResponseDto"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RideOfferResponseDto"
+            }
+          }
+        },
+        "required": [
+          "order",
+          "items"
+        ]
+      },
+      "SubmitRideOfferDto": {
+        "type": "object",
+        "properties": {
+          "priceSteps": {
+            "type": "number",
+            "description": "Price-button steps relative to the passenger unit price"
+          },
+          "hasChildSeat": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "priceSteps"
+        ]
+      },
+      "AcceptRideOfferDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "description": "Offer version shown to passenger"
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "SendOtpDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendOtpResponseDto": {
+        "type": "object",
+        "properties": {
+          "expiresInSeconds": {
+            "type": "number"
+          },
+          "devCode": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "expiresInSeconds"
+        ]
+      },
+      "VerifyOtpDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AuthUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "name": {
+            "type": "object",
+            "nullable": true
+          },
+          "preferredLanguage": {
+            "type": "string"
+          },
+          "preferredCurrency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "name",
+          "preferredLanguage",
+          "preferredCurrency"
+        ]
+      },
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthUserDto"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "user"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "LogoutResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "EstimateRoutePointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 43.238949
+          },
+          "lng": {
+            "type": "number",
+            "example": 76.889709
+          },
+          "address": {
+            "type": "string",
+            "example": "Abay Ave 10"
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ]
+      },
+      "EstimateOrderDto": {
+        "type": "object",
+        "properties": {
+          "promoCode": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "carClass": {
+            "type": "string",
+            "example": "economy"
+          },
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "number",
+            "example": 960
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EstimateRoutePointDto"
+            }
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "declaredValue": {
+            "type": "number",
+            "example": 50000
+          },
+          "cashOnDelivery": {
+            "type": "number",
+            "example": 12000
+          }
+        },
+        "required": [
+          "serviceType",
+          "distanceMeters",
+          "durationSeconds"
+        ]
+      },
+      "EstimateResultDto": {
+        "type": "object",
+        "properties": {
+          "discountAmount": {
+            "type": "number"
+          },
+          "originalPrice": {
+            "type": "number"
+          },
+          "promoCodeId": {
+            "type": "string"
+          },
+          "tariffId": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "vehicleClass": {
+            "type": "object",
+            "example": "economy",
+            "nullable": true
+          },
+          "estimatedPrice": {
+            "type": "number",
+            "example": 1550
+          },
+          "basePrice": {
+            "type": "number",
+            "example": 1550
+          },
+          "surchargeAmount": {
+            "type": "number",
+            "example": 0
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "surgeCoefficient": {
+            "type": "number",
+            "example": 1
+          },
+          "nightCoefficient": {
+            "type": "number",
+            "example": 1
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "number",
+            "example": 960
+          },
+          "etaSeconds": {
+            "type": "number",
+            "example": 960
+          }
+        },
+        "required": [
+          "tariffId",
+          "serviceType",
+          "vehicleClass",
+          "estimatedPrice",
+          "basePrice",
+          "surchargeAmount",
+          "currency",
+          "surgeCoefficient",
+          "nightCoefficient",
+          "distanceMeters",
+          "durationSeconds",
+          "etaSeconds"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "routePoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderRoutePointDto"
+            }
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carClass": {
+            "type": "string",
+            "example": "economy"
+          },
+          "promoCode": {
+            "type": "string",
+            "example": "ALMATY10"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "number",
+            "example": 960
+          },
+          "courierVehicleType": {
+            "type": "string",
+            "enum": [
+              "bicycle",
+              "moped",
+              "scooter",
+              "car"
+            ]
+          },
+          "packageDescription": {
+            "type": "string"
+          },
+          "packagePhoto": {
+            "type": "string"
+          },
+          "declaredValue": {
+            "type": "number",
+            "example": 50000
+          },
+          "isFragile": {
+            "type": "boolean"
+          },
+          "requiresReturn": {
+            "type": "boolean"
+          },
+          "cashOnDelivery": {
+            "type": "number",
+            "example": 12000
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "recipientCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "serviceType",
+          "routePoints",
+          "paymentMethod"
+        ]
+      },
+      "OrdersHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderResponseDto"
+            }
+          },
+          "nextCursor": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CancelOrderDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Client changed plans"
+          }
+        }
+      },
+      "OrderChatMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string",
+            "enum": [
+              "client",
+              "executor"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sender",
+          "body",
+          "createdAt"
+        ]
+      },
+      "SendOrderChatMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "RateOrderDto": {
+        "type": "object",
+        "properties": {
+          "executorRating": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "example": "Driver was careful and arrived fast"
+          }
+        },
+        "required": [
+          "executorRating"
+        ]
+      },
+      "UpdateExecutorOrderStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "arriving",
+              "waiting",
+              "in_progress",
+              "completed"
+            ]
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "heading": {
+            "type": "number"
+          },
+          "photo": {
+            "type": "string"
+          },
+          "actualDistanceMeters": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CompleteDeliveryOrderDto": {
+        "type": "object",
+        "properties": {
+          "proofPhoto": {
+            "type": "string"
+          },
+          "recipientCode": {
+            "type": "string"
+          }
+        }
+      },
+      "FailDeliveryOrderDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "IncomingDispatchOfferDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "taxi",
+              "delivery",
+              "intercity",
+              "cargo",
+              "scooter"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "card",
+              "cash",
+              "transfer_kaspi",
+              "transfer_halyk",
+              "corporate",
+              "bonus"
+            ]
+          },
+          "clientName": {
+            "type": "object",
+            "nullable": true
+          },
+          "clientPhone": {
+            "type": "object",
+            "nullable": true
+          },
+          "estimatedPrice": {
+            "type": "object",
+            "nullable": true,
+            "example": "1500.00"
+          },
+          "distanceMeters": {
+            "type": "object",
+            "nullable": true,
+            "example": 5400
+          },
+          "durationSeconds": {
+            "type": "object",
+            "nullable": true,
+            "example": 960
+          },
+          "pickupAddress": {
+            "type": "object",
+            "nullable": true
+          },
+          "pickupLat": {
+            "type": "object",
+            "nullable": true
+          },
+          "pickupLng": {
+            "type": "object",
+            "nullable": true
+          },
+          "destinationAddress": {
+            "type": "object",
+            "nullable": true
+          },
+          "destinationLat": {
+            "type": "object",
+            "nullable": true
+          },
+          "destinationLng": {
+            "type": "object",
+            "nullable": true
+          },
+          "offeredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "serviceType",
+          "currency",
+          "paymentMethod",
+          "estimatedPrice",
+          "distanceMeters",
+          "durationSeconds",
+          "pickupAddress",
+          "pickupLat",
+          "pickupLng",
+          "destinationAddress",
+          "destinationLat",
+          "destinationLng",
+          "offeredAt"
+        ]
+      },
+      "AddressSuggestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "title",
+          "subtitle",
+          "lat",
+          "lng"
+        ]
+      },
+      "GeoPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 43.238949
+          },
+          "lng": {
+            "type": "number",
+            "example": 76.889709
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ]
+      },
+      "RouteRequestDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/GeoPointDto"
+          },
+          "to": {
+            "$ref": "#/components/schemas/GeoPointDto"
+          },
+          "waypoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeoPointDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "RouteResponseDto": {
+        "type": "object",
+        "properties": {
+          "polyline": {
+            "type": "string"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeoPointDto"
+            }
+          },
+          "distanceMeters": {
+            "type": "number"
+          },
+          "durationSeconds": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "polyline",
+          "points",
+          "distanceMeters",
+          "durationSeconds"
+        ]
+      },
+      "NearbyExecutorMarkerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "heading": {
+            "type": "object"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "vehicleType": {
+            "type": "object"
+          },
+          "distanceMeters": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "lat",
+          "lng",
+          "label",
+          "distanceMeters"
+        ]
+      },
+      "ErrorCatalogDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "version",
+          "messages"
+        ]
+      },
+      "UpdateErrorMessageDto": {
+        "type": "object",
+        "properties": {
+          "ru": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "kk": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "ru",
+          "kk"
+        ]
+      },
       "DispatchSettingsDto": {
         "type": "object",
         "properties": {}
@@ -4005,11 +5840,53 @@
       },
       "CreateCityDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "ridePricingBasis": {
+            "type": "string",
+            "enum": [
+              "seat",
+              "salon"
+            ],
+            "default": "seat"
+          },
+          "rideMinimumOrderKzt": {
+            "type": "number"
+          },
+          "rideExchangeRate": {
+            "type": "number"
+          },
+          "ridePriceStepKzt": {
+            "type": "number"
+          },
+          "rideCommissionPercent": {
+            "type": "number"
+          }
+        }
       },
       "UpdateCityDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "ridePricingBasis": {
+            "type": "string",
+            "enum": [
+              "seat",
+              "salon"
+            ],
+            "default": "seat"
+          },
+          "rideMinimumOrderKzt": {
+            "type": "number"
+          },
+          "rideExchangeRate": {
+            "type": "number"
+          },
+          "ridePriceStepKzt": {
+            "type": "number"
+          },
+          "rideCommissionPercent": {
+            "type": "number"
+          }
+        }
       },
       "TariffEntity": {
         "type": "object",
@@ -5425,44 +7302,6 @@
           "verifiedExecutors"
         ]
       },
-      "CreateOrderRoutePointDto": {
-        "type": "object",
-        "properties": {
-          "sequenceIndex": {
-            "type": "number",
-            "example": 0
-          },
-          "lat": {
-            "type": "number",
-            "example": 43.238949
-          },
-          "lng": {
-            "type": "number",
-            "example": 76.889709
-          },
-          "address": {
-            "type": "string",
-            "example": "Abay Ave 10"
-          },
-          "contactName": {
-            "type": "string",
-            "example": "Aruzhan"
-          },
-          "contactPhone": {
-            "type": "string",
-            "example": "+77771234567"
-          },
-          "notes": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "sequenceIndex",
-          "lat",
-          "lng",
-          "address"
-        ]
-      },
       "CreateAdminOrderDto": {
         "type": "object",
         "properties": {
@@ -5568,929 +7407,9 @@
           "clientPhone"
         ]
       },
-      "OrderDeliveryDetailsDto": {
-        "type": "object",
-        "properties": {
-          "courierVehicleType": {
-            "type": "string",
-            "enum": [
-              "bicycle",
-              "moped",
-              "scooter",
-              "car"
-            ]
-          },
-          "packageDescription": {
-            "type": "object"
-          },
-          "packagePhotoUrl": {
-            "type": "object"
-          },
-          "declaredValue": {
-            "type": "object"
-          },
-          "isFragile": {
-            "type": "boolean"
-          },
-          "requiresReturn": {
-            "type": "boolean"
-          },
-          "cashOnDelivery": {
-            "type": "object"
-          },
-          "deliveryStatus": {
-            "type": "string",
-            "enum": [
-              "pending_pickup",
-              "picked_up",
-              "in_transit",
-              "at_door",
-              "delivered_confirmed",
-              "delivery_failed",
-              "returning"
-            ]
-          },
-          "proofPhotoUrl": {
-            "type": "object"
-          },
-          "recipientCode": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "courierVehicleType",
-          "isFragile",
-          "requiresReturn",
-          "deliveryStatus"
-        ]
-      },
-      "OrderResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "serviceType": {
-            "type": "string",
-            "enum": [
-              "taxi",
-              "delivery",
-              "intercity",
-              "cargo",
-              "scooter"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "draft",
-              "searching",
-              "accepted",
-              "arriving",
-              "waiting",
-              "in_progress",
-              "delivered",
-              "completed",
-              "cancelled_client",
-              "cancelled_executor",
-              "cancelled_system",
-              "failed"
-            ]
-          },
-          "cityId": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "RUB",
-              "KZT"
-            ]
-          },
-          "paymentMethod": {
-            "type": "string",
-            "enum": [
-              "card",
-              "cash",
-              "transfer_kaspi",
-              "transfer_halyk",
-              "corporate",
-              "bonus"
-            ]
-          },
-          "promoCodeId": {
-            "type": "object"
-          },
-          "discountAmount": {
-            "type": "string"
-          },
-          "executorId": {
-            "type": "object"
-          },
-          "clientName": {
-            "type": "object"
-          },
-          "clientPhone": {
-            "type": "object"
-          },
-          "estimatedPrice": {
-            "type": "object"
-          },
-          "finalPrice": {
-            "type": "object"
-          },
-          "distanceMeters": {
-            "type": "object"
-          },
-          "durationSeconds": {
-            "type": "object"
-          },
-          "carClass": {
-            "type": "object"
-          },
-          "scheduledAt": {
-            "type": "object"
-          },
-          "acceptedAt": {
-            "type": "object"
-          },
-          "startedAt": {
-            "type": "object"
-          },
-          "completedAt": {
-            "type": "object"
-          },
-          "cancelledAt": {
-            "type": "object"
-          },
-          "cancelReason": {
-            "type": "object"
-          },
-          "executorRating": {
-            "type": "object"
-          },
-          "executorName": {
-            "type": "object"
-          },
-          "executorPhone": {
-            "type": "object"
-          },
-          "executorVehicleLabel": {
-            "type": "object"
-          },
-          "executorVehiclePlate": {
-            "type": "object"
-          },
-          "executorProfileRating": {
-            "type": "object"
-          },
-          "routePoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateOrderRoutePointDto"
-            }
-          },
-          "deliveryDetails": {
-            "$ref": "#/components/schemas/OrderDeliveryDetailsDto"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "serviceType",
-          "status",
-          "cityId",
-          "currency",
-          "paymentMethod",
-          "discountAmount",
-          "routePoints",
-          "createdAt"
-        ]
-      },
       "CreateTariffDto": {
         "type": "object",
         "properties": {}
-      },
-      "SendOtpDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "SendOtpResponseDto": {
-        "type": "object",
-        "properties": {
-          "expiresInSeconds": {
-            "type": "number"
-          },
-          "devCode": {
-            "type": "object",
-            "nullable": true
-          }
-        },
-        "required": [
-          "expiresInSeconds"
-        ]
-      },
-      "VerifyOtpDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "AuthUserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "name": {
-            "type": "object",
-            "nullable": true
-          },
-          "preferredLanguage": {
-            "type": "string"
-          },
-          "preferredCurrency": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "phone",
-          "name",
-          "preferredLanguage",
-          "preferredCurrency"
-        ]
-      },
-      "AuthResponseDto": {
-        "type": "object",
-        "properties": {
-          "accessToken": {
-            "type": "string"
-          },
-          "refreshToken": {
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/AuthUserDto"
-          }
-        },
-        "required": [
-          "accessToken",
-          "refreshToken",
-          "user"
-        ]
-      },
-      "RefreshTokenDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "LogoutResponseDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
-        ]
-      },
-      "EstimateRoutePointDto": {
-        "type": "object",
-        "properties": {
-          "lat": {
-            "type": "number",
-            "example": 43.238949
-          },
-          "lng": {
-            "type": "number",
-            "example": 76.889709
-          },
-          "address": {
-            "type": "string",
-            "example": "Abay Ave 10"
-          }
-        },
-        "required": [
-          "lat",
-          "lng"
-        ]
-      },
-      "EstimateOrderDto": {
-        "type": "object",
-        "properties": {
-          "promoCode": {
-            "type": "string"
-          },
-          "cityId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "serviceType": {
-            "type": "string",
-            "enum": [
-              "taxi",
-              "delivery",
-              "intercity",
-              "cargo",
-              "scooter"
-            ]
-          },
-          "carClass": {
-            "type": "string",
-            "example": "economy"
-          },
-          "courierVehicleType": {
-            "type": "string",
-            "enum": [
-              "bicycle",
-              "moped",
-              "scooter",
-              "car"
-            ]
-          },
-          "distanceMeters": {
-            "type": "number",
-            "example": 5400
-          },
-          "durationSeconds": {
-            "type": "number",
-            "example": 960
-          },
-          "routePoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EstimateRoutePointDto"
-            }
-          },
-          "isFragile": {
-            "type": "boolean"
-          },
-          "requiresReturn": {
-            "type": "boolean"
-          },
-          "declaredValue": {
-            "type": "number",
-            "example": 50000
-          },
-          "cashOnDelivery": {
-            "type": "number",
-            "example": 12000
-          }
-        },
-        "required": [
-          "serviceType",
-          "distanceMeters",
-          "durationSeconds"
-        ]
-      },
-      "EstimateResultDto": {
-        "type": "object",
-        "properties": {
-          "discountAmount": {
-            "type": "number"
-          },
-          "originalPrice": {
-            "type": "number"
-          },
-          "promoCodeId": {
-            "type": "string"
-          },
-          "tariffId": {
-            "type": "string"
-          },
-          "serviceType": {
-            "type": "string",
-            "enum": [
-              "taxi",
-              "delivery",
-              "intercity",
-              "cargo",
-              "scooter"
-            ]
-          },
-          "vehicleClass": {
-            "type": "object",
-            "example": "economy",
-            "nullable": true
-          },
-          "estimatedPrice": {
-            "type": "number",
-            "example": 1550
-          },
-          "basePrice": {
-            "type": "number",
-            "example": 1550
-          },
-          "surchargeAmount": {
-            "type": "number",
-            "example": 0
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "RUB",
-              "KZT"
-            ]
-          },
-          "surgeCoefficient": {
-            "type": "number",
-            "example": 1
-          },
-          "nightCoefficient": {
-            "type": "number",
-            "example": 1
-          },
-          "distanceMeters": {
-            "type": "number",
-            "example": 5400
-          },
-          "durationSeconds": {
-            "type": "number",
-            "example": 960
-          },
-          "etaSeconds": {
-            "type": "number",
-            "example": 960
-          }
-        },
-        "required": [
-          "tariffId",
-          "serviceType",
-          "vehicleClass",
-          "estimatedPrice",
-          "basePrice",
-          "surchargeAmount",
-          "currency",
-          "surgeCoefficient",
-          "nightCoefficient",
-          "distanceMeters",
-          "durationSeconds",
-          "etaSeconds"
-        ]
-      },
-      "CreateOrderDto": {
-        "type": "object",
-        "properties": {
-          "serviceType": {
-            "type": "string",
-            "enum": [
-              "taxi",
-              "delivery",
-              "intercity",
-              "cargo",
-              "scooter"
-            ]
-          },
-          "routePoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateOrderRoutePointDto"
-            }
-          },
-          "paymentMethod": {
-            "type": "string",
-            "enum": [
-              "card",
-              "cash",
-              "transfer_kaspi",
-              "transfer_halyk",
-              "corporate",
-              "bonus"
-            ]
-          },
-          "cityId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "carClass": {
-            "type": "string",
-            "example": "economy"
-          },
-          "promoCode": {
-            "type": "string",
-            "example": "ALMATY10"
-          },
-          "scheduledAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "distanceMeters": {
-            "type": "number",
-            "example": 5400
-          },
-          "durationSeconds": {
-            "type": "number",
-            "example": 960
-          },
-          "courierVehicleType": {
-            "type": "string",
-            "enum": [
-              "bicycle",
-              "moped",
-              "scooter",
-              "car"
-            ]
-          },
-          "packageDescription": {
-            "type": "string"
-          },
-          "packagePhoto": {
-            "type": "string"
-          },
-          "declaredValue": {
-            "type": "number",
-            "example": 50000
-          },
-          "isFragile": {
-            "type": "boolean"
-          },
-          "requiresReturn": {
-            "type": "boolean"
-          },
-          "cashOnDelivery": {
-            "type": "number",
-            "example": 12000
-          },
-          "contactName": {
-            "type": "string"
-          },
-          "contactPhone": {
-            "type": "string"
-          },
-          "recipientCode": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "serviceType",
-          "routePoints",
-          "paymentMethod"
-        ]
-      },
-      "OrdersHistoryResponseDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderResponseDto"
-            }
-          },
-          "nextCursor": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "items"
-        ]
-      },
-      "CancelOrderDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "example": "Client changed plans"
-          }
-        }
-      },
-      "OrderChatMessageDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sender": {
-            "type": "string",
-            "enum": [
-              "client",
-              "executor"
-            ]
-          },
-          "body": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "sender",
-          "body",
-          "createdAt"
-        ]
-      },
-      "SendOrderChatMessageDto": {
-        "type": "object",
-        "properties": {
-          "body": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "body"
-        ]
-      },
-      "RateOrderDto": {
-        "type": "object",
-        "properties": {
-          "executorRating": {
-            "type": "number",
-            "example": 5,
-            "minimum": 1,
-            "maximum": 5
-          },
-          "comment": {
-            "type": "string",
-            "example": "Driver was careful and arrived fast"
-          }
-        },
-        "required": [
-          "executorRating"
-        ]
-      },
-      "UpdateExecutorOrderStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "arriving",
-              "waiting",
-              "in_progress",
-              "completed"
-            ]
-          },
-          "lat": {
-            "type": "number"
-          },
-          "lng": {
-            "type": "number"
-          },
-          "heading": {
-            "type": "number"
-          },
-          "photo": {
-            "type": "string"
-          },
-          "actualDistanceMeters": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "CompleteDeliveryOrderDto": {
-        "type": "object",
-        "properties": {
-          "proofPhoto": {
-            "type": "string"
-          },
-          "recipientCode": {
-            "type": "string"
-          }
-        }
-      },
-      "FailDeliveryOrderDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string"
-          }
-        }
-      },
-      "IncomingDispatchOfferDto": {
-        "type": "object",
-        "properties": {
-          "orderId": {
-            "type": "string"
-          },
-          "serviceType": {
-            "type": "string",
-            "enum": [
-              "taxi",
-              "delivery",
-              "intercity",
-              "cargo",
-              "scooter"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "RUB",
-              "KZT"
-            ]
-          },
-          "paymentMethod": {
-            "type": "string",
-            "enum": [
-              "card",
-              "cash",
-              "transfer_kaspi",
-              "transfer_halyk",
-              "corporate",
-              "bonus"
-            ]
-          },
-          "clientName": {
-            "type": "object",
-            "nullable": true
-          },
-          "clientPhone": {
-            "type": "object",
-            "nullable": true
-          },
-          "estimatedPrice": {
-            "type": "object",
-            "nullable": true,
-            "example": "1500.00"
-          },
-          "distanceMeters": {
-            "type": "object",
-            "nullable": true,
-            "example": 5400
-          },
-          "durationSeconds": {
-            "type": "object",
-            "nullable": true,
-            "example": 960
-          },
-          "pickupAddress": {
-            "type": "object",
-            "nullable": true
-          },
-          "pickupLat": {
-            "type": "object",
-            "nullable": true
-          },
-          "pickupLng": {
-            "type": "object",
-            "nullable": true
-          },
-          "destinationAddress": {
-            "type": "object",
-            "nullable": true
-          },
-          "destinationLat": {
-            "type": "object",
-            "nullable": true
-          },
-          "destinationLng": {
-            "type": "object",
-            "nullable": true
-          },
-          "offeredAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "orderId",
-          "serviceType",
-          "currency",
-          "paymentMethod",
-          "estimatedPrice",
-          "distanceMeters",
-          "durationSeconds",
-          "pickupAddress",
-          "pickupLat",
-          "pickupLng",
-          "destinationAddress",
-          "destinationLat",
-          "destinationLng",
-          "offeredAt"
-        ]
-      },
-      "AddressSuggestionResponseDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "subtitle": {
-            "type": "string"
-          },
-          "lat": {
-            "type": "number"
-          },
-          "lng": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "title",
-          "subtitle",
-          "lat",
-          "lng"
-        ]
-      },
-      "GeoPointDto": {
-        "type": "object",
-        "properties": {
-          "lat": {
-            "type": "number",
-            "example": 43.238949
-          },
-          "lng": {
-            "type": "number",
-            "example": 76.889709
-          }
-        },
-        "required": [
-          "lat",
-          "lng"
-        ]
-      },
-      "RouteRequestDto": {
-        "type": "object",
-        "properties": {
-          "from": {
-            "$ref": "#/components/schemas/GeoPointDto"
-          },
-          "to": {
-            "$ref": "#/components/schemas/GeoPointDto"
-          },
-          "waypoints": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GeoPointDto"
-            }
-          }
-        },
-        "required": [
-          "from",
-          "to"
-        ]
-      },
-      "RouteResponseDto": {
-        "type": "object",
-        "properties": {
-          "polyline": {
-            "type": "string"
-          },
-          "points": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GeoPointDto"
-            }
-          },
-          "distanceMeters": {
-            "type": "number"
-          },
-          "durationSeconds": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "polyline",
-          "points",
-          "distanceMeters",
-          "durationSeconds"
-        ]
-      },
-      "NearbyExecutorMarkerDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "lat": {
-            "type": "number"
-          },
-          "lng": {
-            "type": "number"
-          },
-          "heading": {
-            "type": "object"
-          },
-          "label": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "vehicleType": {
-            "type": "object"
-          },
-          "distanceMeters": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "lat",
-          "lng",
-          "label",
-          "distanceMeters"
-        ]
       },
       "PaymentCardResponseDto": {
         "type": "object",
@@ -6737,44 +7656,6 @@
       "UpdateProfileDto": {
         "type": "object",
         "properties": {}
-      },
-      "ErrorCatalogDto": {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "string"
-          },
-          "messages": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "required": [
-          "version",
-          "messages"
-        ]
-      },
-      "UpdateErrorMessageDto": {
-        "type": "object",
-        "properties": {
-          "ru": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "kk": {
-            "type": "string",
-            "maxLength": 1000
-          }
-        },
-        "required": [
-          "ru",
-          "kk"
-        ]
       }
     }
   }

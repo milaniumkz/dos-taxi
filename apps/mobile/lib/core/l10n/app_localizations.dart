@@ -2461,6 +2461,234 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Включайте «Детский» только при наличии детского кресла.'**
   String get driverChildSeatNotice;
+
+  /// No description provided for @rideRequestTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заявка на поездку'**
+  String get rideRequestTitle;
+
+  /// No description provided for @rideRetry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить'**
+  String get rideRetry;
+
+  /// No description provided for @rideEntrance.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подъезд (необязательно)'**
+  String get rideEntrance;
+
+  /// No description provided for @rideComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий (необязательно)'**
+  String get rideComment;
+
+  /// No description provided for @rideChildSeat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Детское кресло'**
+  String get rideChildSeat;
+
+  /// No description provided for @rideTogether.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вместе'**
+  String get rideTogether;
+
+  /// No description provided for @rideTogetherHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель может подбирать пассажиров по пути'**
+  String get rideTogetherHint;
+
+  /// No description provided for @ridePayment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Способ оплаты'**
+  String get ridePayment;
+
+  /// No description provided for @rideCash.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наличными'**
+  String get rideCash;
+
+  /// No description provided for @rideKaspi.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перевод Kaspi'**
+  String get rideKaspi;
+
+  /// No description provided for @rideHalyk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перевод Halyk'**
+  String get rideHalyk;
+
+  /// No description provided for @rideSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подать заявку'**
+  String get rideSubmit;
+
+  /// No description provided for @ridePerSeat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена за место'**
+  String get ridePerSeat;
+
+  /// No description provided for @ridePerSalon.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена за весь салон'**
+  String get ridePerSalon;
+
+  /// No description provided for @ridePassengers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Количество пассажиров'**
+  String get ridePassengers;
+
+  /// No description provided for @rideYourPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваша цена'**
+  String get rideYourPrice;
+
+  /// No description provided for @rideTotal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Итого'**
+  String get rideTotal;
+
+  /// No description provided for @rideMinimum.
+  ///
+  /// In ru, this message translates to:
+  /// **'Минимальный заказ'**
+  String get rideMinimum;
+
+  /// No description provided for @rideDecrease.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уменьшить'**
+  String get rideDecrease;
+
+  /// No description provided for @rideIncrease.
+  ///
+  /// In ru, this message translates to:
+  /// **'Увеличить'**
+  String get rideIncrease;
+
+  /// No description provided for @rideOffersTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предложения водителей'**
+  String get rideOffersTitle;
+
+  /// No description provided for @rideOffersEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ждём предложения водителей. Водителя выбираете вы.'**
+  String get rideOffersEmpty;
+
+  /// No description provided for @rideChooseDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать водителя'**
+  String get rideChooseDriver;
+
+  /// No description provided for @rideFeedTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заявки рядом'**
+  String get rideFeedTitle;
+
+  /// No description provided for @rideFeedEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новых заявок рядом пока нет'**
+  String get rideFeedEmpty;
+
+  /// No description provided for @ridePropose.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предложить цену'**
+  String get ridePropose;
+
+  /// No description provided for @rideWithdraw.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отозвать предложение'**
+  String get rideWithdraw;
+
+  /// No description provided for @ridePending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предложение отправлено. Ждём выбора пассажира.'**
+  String get ridePending;
+
+  /// No description provided for @rideConfirmChildSeat.
+  ///
+  /// In ru, this message translates to:
+  /// **'У меня есть детское кресло'**
+  String get rideConfirmChildSeat;
+
+  /// No description provided for @ridePickupDistance.
+  ///
+  /// In ru, this message translates to:
+  /// **'До подачи'**
+  String get ridePickupDistance;
+
+  /// No description provided for @rideCapacity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пассажирских мест'**
+  String get rideCapacity;
+
+  /// No description provided for @rideOffline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включите «На линии», чтобы видеть заявки'**
+  String get rideOffline;
+
+  /// No description provided for @rideNext.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать ещё'**
+  String get rideNext;
+
+  /// No description provided for @rideCancel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить заявку'**
+  String get rideCancel;
+
+  /// No description provided for @rideReload.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить'**
+  String get rideReload;
+
+  /// No description provided for @rideRating.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рейтинг'**
+  String get rideRating;
+
+  /// No description provided for @rideCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город работы'**
+  String get rideCity;
+
+  /// No description provided for @rideKilometres.
+  ///
+  /// In ru, this message translates to:
+  /// **'км'**
+  String get rideKilometres;
 }
 
 class _AppLocalizationsDelegate

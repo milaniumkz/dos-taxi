@@ -5,6 +5,7 @@ import {
 import { DeliveryStatus, OrderStatus, ServiceType } from "@dos/shared-types";
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
@@ -12,7 +13,14 @@ import {
   forwardRef,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { And, MoreThanOrEqual, LessThan, In, Repository } from "typeorm";
+import {
+  And,
+  MoreThanOrEqual,
+  LessThan,
+  In,
+  Repository,
+  EntityManager,
+} from "typeorm";
 
 import { CityEntity } from "../admin/entities/city.entity";
 import { DeliveryDetailEntity } from "../delivery/entities/delivery-detail.entity";
@@ -605,15 +613,27 @@ export class OrdersService {
     nextStatus: OrderStatus,
     actorId?: string,
     metadata?: Record<string, unknown>,
+    manager?: EntityManager,
   ): Promise<OrderEntity> {
-    const order = await this.ordersRepository.findOne({
+    const repository =
+      manager?.getRepository(OrderEntity) ?? this.ordersRepository;
+    const order = await repository.findOne({
       where: { id: orderId },
+      ...(manager ? { lock: { mode: "pessimistic_write" as const } } : {}),
     });
     if (!order) {
       throw new NotFoundException({
         code: "ORDER_NOT_FOUND",
         message: "Order not found",
       });
+    }
+
+    if (order.isNegotiated && !manager) {
+      const updated = await this.ordersRepository.manager.transaction((tx) =>
+        this.transition(orderId, nextStatus, actorId, metadata, tx),
+      );
+      await this.announceTransition(updated, nextStatus, metadata);
+      return updated;
     }
 
     const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
@@ -690,7 +710,7 @@ export class OrdersService {
       } else {
         order.finalPrice = order.estimatedPrice;
       }
-      await this.applyExecutorCommission(order);
+      await this.applyExecutorCommission(order, manager);
     }
     if (nextStatus === OrderStatus.DELIVERED) {
       order.completedAt = new Date();
@@ -705,9 +725,9 @@ export class OrdersService {
         typeof metadata?.reason === "string" ? metadata.reason : null;
     }
 
-    const updated = await this.ordersRepository.save(order);
+    const updated = await repository.save(order);
     if (nextStatus === OrderStatus.COMPLETED) {
-      await this.applyDriverCompletionBonus(updated);
+      await this.applyDriverCompletionBonus(updated, manager);
     }
     await this.recordStatusEvent(
       order.id,
@@ -715,14 +735,23 @@ export class OrdersService {
       nextStatus,
       actorId,
       metadata ?? null,
+      manager,
     );
+    if (!manager) await this.announceTransition(updated, nextStatus, metadata);
+    return updated;
+  }
+
+  async announceTransition(
+    order: OrderEntity,
+    nextStatus: OrderStatus,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
     this.ordersRealtimeService.emitOrderStatusChanged({
       orderId: order.id,
       status: nextStatus,
       executorId: order.executorId,
     });
-    await this.notifyOrderStatusChange(updated, nextStatus, metadata);
-    return updated;
+    await this.notifyOrderStatusChange(order, nextStatus, metadata);
   }
 
   private async applyTaxiTaximeterFinalPrice(
@@ -730,6 +759,11 @@ export class OrdersService {
     metadata: Record<string, unknown> | undefined,
     completedAt: Date,
   ): Promise<void> {
+    if (order.isNegotiated) {
+      order.finalPrice = order.estimatedPrice;
+      return;
+    }
+
     const routePoints = await this.routePointsRepository.find({
       where: { orderId: order.id },
       order: { sequenceIndex: "ASC" },
@@ -818,12 +852,17 @@ export class OrdersService {
       : "economy";
   }
 
-  private async applyExecutorCommission(order: OrderEntity): Promise<void> {
+  private async applyExecutorCommission(
+    order: OrderEntity,
+    manager?: EntityManager,
+  ): Promise<void> {
     if (!order.executorId) {
       return;
     }
 
-    const executor = await this.executorsRepository.findOne({
+    const executors =
+      manager?.getRepository(ExecutorEntity) ?? this.executorsRepository;
+    const executor = await executors.findOne({
       where: { id: order.executorId },
     });
     if (!executor) {
@@ -840,29 +879,43 @@ export class OrdersService {
       return;
     }
 
-    const commission = await this.pricingService.calculateExecutorCommission({
-      cityId: order.cityId,
-      serviceType: order.serviceType,
-      carClass: this.isDriverRideService(order.serviceType)
-        ? await this.resolveTaxiCarClass(order)
-        : undefined,
-      vehicleType:
-        order.serviceType === ServiceType.DELIVERY
-          ? await this.resolveDeliveryVehicleType(order.id)
-          : undefined,
-      orderAmount,
-      requestedAt: order.completedAt ?? new Date(),
-    });
+    const commission = order.isNegotiated
+      ? {
+          amount: Number(
+            Math.max(
+              0,
+              (orderAmount * Number(order.rideCommissionPercent)) / 100 +
+                Number(order.rideCommissionFixed ?? 0),
+            ).toFixed(2),
+          ),
+          percent: Number(order.rideCommissionPercent),
+          fixed: Number(order.rideCommissionFixed ?? 0),
+          currency: order.currency,
+          tariffId: null,
+        }
+      : await this.pricingService.calculateExecutorCommission({
+          cityId: order.cityId,
+          serviceType: order.serviceType,
+          carClass: this.isDriverRideService(order.serviceType)
+            ? await this.resolveTaxiCarClass(order)
+            : undefined,
+          vehicleType:
+            order.serviceType === ServiceType.DELIVERY
+              ? await this.resolveDeliveryVehicleType(order.id)
+              : undefined,
+          orderAmount,
+          requestedAt: order.completedAt ?? new Date(),
+        });
     if (commission.amount <= 0) {
       return;
     }
 
-    await this.executorsRepository.decrement(
+    await executors.decrement(
       { id: executor.id },
       "balance",
       commission.amount.toFixed(2),
     );
-    const updated = await this.executorsRepository.findOne({
+    const updated = await executors.findOne({
       where: { id: executor.id },
     });
     await this.recordStatusEvent(
@@ -880,15 +933,22 @@ export class OrdersService {
         currency: commission.currency,
         balanceAfter: updated?.balance,
       },
+      manager,
     );
   }
 
-  private async applyDriverCompletionBonus(order: OrderEntity): Promise<void> {
+  private async applyDriverCompletionBonus(
+    order: OrderEntity,
+    transaction?: EntityManager,
+  ): Promise<void> {
     if (!order.executorId || order.status !== OrderStatus.COMPLETED) {
       return;
     }
 
-    const settings = await this.driverBonusSettingsRepository.findOne({
+    const settingsRepository =
+      transaction?.getRepository(DriverBonusSettingEntity) ??
+      this.driverBonusSettingsRepository;
+    const settings = await settingsRepository.findOne({
       where: { key: "default" },
     });
     if (!settings?.isEnabled || settings.ordersRequired <= 0) {
@@ -901,63 +961,64 @@ export class OrdersService {
     }
 
     const milestone = settings.ordersRequired;
-    const credited = await this.executorsRepository.manager.transaction(
-      async (manager) => {
-        const executors = manager.getRepository(ExecutorEntity);
-        const executor = await executors.findOne({
-          where: { id: order.executorId! },
-          lock: { mode: "pessimistic_write" },
-        });
-        if (!executor) return null;
-        const city = executor.cityId
-          ? await manager
-              .getRepository(CityEntity)
-              .findOneBy({ id: executor.cityId })
-          : null;
-        const day = await driverBonusDay(
-          manager,
-          driverBonusTimezone(city?.timezone),
-          order.completedAt ?? new Date(),
-        );
-        const completedOrders = await manager.getRepository(OrderEntity).count({
-          where: {
-            executorId: executor.id,
-            status: OrderStatus.COMPLETED,
-            completedAt: And(MoreThanOrEqual(day.start), LessThan(day.end)),
-          },
-        });
-        if (completedOrders < milestone) return null;
-        const payouts = manager.getRepository(DriverBonusPayoutEntity);
-        const previous = await payouts.findOne({
-          where: {
-            executorId: executor.id,
-            bonusDate: day.day,
-          },
-        });
-        if (previous) return null;
-        await payouts.save(
-          payouts.create({
-            executorId: executor.id,
-            orderId: order.id,
-            thresholdCompletedOrders: milestone,
-            bonusDate: day.day,
-            amount: bonusAmount.toFixed(2),
-          }),
-        );
-        await executors.increment(
-          { id: executor.id },
-          "balance",
-          bonusAmount.toFixed(2),
-        );
-        return {
-          executor: await executors.findOneOrFail({
-            where: { id: executor.id },
-          }),
-          completedOrders,
+    const credit = async (manager: EntityManager) => {
+      const executors = manager.getRepository(ExecutorEntity);
+      const executor = await executors.findOne({
+        where: { id: order.executorId! },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!executor) return null;
+      const city = executor.cityId
+        ? await manager
+            .getRepository(CityEntity)
+            .findOneBy({ id: executor.cityId })
+        : null;
+      const day = await driverBonusDay(
+        manager,
+        driverBonusTimezone(city?.timezone),
+        order.completedAt ?? new Date(),
+      );
+      const completedOrders = await manager.getRepository(OrderEntity).count({
+        where: {
+          executorId: executor.id,
+          status: OrderStatus.COMPLETED,
+          completedAt: And(MoreThanOrEqual(day.start), LessThan(day.end)),
+        },
+      });
+      if (completedOrders < milestone) return null;
+      const payouts = manager.getRepository(DriverBonusPayoutEntity);
+      const previous = await payouts.findOne({
+        where: {
+          executorId: executor.id,
           bonusDate: day.day,
-        };
-      },
-    );
+        },
+      });
+      if (previous) return null;
+      await payouts.save(
+        payouts.create({
+          executorId: executor.id,
+          orderId: order.id,
+          thresholdCompletedOrders: milestone,
+          bonusDate: day.day,
+          amount: bonusAmount.toFixed(2),
+        }),
+      );
+      await executors.increment(
+        { id: executor.id },
+        "balance",
+        bonusAmount.toFixed(2),
+      );
+      return {
+        executor: await executors.findOneOrFail({
+          where: { id: executor.id },
+        }),
+        completedOrders,
+        bonusDate: day.day,
+      };
+    };
+    const credited = transaction
+      ? await credit(transaction)
+      : await this.executorsRepository.manager.transaction(credit);
     if (!credited) return;
     await this.recordStatusEvent(
       order.id,
@@ -973,6 +1034,7 @@ export class OrdersService {
         bonusAmount,
         balanceAfter: credited.executor.balance,
       },
+      transaction,
     );
   }
 
@@ -1026,6 +1088,92 @@ export class OrdersService {
 
   private degToRad(value: number): number {
     return (value * Math.PI) / 180;
+  }
+
+  async acceptExecutorAssignment(
+    orderId: string,
+    executorId: string,
+    actorId: string,
+    metadata: Record<string, unknown>,
+  ): Promise<OrderEntity> {
+    const assigned = await this.ordersRepository.manager.transaction(
+      async (manager) => {
+        const orders = manager.getRepository(OrderEntity);
+        const order = await orders.findOne({
+          where: { id: orderId },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!order)
+          throw new NotFoundException({
+            code: "ORDER_NOT_FOUND",
+            message: "Order not found",
+          });
+        if (order.isNegotiated)
+          throw new BadRequestException({
+            code: "RIDE_PASSENGER_SELECTION_REQUIRED",
+            message: "Passenger selects driver",
+          });
+        if (order.status !== OrderStatus.SEARCHING)
+          throw new BadRequestException({
+            code: "ORDER_ASSIGN_INVALID_STATUS",
+            message: "Order is no longer searching",
+          });
+        const executor = await manager
+          .getRepository(ExecutorEntity)
+          .findOne({
+            where: { id: executorId },
+            lock: { mode: "pessimistic_write" },
+          });
+        if (!executor || executor.verificationStatus !== "verified")
+          throw new BadRequestException({
+            code: "EXECUTOR_ASSIGNMENT_INVALID",
+            message: "Executor must be verified",
+          });
+        if (
+          await orders.exists({
+            where: {
+              executorId,
+              status: In([
+                OrderStatus.ACCEPTED,
+                OrderStatus.ARRIVING,
+                OrderStatus.WAITING,
+                OrderStatus.IN_PROGRESS,
+                OrderStatus.DELIVERED,
+              ]),
+            },
+          })
+        )
+          throw new ConflictException({
+            code: "EXECUTOR_ALREADY_BUSY",
+            message: "Executor already has an active order",
+          });
+        order.executorId = executorId;
+        await orders.save(order);
+        return this.transition(
+          orderId,
+          OrderStatus.ACCEPTED,
+          actorId,
+          metadata,
+          manager,
+        );
+      },
+    );
+    await this.announceTransition(assigned, OrderStatus.ACCEPTED, metadata);
+    return assigned;
+  }
+
+  async resolveBookingCity(
+    cityId?: string,
+    points?: Array<{ lat: number; lng: number }>,
+    serviceType: ServiceType = ServiceType.TAXI,
+  ): Promise<CityEntity> {
+    const city = await this.resolveCity(cityId, points);
+    if (points) {
+      if (serviceType === ServiceType.INTERCITY)
+        this.assertPickupInServiceZone(city, points);
+      else this.assertPointsInServiceZone(city, points);
+    }
+    return city;
   }
 
   private async resolveCity(
@@ -1115,7 +1263,7 @@ export class OrdersService {
 
   private assertPointsInServiceZone(
     city: CityEntity,
-    routePoints: CreateOrderDto["routePoints"],
+    routePoints: Array<{ lat: number; lng: number }>,
   ): void {
     for (const point of routePoints) {
       if (!this.isPointInCityServiceZone(city, point)) {
@@ -1129,7 +1277,7 @@ export class OrdersService {
 
   private assertPickupInServiceZone(
     city: CityEntity,
-    routePoints: CreateOrderDto["routePoints"],
+    routePoints: Array<{ lat: number; lng: number }>,
   ): void {
     const pickupPoint = routePoints[0];
     if (pickupPoint && !this.isPointInCityServiceZone(city, pickupPoint)) {
@@ -1199,9 +1347,13 @@ export class OrdersService {
     toStatus: OrderStatus,
     actorId?: string,
     metadata?: Record<string, unknown> | null,
+    manager?: EntityManager,
   ): Promise<void> {
-    await this.orderStatusEventsRepository.save(
-      this.orderStatusEventsRepository.create({
+    const events =
+      manager?.getRepository(OrderStatusEventEntity) ??
+      this.orderStatusEventsRepository;
+    await events.save(
+      events.create({
         orderId,
         fromStatus,
         toStatus,
@@ -1248,6 +1400,15 @@ export class OrdersService {
       distanceMeters: order.distanceMeters,
       durationSeconds: order.durationSeconds,
       carClass: order.carClass ?? null,
+      isNegotiated: order.isNegotiated ?? false,
+      passengerCount: order.passengerCount ?? 1,
+      ridePricingBasis: order.ridePricingBasis ?? null,
+      rideUnitPrice: order.rideUnitPrice ?? null,
+      pickupEntrance: order.pickupEntrance ?? null,
+      pickupComment: order.pickupComment ?? null,
+      needsChildSeat: order.needsChildSeat ?? false,
+      sharedRide: order.sharedRide ?? false,
+
       scheduledAt: order.scheduledAt,
       acceptedAt: order.acceptedAt,
       startedAt: order.startedAt,

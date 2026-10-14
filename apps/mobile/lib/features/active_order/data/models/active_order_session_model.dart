@@ -15,6 +15,7 @@ class ActiveOrderSessionModel extends ActiveOrderSession {
     required super.currency,
     required super.initialEtaSeconds,
     required super.vehicleLabel,
+    super.isNegotiated,
     super.initialOrderStatus,
     super.executorName,
     super.executorRating,
@@ -51,6 +52,7 @@ class ActiveOrderSessionModel extends ActiveOrderSession {
         'taxi';
 
     return ActiveOrderSessionModel(
+      isNegotiated: json['isNegotiated'] == true,
       orderId: json['id'] as String? ?? '',
       serviceType: serviceType == 'delivery'
           ? ActiveOrderServiceType.delivery
@@ -109,6 +111,7 @@ class ActiveOrderSessionModel extends ActiveOrderSession {
     required Map<String, dynamic> order,
     required Map<String, dynamic> deliveryDetails,
   }) {
+    if (order['isNegotiated'] == true) return 'ride_request';
     if (serviceType == 'delivery') {
       return deliveryDetails['courierVehicleType'] as String? ??
           deliveryDetails['courier_vehicle_type'] as String? ??

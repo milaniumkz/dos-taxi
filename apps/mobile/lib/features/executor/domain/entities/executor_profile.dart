@@ -19,9 +19,13 @@ class ExecutorProfile extends Equatable {
     required this.verificationStatus,
     required this.preferredLanguage,
     required this.cityName,
+    this.cityId,
+    this.passengerCapacity = 4,
     this.cityCurrency = 'KZT',
   });
 
+  final String? cityId;
+  final int passengerCapacity;
   final String id;
   final String phone;
   final String name;
@@ -62,9 +66,13 @@ class ExecutorProfile extends Equatable {
     String? verificationStatus,
     String? preferredLanguage,
     Object? cityName = _unset,
+    String? cityId,
+    int? passengerCapacity,
     String? cityCurrency,
   }) {
     return ExecutorProfile(
+      cityId: cityId ?? this.cityId,
+      passengerCapacity: passengerCapacity ?? this.passengerCapacity,
       id: id ?? this.id,
       phone: phone ?? this.phone,
       name: name ?? this.name,
@@ -100,6 +108,8 @@ class ExecutorProfile extends Equatable {
 
   @override
   List<Object?> get props => [
+    cityId,
+    passengerCapacity,
     id,
     phone,
     name,

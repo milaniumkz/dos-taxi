@@ -1,3 +1,4 @@
+import { RideMarketplaceModule } from "./modules/ride-marketplace/ride-marketplace.module";
 import { ErrorMessagesModule } from "./modules/error-messages/error-messages.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
@@ -22,6 +23,7 @@ import { UsersModule } from "./modules/users/users.module";
 
 @Module({
   imports: [
+    RideMarketplaceModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, databaseConfig, redisConfig, jwtConfig],

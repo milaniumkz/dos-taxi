@@ -2,6 +2,8 @@ import '../../domain/entities/executor_profile.dart';
 
 class ExecutorProfileModel extends ExecutorProfile {
   const ExecutorProfileModel({
+    super.cityId,
+    super.passengerCapacity,
     required super.id,
     required super.phone,
     required super.name,
@@ -26,6 +28,8 @@ class ExecutorProfileModel extends ExecutorProfile {
     final user = _asMap(json['user']);
     final city = _asMap(json['city']);
     return ExecutorProfileModel(
+      cityId: json['cityId'] as String? ?? city['id'] as String?,
+      passengerCapacity: _toInt(json['passengerCapacity']) ?? 4,
       id: json['id'] as String? ?? '',
       phone: user['phone'] as String? ?? '',
       name: user['name'] as String? ?? '',

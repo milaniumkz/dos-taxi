@@ -646,135 +646,151 @@ class _DriverActiveOrderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final targetLabel = _targetLabel;
     final targetAddress = _targetAddress;
-    return DosCard(
-      color: AppColors.darkSurface,
-      borderColor: const Color(0x22FFFFFF),
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+      ),
+      child: SingleChildScrollView(
+        child: DosCard(
+          color: AppColors.darkSurface,
+          borderColor: const Color(0x22FFFFFF),
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.primary,
-                child: Icon(
-                  Icons.navigation_rounded,
-                  color: AppColors.text,
-                  size: 19,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      targetLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.primary,
+                    child: Icon(
+                      Icons.navigation_rounded,
+                      color: AppColors.text,
+                      size: 19,
                     ),
-                    Text(
-                      targetAddress,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.darkText,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${l10n.driverActiveOrderPaymentLabel}: ${_paymentMethodLabel(l10n, session.paymentMethod)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.darkMuted,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                AppFormatters.formatCurrency(
-                  context,
-                  session.price,
-                  currencyCode: session.currency,
-                ),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(color: AppColors.primary),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Expanded(
-                child: _DriverRoundAction(
-                  icon: Icons.call_rounded,
-                  label: session.clientPhone == null
-                      ? '—'
-                      : AppFormatters.formatKazakhstanPhone(
-                          session.clientPhone!,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          targetLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
-                  onTap: onCallClient,
-                ),
+                        Text(
+                          targetAddress,
+                          maxLines: session.isNegotiated ? null : 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                color: AppColors.darkText,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${l10n.driverActiveOrderPaymentLabel}: ${_paymentMethodLabel(l10n, session.paymentMethod)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: AppColors.darkMuted,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    AppFormatters.formatCurrency(
+                      context,
+                      session.price,
+                      currencyCode: session.currency,
+                      decimalDigits:
+                          session.isNegotiated && session.currency == 'RUB'
+                          ? 2
+                          : 0,
+                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleSmall?.copyWith(color: AppColors.primary),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _DriverRoundAction(
-                  icon: Icons.navigation_rounded,
-                  label: l10n.driverActiveOrderNavigationAction,
-                  onTap: onOpenNavigation,
-                ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: _DriverRoundAction(
+                      icon: Icons.call_rounded,
+                      label: session.clientPhone == null
+                          ? '—'
+                          : AppFormatters.formatKazakhstanPhone(
+                              session.clientPhone!,
+                            ),
+                      onTap: onCallClient,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _DriverRoundAction(
+                      icon: Icons.navigation_rounded,
+                      label: l10n.driverActiveOrderNavigationAction,
+                      onTap: onOpenNavigation,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _DriverRoundAction(
+                      icon: Icons.chat_bubble_rounded,
+                      label: l10n.driverIncomingOrderClientLabel,
+                      onTap: onOpenChat,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _DriverRoundAction(
-                  icon: Icons.chat_bubble_rounded,
-                  label: l10n.driverIncomingOrderClientLabel,
-                  onTap: onOpenChat,
+              if (session.isDelivery && session.status == 'at_door') ...[
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: recipientCodeController,
+                  decoration: InputDecoration(
+                    labelText: l10n.driverActiveOrderRecipientCodeLabel,
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton.icon(
+                  onPressed: incomingState.isSubmitting
+                      ? null
+                      : onPickProofPhoto,
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  label: Text(l10n.driverActiveOrderProofPhotoAction),
+                ),
+                if (proofPhoto != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    child: Text(
+                      proofPhoto!.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.darkMuted,
+                      ),
+                    ),
+                  ),
+              ],
+              const SizedBox(height: AppSpacing.sm),
+              ...actionButtons,
             ],
           ),
-          if (session.isDelivery && session.status == 'at_door') ...[
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: recipientCodeController,
-              decoration: InputDecoration(
-                labelText: l10n.driverActiveOrderRecipientCodeLabel,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: incomingState.isSubmitting ? null : onPickProofPhoto,
-              icon: const Icon(Icons.add_photo_alternate_outlined),
-              label: Text(l10n.driverActiveOrderProofPhotoAction),
-            ),
-            if (proofPhoto != null)
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.xs),
-                child: Text(
-                  proofPhoto!.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: AppColors.darkMuted),
-                ),
-              ),
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          ...actionButtons,
-        ],
+        ),
       ),
     );
   }
@@ -788,7 +804,17 @@ class _DriverActiveOrderCard extends StatelessWidget {
 
   String get _targetAddress {
     if (session.status == 'accepted') {
-      return session.pickupAddress;
+      return [
+        session.pickupAddress,
+        if ((session.pickupEntrance ?? '').isNotEmpty)
+          '${l10n.rideEntrance}: ${session.pickupEntrance}',
+        if ((session.pickupComment ?? '').isNotEmpty)
+          '${l10n.rideComment}: ${session.pickupComment}',
+        if (session.isNegotiated)
+          '${l10n.ridePassengers}: ${session.passengerCount}',
+        if (session.needsChildSeat) l10n.rideChildSeat,
+        if (session.sharedRide) l10n.rideTogether,
+      ].join('\n');
     }
     return session.destinationAddress;
   }

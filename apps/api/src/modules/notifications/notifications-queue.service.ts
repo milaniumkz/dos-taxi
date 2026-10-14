@@ -13,6 +13,7 @@ import IORedis from "ioredis";
 import { sendSmscSms } from "./smsc.provider";
 
 export type NotificationType =
+  | "ride_price_offer"
   | "auth_otp"
   | "executor_incoming_order"
   | "order_accepted"
@@ -545,6 +546,7 @@ export class NotificationsQueueService
     }
 
     if (
+      type === "ride_price_offer" ||
       type === "order_waiting" ||
       type === "order_started" ||
       type === "order_cancelled"

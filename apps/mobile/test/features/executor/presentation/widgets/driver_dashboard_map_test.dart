@@ -29,7 +29,7 @@ class _Repository extends Mock implements ExecutorRepository {}
 void main() {
   for (final size in [const Size(390, 844), const Size(360, 640)]) {
     testWidgets(
-      'driver remains above cards before and after bonus loads on $size',
+      'courier map marker remains above cards before and after bonus loads on $size',
       (tester) async {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1;
@@ -59,7 +59,7 @@ void main() {
               id: 'driver',
               phone: '+77000000002',
               name: 'Driver',
-              executorType: 'driver',
+              executorType: 'courier',
               vehicleType: null,
               carClass: 'economy',
               isOnline: false,

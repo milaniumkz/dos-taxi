@@ -113,6 +113,7 @@ export class DispatchService {
     const order = await this.ordersRepository.findOne({
       where: { id: orderId },
     });
+    if (order?.isNegotiated) return;
     if (!order) {
       throw new NotFoundException({
         code: "ORDER_NOT_FOUND",
@@ -247,30 +248,17 @@ export class DispatchService {
       });
     }
 
-    offer.response = "accepted";
-    offer.respondedAt = new Date();
-    await this.dispatchOffersRepository.save(offer);
-
-    const order = await this.ordersRepository.findOne({
-      where: { id: orderId },
-    });
-    if (!order) {
-      throw new NotFoundException({
-        code: "ORDER_NOT_FOUND",
-        message: "Order not found",
-      });
-    }
-
-    order.executorId = executor.id;
-    await this.ordersRepository.save(order);
-    await this.redisStoreService.delete(this.getQueueKey(orderId));
-
-    return this.ordersService.transition(
+    const order = await this.ordersService.acceptExecutorAssignment(
       orderId,
-      OrderStatus.ACCEPTED,
+      executor.id,
       executor.userId,
       { source: "dispatch_accept" },
     );
+    offer.response = "accepted";
+    offer.respondedAt = new Date();
+    await this.dispatchOffersRepository.save(offer);
+    await this.redisStoreService.delete(this.getQueueKey(orderId));
+    return order;
   }
 
   async rejectOrder(executorUserId: string, orderId: string): Promise<void> {
@@ -569,9 +557,10 @@ export class DispatchService {
             where: { orderId: order.id },
           })
         : null;
-    const requestedCarClass = order.serviceType === ServiceType.TAXI
-      ? await this.resolveOrderCarClass(order.id)
-      : null;
+    const requestedCarClass =
+      order.serviceType === ServiceType.TAXI
+        ? await this.resolveOrderCarClass(order.id)
+        : null;
 
     const executorIds = [
       ...new Set(onlineRecords.map((record) => record.executorId)),

@@ -1268,4 +1268,119 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get driverChildSeatNotice =>
       'Включайте «Детский» только при наличии детского кресла.';
+
+  @override
+  String get rideRequestTitle => 'Заявка на поездку';
+
+  @override
+  String get rideRetry => 'Повторить';
+
+  @override
+  String get rideEntrance => 'Подъезд (необязательно)';
+
+  @override
+  String get rideComment => 'Комментарий (необязательно)';
+
+  @override
+  String get rideChildSeat => 'Детское кресло';
+
+  @override
+  String get rideTogether => 'Вместе';
+
+  @override
+  String get rideTogetherHint => 'Водитель может подбирать пассажиров по пути';
+
+  @override
+  String get ridePayment => 'Способ оплаты';
+
+  @override
+  String get rideCash => 'Наличными';
+
+  @override
+  String get rideKaspi => 'Перевод Kaspi';
+
+  @override
+  String get rideHalyk => 'Перевод Halyk';
+
+  @override
+  String get rideSubmit => 'Подать заявку';
+
+  @override
+  String get ridePerSeat => 'Цена за место';
+
+  @override
+  String get ridePerSalon => 'Цена за весь салон';
+
+  @override
+  String get ridePassengers => 'Количество пассажиров';
+
+  @override
+  String get rideYourPrice => 'Ваша цена';
+
+  @override
+  String get rideTotal => 'Итого';
+
+  @override
+  String get rideMinimum => 'Минимальный заказ';
+
+  @override
+  String get rideDecrease => 'Уменьшить';
+
+  @override
+  String get rideIncrease => 'Увеличить';
+
+  @override
+  String get rideOffersTitle => 'Предложения водителей';
+
+  @override
+  String get rideOffersEmpty =>
+      'Ждём предложения водителей. Водителя выбираете вы.';
+
+  @override
+  String get rideChooseDriver => 'Выбрать водителя';
+
+  @override
+  String get rideFeedTitle => 'Заявки рядом';
+
+  @override
+  String get rideFeedEmpty => 'Новых заявок рядом пока нет';
+
+  @override
+  String get ridePropose => 'Предложить цену';
+
+  @override
+  String get rideWithdraw => 'Отозвать предложение';
+
+  @override
+  String get ridePending => 'Предложение отправлено. Ждём выбора пассажира.';
+
+  @override
+  String get rideConfirmChildSeat => 'У меня есть детское кресло';
+
+  @override
+  String get ridePickupDistance => 'До подачи';
+
+  @override
+  String get rideCapacity => 'Пассажирских мест';
+
+  @override
+  String get rideOffline => 'Включите «На линии», чтобы видеть заявки';
+
+  @override
+  String get rideNext => 'Показать ещё';
+
+  @override
+  String get rideCancel => 'Отменить заявку';
+
+  @override
+  String get rideReload => 'Обновить';
+
+  @override
+  String get rideRating => 'Рейтинг';
+
+  @override
+  String get rideCity => 'Город работы';
+
+  @override
+  String get rideKilometres => 'км';
 }

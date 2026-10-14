@@ -136,6 +136,8 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   @override
   Future<Either<Failure, ExecutorProfile>> updateVehicleSettings({
     required ExecutorProfile profile,
+    String? cityId,
+    int? passengerCapacity,
     String? vehicleMake,
     String? vehicleModel,
     int? vehicleYear,
@@ -145,6 +147,8 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   }) async {
     try {
       final updated = await _remoteDataSource.updateVehicleSettings(
+        cityId: cityId,
+        passengerCapacity: passengerCapacity,
         vehicleMake: vehicleMake,
         vehicleModel: vehicleModel,
         vehicleYear: vehicleYear,

@@ -1,3 +1,4 @@
+import '../../../ride_marketplace/presentation/ride_offers_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -55,6 +56,9 @@ class ActiveOrderScreen extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        if (state.session.isNegotiated && state.orderStatus == 'searching') {
+          return RideOffersScreen(orderId: state.session.orderId);
+        }
         return Scaffold(
           extendBodyBehindAppBar: true,
           body: Stack(
@@ -286,11 +290,15 @@ class ActiveOrderScreen extends StatelessWidget {
       context,
       state.session.price,
       currencyCode: state.session.currency,
+      decimalDigits:
+          state.session.isNegotiated && state.session.currency == 'RUB' ? 2 : 0,
     );
   }
 
   String _localizedTariffLabel(AppLocalizations l10n, String value) {
     switch (value.trim().toLowerCase()) {
+      case 'ride_request':
+        return l10n.rideRequestTitle;
       case 'economy':
       case 'эконом':
       case 'taxi':

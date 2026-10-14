@@ -1,3 +1,5 @@
+import '../../features/ride_marketplace/data/ride_repository_impl.dart';
+import '../../features/ride_marketplace/domain/ride_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
@@ -105,6 +107,9 @@ Future<void> configureDependencies(AppConfig config) async {
       },
       authSessionEvents: serviceLocator<AuthSessionEvents>(),
     ),
+  );
+  serviceLocator.registerLazySingleton<RideRepository>(
+    () => RideRepositoryImpl(serviceLocator<ApiClient>()),
   );
   serviceLocator.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSource(tokenStorage),

@@ -94,7 +94,10 @@ export class UpdateExecutorProfileDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsIn(["economy", "comfort", "comfort_plus", "business", "together", "child"], { each: true })
+  @IsIn(
+    ["economy", "comfort", "comfort_plus", "business", "together", "child"],
+    { each: true },
+  )
   enabledTariffs?: string[];
 
   @IsOptional()
@@ -106,4 +109,10 @@ export class UpdateExecutorProfileDto {
   @Transform(({ value }) => emptyStringToUndefined(value))
   @Matches(/^(ru|kk)$/)
   preferredLanguage?: string;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(8)
+  passengerCapacity?: number;
 }

@@ -1,0 +1,123 @@
+import 'dart:math';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../home/domain/entities/address_suggestion.dart';
+import '../../active_order/domain/entities/active_order_session.dart';
+import '../domain/ride_repository.dart';
+
+class RideRequestState {
+  const RideRequestState({
+    this.quote,
+    this.busy = false,
+    this.error,
+    this.created,
+  });
+  final Map<String, dynamic>? quote;
+  final bool busy;
+  final String? error;
+  final ActiveOrderSession? created;
+}
+
+class RideRequestCubit extends Cubit<RideRequestState> {
+  RideRequestCubit(
+    this.repository,
+    this.pickup,
+    this.destination,
+    this.serviceType,
+  ) : super(const RideRequestState());
+  final RideRepository repository;
+  AddressSuggestion pickup, destination;
+  final String serviceType;
+  int passengers = 1, steps = 0;
+  int _revision = 0;
+  String? _key;
+  Map<String, dynamic>? _submitted;
+  Map<String, dynamic> get _route => {
+    'serviceType': serviceType,
+    'passengerCount': passengers,
+    'routePoints': [pickup, destination]
+        .map(
+          (a) => {
+            'lat': a.location.latitude,
+            'lng': a.location.longitude,
+            'address': a.displayTitle,
+          },
+        )
+        .toList(),
+  };
+  Future<void> refreshQuote([int? count]) async {
+    if (state.busy && _submitted != null) return;
+    if (count != null) passengers = count;
+    final revision = ++_revision;
+    emit(const RideRequestState(busy: true));
+    final result = await repository.quote(_route);
+    if (isClosed || revision != _revision) return;
+    result.fold((f) => emit(RideRequestState(error: f.message)), (q) {
+      steps = 0;
+      emit(RideRequestState(quote: q));
+    });
+  }
+
+  Future<void> changeAddress(
+    AddressSuggestion address, {
+    required bool isPickup,
+  }) {
+    if (isPickup) {
+      pickup = address;
+    } else {
+      destination = address;
+    }
+    return refreshQuote();
+  }
+
+  void changePrice(int delta) {
+    if (state.busy || state.quote == null) return;
+    steps = (steps + delta).clamp(0, 1000);
+    emit(RideRequestState(quote: state.quote));
+  }
+
+  Future<void> submit({
+    required String payment,
+    required String entrance,
+    required String comment,
+    required bool childSeat,
+    required bool shared,
+  }) async {
+    if (state.busy || state.quote == null) return;
+    final q = state.quote!;
+    final data = {
+      ..._route,
+      'termsKey': q['termsKey'],
+      'priceSteps': steps,
+      'paymentMethod': payment,
+      'pickupEntrance': entrance.trim(),
+      'pickupComment': comment.trim(),
+      'needsChildSeat': childSeat,
+      'sharedRide': shared,
+    };
+    if (_submitted?.toString() != data.toString()) {
+      _submitted = data;
+      _key = _uuid();
+    }
+    emit(RideRequestState(quote: q, busy: true));
+    final result = await repository.create(data, _key!);
+    if (isClosed) return;
+    result.fold((f) {
+      if (f.code == 'RIDE_PRICING_CHANGED') {
+        _submitted = null;
+        _key = null;
+        refreshQuote();
+      } else {
+        emit(RideRequestState(quote: q, error: f.message));
+      }
+    }, (order) => emit(RideRequestState(quote: q, created: order)));
+  }
+
+  static String _uuid() {
+    final random = Random.secure();
+    final bytes = List.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    final s = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return '${s.substring(0, 8)}-${s.substring(8, 12)}-${s.substring(12, 16)}-${s.substring(16, 20)}-${s.substring(20)}';
+  }
+}

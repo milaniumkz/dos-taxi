@@ -71,7 +71,7 @@ void main() {
   });
 
   IncomingOrderCubit buildCubit({
-    Duration tick = const Duration(milliseconds: 20),
+    Duration tick = const Duration(seconds: 1),
     int lifetime = 20,
   }) {
     return IncomingOrderCubit(
@@ -192,27 +192,29 @@ void main() {
     'times out the current offer when countdown reaches zero',
     build: () =>
         buildCubit(tick: const Duration(milliseconds: 20), lifetime: 2),
-    act: (cubit) => cubit.startListening(profile),
-    wait: const Duration(milliseconds: 80),
+    act: (cubit) async {
+      await cubit.startListening(profile);
+      if (cubit.state.currentOffer == null)
+        await cubit.stream.firstWhere((state) => state.currentOffer != null);
+      await cubit.stream.firstWhere(
+        (state) => state.currentOffer == null && state.secondsRemaining == 0,
+      );
+    },
     expect: () => [
+      isA<IncomingOrderState>().having((s) => s.isListening, 'listening', true),
       isA<IncomingOrderState>().having(
-        (state) => state.isListening,
-        'isListening',
-        true,
-      ),
-      isA<IncomingOrderState>().having(
-        (state) => state.currentOffer?.orderId,
+        (s) => s.currentOffer?.orderId,
         'offer',
         'order-1',
       ),
       isA<IncomingOrderState>().having(
-        (state) => state.secondsRemaining,
-        'secondsRemaining',
+        (s) => s.secondsRemaining,
+        'remaining',
         1,
       ),
       isA<IncomingOrderState>()
-          .having((state) => state.currentOffer, 'offer', isNull)
-          .having((state) => state.secondsRemaining, 'secondsRemaining', 0),
+          .having((s) => s.currentOffer, 'offer', isNull)
+          .having((s) => s.secondsRemaining, 'remaining', 0),
     ],
   );
 }

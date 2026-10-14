@@ -57,6 +57,22 @@ class ActiveOrderCubit extends Cubit<ActiveOrderState> {
         );
   }
 
+  void applySelection(ActiveOrderSession session) {
+    if (session.orderId != state.session.orderId) return;
+    emit(
+      state.copyWith(
+        session: session,
+        orderStatus: session.initialOrderStatus,
+        executorName: session.executorName,
+        executorRating: session.executorRating,
+        executorVehicleLabel: session.executorVehicleLabel,
+        executorPhone: session.executorPhone,
+        executorPhoneMasked: _initialMaskedPhone(session.executorPhone),
+        errorMessage: null,
+      ),
+    );
+  }
+
   Future<void> cancelOrder() async {
     emit(state.copyWith(isCancelling: true, errorMessage: null));
     final result = await _activeOrderRepository.cancelOrder(
@@ -105,6 +121,7 @@ class ActiveOrderCubit extends Cubit<ActiveOrderState> {
         emit(
           state.copyWith(
             isConnecting: false,
+            session: event.session ?? state.session,
             orderStatus: nextStatus,
             executorName: event.executorName ?? state.executorName,
             executorRating: event.executorRating ?? state.executorRating,
