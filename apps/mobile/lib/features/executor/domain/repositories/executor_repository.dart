@@ -28,6 +28,8 @@ abstract class ExecutorRepository {
 
   Future<Either<Failure, ExecutorProfile>> updateVehicleSettings({
     required ExecutorProfile profile,
+    String? cityId,
+    int? passengerCapacity,
     String? vehicleMake,
     String? vehicleModel,
     int? vehicleYear,

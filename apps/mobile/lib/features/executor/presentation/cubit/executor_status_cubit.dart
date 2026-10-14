@@ -135,6 +135,8 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
   }
 
   Future<bool> updateVehicleSettings({
+    String? cityId,
+    int? passengerCapacity,
     String? vehicleMake,
     String? vehicleModel,
     int? vehicleYear,
@@ -150,6 +152,8 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
     emit(state.copyWith(isLoading: true, errorMessage: null));
     final result = await _executorRepository.updateVehicleSettings(
       profile: profile,
+      cityId: cityId,
+      passengerCapacity: passengerCapacity,
       vehicleMake: vehicleMake,
       vehicleModel: vehicleModel,
       vehicleYear: vehicleYear,

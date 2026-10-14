@@ -1,3 +1,4 @@
+import 'active_order_session.dart';
 import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -10,6 +11,7 @@ enum ActiveOrderTrackingEventType {
 class ActiveOrderTrackingEvent extends Equatable {
   const ActiveOrderTrackingEvent._({
     required this.type,
+    this.session,
     this.orderStatus,
     this.executorLocation,
     this.executorHeading,
@@ -21,6 +23,7 @@ class ActiveOrderTrackingEvent extends Equatable {
   });
 
   const ActiveOrderTrackingEvent.statusChanged({
+    ActiveOrderSession? session,
     required String orderStatus,
     String? executorName,
     double? executorRating,
@@ -28,6 +31,7 @@ class ActiveOrderTrackingEvent extends Equatable {
     String? executorPhone,
   }) : this._(
          type: ActiveOrderTrackingEventType.statusChanged,
+         session: session,
          orderStatus: orderStatus,
          executorName: executorName,
          executorRating: executorRating,
@@ -50,6 +54,7 @@ class ActiveOrderTrackingEvent extends Equatable {
         etaSeconds: etaSeconds,
       );
 
+  final ActiveOrderSession? session;
   final ActiveOrderTrackingEventType type;
   final String? orderStatus;
   final LatLng? executorLocation;
@@ -62,6 +67,7 @@ class ActiveOrderTrackingEvent extends Equatable {
 
   @override
   List<Object?> get props => [
+    session,
     type,
     orderStatus,
     executorLocation,

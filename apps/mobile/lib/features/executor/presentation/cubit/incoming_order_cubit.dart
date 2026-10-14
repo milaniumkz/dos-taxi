@@ -249,6 +249,7 @@ class IncomingOrderCubit extends Cubit<IncomingOrderState> {
       ),
     );
     _countdownTimer = Timer.periodic(_countdownTick, (timer) {
+      if (state.isSubmitting) return;
       final nextValue = state.secondsRemaining - 1;
       if (nextValue <= 0) {
         _handleTimeout();

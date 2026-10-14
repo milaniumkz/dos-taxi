@@ -59,6 +59,30 @@ export class OrderResponseDto {
   carClass!: string | null;
 
   @ApiPropertyOptional()
+  isNegotiated?: boolean;
+
+  @ApiPropertyOptional()
+  passengerCount?: number;
+
+  @ApiPropertyOptional()
+  ridePricingBasis?: string | null;
+
+  @ApiPropertyOptional()
+  rideUnitPrice?: string | null;
+
+  @ApiPropertyOptional()
+  pickupEntrance?: string | null;
+
+  @ApiPropertyOptional()
+  pickupComment?: string | null;
+
+  @ApiPropertyOptional()
+  needsChildSeat?: boolean;
+
+  @ApiPropertyOptional()
+  sharedRide?: boolean;
+
+  @ApiPropertyOptional()
   scheduledAt!: Date | null;
 
   @ApiPropertyOptional()

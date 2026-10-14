@@ -111,6 +111,7 @@ export class ExecutorsService {
         vehicleColor: dto.vehicleColor ?? null,
         vehiclePlate: dto.vehiclePlate ?? null,
         enabledTariffs: this.normalizeEnabledTariffs(dto.enabledTariffs),
+        passengerCapacity: dto.passengerCapacity,
         cityId: dto.cityId ?? null,
         verificationStatus: "pending",
       });
@@ -141,6 +142,7 @@ export class ExecutorsService {
           dto.vehiclePlate !== undefined
             ? dto.vehiclePlate
             : executor.vehiclePlate,
+        passengerCapacity: dto.passengerCapacity ?? executor.passengerCapacity,
         enabledTariffs:
           dto.enabledTariffs !== undefined
             ? this.normalizeEnabledTariffs(dto.enabledTariffs)
@@ -283,12 +285,20 @@ export class ExecutorsService {
   }
 
   private normalizeEnabledTariffs(values?: string[]): string[] {
-    const allowed = ["economy", "comfort", "comfort_plus", "business", "together", "child"];
+    const allowed = [
+      "economy",
+      "comfort",
+      "comfort_plus",
+      "business",
+      "together",
+      "child",
+    ];
     const normalized = [
       ...new Set(
-        (values?.length ? values : ["economy", "comfort", "comfort_plus", "business"]).filter((value) =>
-          allowed.includes(value),
-        ),
+        (values?.length
+          ? values
+          : ["economy", "comfort", "comfort_plus", "business"]
+        ).filter((value) => allowed.includes(value)),
       ),
     ];
 
@@ -309,6 +319,7 @@ export class ExecutorsService {
       this.changed(dto.vehicleYear, executor.vehicleYear) ||
       this.changed(dto.vehicleColor, executor.vehicleColor) ||
       this.changed(dto.vehiclePlate, executor.vehiclePlate) ||
+      this.changed(dto.passengerCapacity, executor.passengerCapacity) ||
       this.changed(dto.cityId, executor.cityId) ||
       (dto.enabledTariffs !== undefined &&
         this.tariffsChanged(

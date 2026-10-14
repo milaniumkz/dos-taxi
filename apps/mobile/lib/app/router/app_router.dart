@@ -1,3 +1,6 @@
+import '../../features/ride_marketplace/presentation/ride_request_screen.dart';
+import '../../features/ride_marketplace/presentation/ride_request_cubit.dart';
+import '../../features/ride_marketplace/domain/ride_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -77,6 +80,24 @@ GoRouter buildAppRouter(AppConfig config) {
           ],
           child: const ExecutorHomeScreen(),
         ),
+      ),
+      GoRoute(
+        path: RideRequestScreen.routePath,
+        builder: (context, state) {
+          final args = state.extra;
+          if (args is! RideRequestArgs) {
+            return const PassengerHomePlaceholderScreen();
+          }
+          return BlocProvider(
+            create: (_) => RideRequestCubit(
+              serviceLocator<RideRepository>(),
+              args.pickup,
+              args.destination,
+              args.serviceType,
+            )..refreshQuote(),
+            child: const RideRequestScreen(),
+          );
+        },
       ),
       GoRoute(
         path: TaxiClassScreen.routePath,

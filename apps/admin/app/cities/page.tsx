@@ -1,17 +1,18 @@
-import { AppFrame } from '../components/app-frame';
-import { CitiesPanel } from '../components/cities-panel';
-import { FlashBanner } from '../components/flash-banner';
-import { MetricCard } from '../components/metric-card';
-import { SectionShell } from '../components/section-shell';
-import { StatusPill } from '../components/status-pill';
-import { createCityAction } from '../lib/admin-actions';
-import { getAdminPageContext } from '../lib/admin-i18n';
+import { rideLabels } from "../lib/ride-i18n";
+import { AppFrame } from "../components/app-frame";
+import { CitiesPanel } from "../components/cities-panel";
+import { FlashBanner } from "../components/flash-banner";
+import { MetricCard } from "../components/metric-card";
+import { SectionShell } from "../components/section-shell";
+import { StatusPill } from "../components/status-pill";
+import { createCityAction } from "../lib/admin-actions";
+import { getAdminPageContext } from "../lib/admin-i18n";
 import {
   buildReturnPath,
   getSearchParam,
   resolveRouteSearchParams,
-} from '../lib/admin-routing';
-import { getBackofficeSnapshot } from '../lib/backoffice';
+} from "../lib/admin-routing";
+import { getBackofficeSnapshot } from "../lib/backoffice";
 
 type CitiesPageProps = {
   searchParams?: Promise<{
@@ -25,8 +26,9 @@ type CitiesPageProps = {
 export default async function CitiesPage({ searchParams }: CitiesPageProps) {
   const snapshot = await getBackofficeSnapshot();
   const resolvedSearchParams = await resolveRouteSearchParams(searchParams);
-  const { locale, dictionary } = await getAdminPageContext(resolvedSearchParams);
-  const selectedQuery = getSearchParam(resolvedSearchParams, 'query') ?? '';
+  const { locale, dictionary } =
+    await getAdminPageContext(resolvedSearchParams);
+  const selectedQuery = getSearchParam(resolvedSearchParams, "query") ?? "";
   const filteredCities = snapshot.cities.filter((city) => {
     if (!selectedQuery) {
       return true;
@@ -41,17 +43,20 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
       city.timezone,
       city.currency,
     ]
-      .join(' ')
+      .join(" ")
       .toLowerCase();
 
     return haystack.includes(normalizedQuery);
   });
   const filteredActiveCities = filteredCities.filter((city) => city.isActive);
   const standbyCities = filteredCities.length - filteredActiveCities.length;
-  const kzCities = filteredCities.filter((city) => city.countryCode === 'KZ').length;
-  const returnPath = buildReturnPath('/cities', resolvedSearchParams, locale);
-  const notice = getSearchParam(resolvedSearchParams, 'notice');
-  const error = getSearchParam(resolvedSearchParams, 'error');
+  const kzCities = filteredCities.filter(
+    (city) => city.countryCode === "KZ",
+  ).length;
+  const returnPath = buildReturnPath("/cities", resolvedSearchParams, locale);
+  const rides = rideLabels(locale);
+  const notice = getSearchParam(resolvedSearchParams, "notice");
+  const error = getSearchParam(resolvedSearchParams, "error");
 
   return (
     <AppFrame
@@ -111,7 +116,10 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
               <button type="submit" className="action-button">
                 {dictionary.forms.apply}
               </button>
-              <a href={`/cities?lang=${locale}`} className="action-button action-button--ghost">
+              <a
+                href={`/cities?lang=${locale}`}
+                className="action-button action-button--ghost"
+              >
                 {dictionary.forms.clear}
               </a>
             </div>
@@ -146,6 +154,14 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="returnPath" value={returnPath} />
             <div className="admin-form__grid">
+              <label className="field">
+                <span>{rides.basis}</span>
+                <select name="ridePricingBasis" defaultValue={"seat"}>
+                  <option value="seat">{rides.seat}</option>
+                  <option value="salon">{rides.salon}</option>
+                </select>
+                <small>{rides.hint}</small>
+              </label>
               <label className="field">
                 <span>{dictionary.forms.nameRu}</span>
                 <input name="nameRu" required />

@@ -86,6 +86,7 @@ export type AdminActivityAction =
   | "payment.cancelled";
 
 export type CitySnapshot = {
+  ridePricingBasis?: "seat" | "salon";
   id: string;
   nameRu: string;
   nameKk: string;
@@ -1469,6 +1470,7 @@ function normalizeUserSnapshot(raw: {
 }
 
 function normalizeCitySnapshot(raw: {
+  ridePricingBasis?: string;
   id: string;
   nameRu?: string | null;
   nameKk?: string | null;
@@ -1479,6 +1481,7 @@ function normalizeCitySnapshot(raw: {
 }): CitySnapshot {
   return {
     id: raw.id,
+    ridePricingBasis: raw.ridePricingBasis === "salon" ? "salon" : "seat",
     nameRu: raw.nameRu ?? "",
     nameKk: raw.nameKk ?? "",
     countryCode: raw.countryCode ?? "",

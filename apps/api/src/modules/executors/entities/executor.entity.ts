@@ -115,6 +115,9 @@ export class ExecutorEntity {
   })
   verificationStatus!: string;
 
+  @Column({ name: "passenger_capacity", type: "int", default: 4 })
+  passengerCapacity!: number;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 }

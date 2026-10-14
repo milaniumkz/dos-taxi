@@ -4,8 +4,7 @@ import 'package:dos_mobile/core/l10n/app_localizations.dart';
 import 'package:dos_mobile/features/home/domain/entities/address_suggestion.dart';
 import 'package:dos_mobile/features/home/presentation/cubit/home_cubit.dart';
 import 'package:dos_mobile/features/home/presentation/screens/passenger_home_placeholder_screen.dart';
-import 'package:dos_mobile/features/taxi/presentation/cubit/taxi_order_cubit.dart';
-import 'package:dos_mobile/features/taxi/presentation/screens/taxi_class_screen.dart';
+import 'package:dos_mobile/features/ride_marketplace/presentation/ride_request_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,8 +13,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _HomeCubit extends MockCubit<HomeState> implements HomeCubit {}
-
-class _TaxiCubit extends MockCubit<TaxiOrderState> implements TaxiOrderCubit {}
 
 void main() {
   final gps = AddressSuggestion(
@@ -89,7 +86,7 @@ void main() {
     tester,
   ) async {
     final home = _HomeCubit();
-    final taxi = _TaxiCubit();
+    RideRequestArgs? submitted;
     final state = HomeState(
       selectedService: HomeServiceType.taxi,
       currentLocation: gps.location,
@@ -101,15 +98,7 @@ void main() {
     );
     whenListen(home, const Stream<HomeState>.empty(), initialState: state);
     when(() => home.initialize()).thenAnswer((_) async {});
-    when(
-      () => taxi.startNewOrder(
-        initialPickup: pickup,
-        initialDestination: destination,
-        serviceType: 'taxi',
-      ),
-    ).thenAnswer((_) async {});
     serviceLocator.registerSingleton<HomeCubit>(home);
-    serviceLocator.registerSingleton<TaxiOrderCubit>(taxi);
     final router = GoRouter(
       initialLocation: '/',
       routes: [
@@ -118,8 +107,11 @@ void main() {
           builder: (_, _) => const PassengerHomePlaceholderScreen(),
         ),
         GoRoute(
-          path: TaxiClassScreen.routePath,
-          builder: (_, _) => const Scaffold(body: Text('class selection')),
+          path: RideRequestScreen.routePath,
+          builder: (_, state) {
+            submitted = state.extra as RideRequestArgs;
+            return const Scaffold(body: Text('ride request'));
+          },
         ),
       ],
     );
@@ -140,14 +132,10 @@ void main() {
     await tester.pump();
     await tester.tap(find.byType(ElevatedButton));
     await tester.pumpAndSettle();
-    verify(
-      () => taxi.startNewOrder(
-        initialPickup: pickup,
-        initialDestination: destination,
-        serviceType: 'taxi',
-      ),
-    ).called(1);
-    expect(find.text('class selection'), findsOneWidget);
+    expect(submitted?.pickup, pickup);
+    expect(submitted?.destination, destination);
+    expect(submitted?.serviceType, 'taxi');
+    expect(find.text('ride request'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

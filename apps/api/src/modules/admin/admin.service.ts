@@ -200,6 +200,11 @@ export class AdminService {
         timezone: dto.timezone,
         isActive: dto.isActive ?? false,
         serviceZone: dto.serviceZone ?? null,
+        ridePricingBasis: dto.ridePricingBasis,
+        rideMinimumOrderKzt: dto.rideMinimumOrderKzt,
+        rideExchangeRate: dto.rideExchangeRate,
+        ridePriceStepKzt: dto.ridePriceStepKzt,
+        rideCommissionPercent: dto.rideCommissionPercent,
       }),
     );
 
@@ -457,19 +462,17 @@ export class AdminService {
         actorId,
         manager.getRepository(UserEntity),
       );
-      await manager
-        .getRepository(AdminActivityLogEntity)
-        .save({
-          actorId: actor,
-          action: "tariff.deleted",
-          entityType: "tariff",
-          entityId: tariff.id,
-          metadata: {
-            cityId: tariff.cityId,
-            nameRu: tariff.nameRu,
-            actorSubject: actorId,
-          },
-        });
+      await manager.getRepository(AdminActivityLogEntity).save({
+        actorId: actor,
+        action: "tariff.deleted",
+        entityType: "tariff",
+        entityId: tariff.id,
+        metadata: {
+          cityId: tariff.cityId,
+          nameRu: tariff.nameRu,
+          actorSubject: actorId,
+        },
+      });
       return { deleted: true };
     });
   }
@@ -736,6 +739,13 @@ export class AdminService {
       });
     }
 
+    if (order.isNegotiated) {
+      throw new BadRequestException({
+        code: "RIDE_PASSENGER_SELECTION_REQUIRED",
+        message: "Passenger must select a driver proposal",
+      });
+    }
+
     if (order.status !== OrderStatus.SEARCHING) {
       throw new BadRequestException({
         code: "ORDER_ASSIGN_INVALID_STATUS",
@@ -763,16 +773,11 @@ export class AdminService {
       });
     }
 
-    order.executorId = executor.id;
-    await this.ordersRepository.save(order);
-    const updated = await this.ordersService.transition(
+    const updated = await this.ordersService.acceptExecutorAssignment(
       order.id,
-      OrderStatus.ACCEPTED,
+      executor.id,
       actorId,
-      {
-        source: "admin_assign",
-        executorId: executor.id,
-      },
+      { source: "admin_assign", executorId: executor.id },
     );
 
     await this.recordActivity(actorId, "order.assigned", "order", updated.id, {

@@ -1,27 +1,28 @@
+import { rideLabels } from "../../lib/ride-i18n";
 import { getCreationLabels } from "../../lib/creation-i18n";
-import Link from 'next/link';
+import Link from "next/link";
 
-import { AppFrame } from '../../components/app-frame';
-import { FlashBanner } from '../../components/flash-banner';
-import { InternalActivityPanel } from '../../components/internal-activity-panel';
-import { InternalNotesPanel } from '../../components/internal-notes-panel';
-import { MetricCard } from '../../components/metric-card';
-import { OrdersTable } from '../../components/orders-table';
-import { SectionShell } from '../../components/section-shell';
-import { TariffsPanel } from '../../components/tariffs-panel';
-import { updateCityAction } from '../../lib/admin-actions';
-import { getAdminPageContext } from '../../lib/admin-i18n';
+import { AppFrame } from "../../components/app-frame";
+import { FlashBanner } from "../../components/flash-banner";
+import { InternalActivityPanel } from "../../components/internal-activity-panel";
+import { InternalNotesPanel } from "../../components/internal-notes-panel";
+import { MetricCard } from "../../components/metric-card";
+import { OrdersTable } from "../../components/orders-table";
+import { SectionShell } from "../../components/section-shell";
+import { TariffsPanel } from "../../components/tariffs-panel";
+import { updateCityAction } from "../../lib/admin-actions";
+import { getAdminPageContext } from "../../lib/admin-i18n";
 import {
   getSearchParam,
   resolveRouteSearchParams,
-} from '../../lib/admin-routing';
+} from "../../lib/admin-routing";
 import {
   getAdminActivitySnapshot,
   getAdminNotesSnapshot,
   getBackofficeSnapshot,
   getCityDetailSnapshot,
-} from '../../lib/backoffice';
-import { cityPrimaryName } from '../../lib/backoffice-view';
+} from "../../lib/backoffice";
+import { cityPrimaryName } from "../../lib/backoffice-view";
 
 type CityDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -38,19 +39,21 @@ export default async function CityDetailPage({
 }: CityDetailPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await resolveRouteSearchParams(searchParams);
-  const { locale, dictionary } = await getAdminPageContext(resolvedSearchParams);
-  const notice = getSearchParam(resolvedSearchParams, 'notice');
-  const error = getSearchParam(resolvedSearchParams, 'error');
+  const { locale, dictionary } =
+    await getAdminPageContext(resolvedSearchParams);
+  const rides = rideLabels(locale);
+  const notice = getSearchParam(resolvedSearchParams, "notice");
+  const error = getSearchParam(resolvedSearchParams, "error");
   const [snapshot, city, activity, notes] = await Promise.all([
     getBackofficeSnapshot(),
     getCityDetailSnapshot(resolvedParams.id),
     getAdminActivitySnapshot({
-      entityType: 'city',
+      entityType: "city",
       entityId: resolvedParams.id,
       limit: 6,
     }),
     getAdminNotesSnapshot({
-      entityType: 'city',
+      entityType: "city",
       entityId: resolvedParams.id,
       limit: 6,
     }),
@@ -63,11 +66,13 @@ export default async function CityDetailPage({
     ? snapshot.orders.filter((order) => order.cityId === city.id)
     : [];
   const activeOrders = relatedOrders.filter((order) =>
-    ['searching', 'accepted', 'arriving', 'waiting', 'in_progress'].includes(
+    ["searching", "accepted", "arriving", "waiting", "in_progress"].includes(
       order.status,
     ),
   ).length;
-  const activeTariffs = relatedTariffs.filter((tariff) => tariff.isActive).length;
+  const activeTariffs = relatedTariffs.filter(
+    (tariff) => tariff.isActive,
+  ).length;
   const cityTitle = city ? cityPrimaryName(city, locale) : resolvedParams.id;
 
   return (
@@ -93,7 +98,10 @@ export default async function CityDetailPage({
               : dictionary.cityDetailPage.notFoundDescription
           }
           aside={
-            <Link href={backHref} className="action-button action-button--ghost">
+            <Link
+              href={backHref}
+              className="action-button action-button--ghost"
+            >
               {dictionary.cityDetailPage.backToCities}
             </Link>
           }
@@ -130,7 +138,9 @@ export default async function CityDetailPage({
               />
             </section>
           ) : (
-            <p className="empty-state">{dictionary.cityDetailPage.notFoundDescription}</p>
+            <p className="empty-state">
+              {dictionary.cityDetailPage.notFoundDescription}
+            </p>
           )}
         </SectionShell>
 
@@ -198,6 +208,17 @@ export default async function CityDetailPage({
                 <input type="hidden" name="cityId" value={city.id} />
                 <div className="admin-form__grid">
                   <label className="field">
+                    <span>{rides.basis}</span>
+                    <select
+                      name="ridePricingBasis"
+                      defaultValue={city.ridePricingBasis ?? "seat"}
+                    >
+                      <option value="seat">{rides.seat}</option>
+                      <option value="salon">{rides.salon}</option>
+                    </select>
+                    <small>{rides.hint}</small>
+                  </label>
+                  <label className="field">
                     <span>{dictionary.forms.nameRu}</span>
                     <input name="nameRu" defaultValue={city.nameRu} required />
                   </label>
@@ -216,13 +237,21 @@ export default async function CityDetailPage({
                   <label className="field">
                     <span>{dictionary.forms.currency}</span>
                     <select name="currency" defaultValue={city.currency}>
-                      <option value="KZT">{dictionary.forms.currencyKzt}</option>
-                      <option value="RUB">{dictionary.forms.currencyRub}</option>
+                      <option value="KZT">
+                        {dictionary.forms.currencyKzt}
+                      </option>
+                      <option value="RUB">
+                        {dictionary.forms.currencyRub}
+                      </option>
                     </select>
                   </label>
                   <label className="field">
                     <span>{dictionary.forms.timezone}</span>
-                    <input name="timezone" defaultValue={city.timezone} required />
+                    <input
+                      name="timezone"
+                      defaultValue={city.timezone}
+                      required
+                    />
                   </label>
                   <label className="field field--checkbox">
                     <input
@@ -263,7 +292,20 @@ export default async function CityDetailPage({
               title={dictionary.cityDetailPage.tariffsTitle}
               description={dictionary.cityDetailPage.tariffsDescription}
             >
-              <div className="button-row"><a className="action-button" href={`/tariffs/new?cityId=${city.id}&lang=${locale}`}>{getCreationLabels(locale).newTariff}</a><a className="action-button action-button--soft" href={`/orders/new?cityId=${city.id}&lang=${locale}`}>{getCreationLabels(locale).newOrder}</a></div>
+              <div className="button-row">
+                <a
+                  className="action-button"
+                  href={`/tariffs/new?cityId=${city.id}&lang=${locale}`}
+                >
+                  {getCreationLabels(locale).newTariff}
+                </a>
+                <a
+                  className="action-button action-button--soft"
+                  href={`/orders/new?cityId=${city.id}&lang=${locale}`}
+                >
+                  {getCreationLabels(locale).newOrder}
+                </a>
+              </div>
               <TariffsPanel
                 tariffs={relatedTariffs}
                 showActions

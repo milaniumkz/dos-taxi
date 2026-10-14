@@ -1,3 +1,4 @@
+import '../../../ride_marketplace/presentation/ride_request_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -16,8 +17,6 @@ import '../../../delivery/presentation/screens/delivery_address_screen.dart';
 import '../../../favorites/presentation/screens/favorites_screen.dart';
 import '../../../order_history/presentation/screens/order_history_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
-import '../../../taxi/presentation/cubit/taxi_order_cubit.dart';
-import '../../../taxi/presentation/screens/taxi_class_screen.dart';
 import '../cubit/home_cubit.dart';
 import '../../domain/entities/address_suggestion.dart';
 import '../widgets/address_search_bar.dart';
@@ -247,15 +246,15 @@ class _PassengerHomePlaceholderScreenState
       return;
     }
 
-    unawaited(
-      serviceLocator<TaxiOrderCubit>().startNewOrder(
-        initialPickup: currentAddress,
-        initialDestination: state.selectedAddress,
-        serviceType: state.selectedService.apiValue,
-      ),
-    );
     if (context.mounted) {
-      context.push(TaxiClassScreen.routePath);
+      context.push(
+        RideRequestScreen.routePath,
+        extra: RideRequestArgs(
+          currentAddress,
+          state.selectedAddress!,
+          state.selectedService.apiValue,
+        ),
+      );
     }
   }
 

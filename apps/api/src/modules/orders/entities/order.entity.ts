@@ -3,7 +3,7 @@ import {
   OrderStatus,
   PaymentMethod,
   ServiceType,
-} from '@dos/shared-types';
+} from "@dos/shared-types";
 import {
   Column,
   CreateDateColumn,
@@ -13,73 +13,73 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from 'typeorm';
+} from "typeorm";
 
-import { CityEntity } from '../../admin/entities/city.entity';
-import { ExecutorEntity } from '../../executors/entities/executor.entity';
-import { PromoCodeEntity } from '../../promo-codes/entities/promo-code.entity';
-import { UserEntity } from '../../users/entities/user.entity';
+import { CityEntity } from "../../admin/entities/city.entity";
+import { ExecutorEntity } from "../../executors/entities/executor.entity";
+import { PromoCodeEntity } from "../../promo-codes/entities/promo-code.entity";
+import { UserEntity } from "../../users/entities/user.entity";
 
-@Entity({ name: 'orders' })
-@Index('IDX_orders_client_id', ['clientId'])
-@Index('IDX_orders_executor_id', ['executorId'])
-@Index('IDX_orders_status', ['status'])
-@Index('IDX_orders_city_id', ['cityId'])
-@Index('IDX_orders_created_at', ['createdAt'])
+@Entity({ name: "orders" })
+@Index("IDX_orders_client_id", ["clientId"])
+@Index("IDX_orders_executor_id", ["executorId"])
+@Index("IDX_orders_status", ["status"])
+@Index("IDX_orders_city_id", ["cityId"])
+@Index("IDX_orders_created_at", ["createdAt"])
 export class OrderEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id!: string;
 
   @ManyToOne(() => UserEntity, { nullable: false })
-  @JoinColumn({ name: 'client_id' })
+  @JoinColumn({ name: "client_id" })
   client!: UserEntity;
 
-  @Column({ name: 'client_id', type: 'uuid' })
+  @Column({ name: "client_id", type: "uuid" })
   clientId!: string;
 
   @ManyToOne(() => ExecutorEntity, { nullable: true })
-  @JoinColumn({ name: 'executor_id' })
+  @JoinColumn({ name: "executor_id" })
   executor!: ExecutorEntity | null;
 
-  @Column({ name: 'executor_id', type: 'uuid', nullable: true })
+  @Column({ name: "executor_id", type: "uuid", nullable: true })
   executorId!: string | null;
 
   @Column({
-    name: 'service_type',
-    type: 'enum',
+    name: "service_type",
+    type: "enum",
     enum: ServiceType,
-    enumName: 'service_type_enum',
+    enumName: "service_type_enum",
   })
   serviceType!: ServiceType;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: OrderStatus,
-    enumName: 'order_status_enum',
+    enumName: "order_status_enum",
     default: OrderStatus.DRAFT,
   })
   status!: OrderStatus;
 
   @ManyToOne(() => CityEntity, { nullable: false })
-  @JoinColumn({ name: 'city_id' })
+  @JoinColumn({ name: "city_id" })
   city!: CityEntity;
 
-  @Column({ name: 'city_id', type: 'uuid' })
+  @Column({ name: "city_id", type: "uuid" })
   cityId!: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: Currency,
-    enumName: 'currency_enum',
+    enumName: "currency_enum",
   })
   currency!: Currency;
 
-  @Column({ name: 'car_class', type: 'varchar', length: 50, nullable: true })
+  @Column({ name: "car_class", type: "varchar", length: 50, nullable: true })
   carClass!: string | null;
 
   @Column({
-    name: 'estimated_price',
-    type: 'decimal',
+    name: "estimated_price",
+    type: "decimal",
     precision: 12,
     scale: 2,
     nullable: true,
@@ -87,71 +87,157 @@ export class OrderEntity {
   estimatedPrice!: string | null;
 
   @Column({
-    name: 'final_price',
-    type: 'decimal',
+    name: "final_price",
+    type: "decimal",
     precision: 12,
     scale: 2,
     nullable: true,
   })
   finalPrice!: string | null;
 
-  @Column({ name: 'distance_meters', type: 'int', nullable: true })
+  @Column({ name: "distance_meters", type: "int", nullable: true })
   distanceMeters!: number | null;
 
-  @Column({ name: 'duration_seconds', type: 'int', nullable: true })
+  @Column({ name: "duration_seconds", type: "int", nullable: true })
   durationSeconds!: number | null;
 
   @Column({
-    name: 'payment_method',
-    type: 'enum',
+    name: "payment_method",
+    type: "enum",
     enum: PaymentMethod,
-    enumName: 'payment_method_enum',
+    enumName: "payment_method_enum",
   })
   paymentMethod!: PaymentMethod;
 
   @ManyToOne(() => PromoCodeEntity, { nullable: true })
-  @JoinColumn({ name: 'promo_code_id' })
+  @JoinColumn({ name: "promo_code_id" })
   promoCode!: PromoCodeEntity | null;
 
-  @Column({ name: 'promo_code_id', type: 'uuid', nullable: true })
+  @Column({ name: "promo_code_id", type: "uuid", nullable: true })
   promoCodeId!: string | null;
 
   @Column({
-    name: 'discount_amount',
-    type: 'decimal',
+    name: "discount_amount",
+    type: "decimal",
     precision: 12,
     scale: 2,
     default: 0,
   })
   discountAmount!: string;
 
-  @Column({ name: 'scheduled_at', type: 'timestamptz', nullable: true })
+  @Column({ name: "scheduled_at", type: "timestamptz", nullable: true })
   scheduledAt!: Date | null;
 
-  @Column({ name: 'accepted_at', type: 'timestamptz', nullable: true })
+  @Column({ name: "accepted_at", type: "timestamptz", nullable: true })
   acceptedAt!: Date | null;
 
-  @Column({ name: 'started_at', type: 'timestamptz', nullable: true })
+  @Column({ name: "started_at", type: "timestamptz", nullable: true })
   startedAt!: Date | null;
 
-  @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
+  @Column({ name: "completed_at", type: "timestamptz", nullable: true })
   completedAt!: Date | null;
 
-  @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })
+  @Column({ name: "cancelled_at", type: "timestamptz", nullable: true })
   cancelledAt!: Date | null;
 
-  @Column({ name: 'cancel_reason', type: 'text', nullable: true })
+  @Column({ name: "cancel_reason", type: "text", nullable: true })
   cancelReason!: string | null;
 
-  @Column({ name: 'client_rating', type: 'smallint', nullable: true })
+  @Column({ name: "client_rating", type: "smallint", nullable: true })
   clientRating!: number | null;
 
-  @Column({ name: 'executor_rating', type: 'smallint', nullable: true })
+  @Column({ name: "executor_rating", type: "smallint", nullable: true })
   executorRating!: number | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @Column({ name: "is_negotiated", type: "boolean", default: false })
+  isNegotiated!: boolean;
+
+  @Column({ name: "ride_request_key", type: "uuid", nullable: true })
+  rideRequestKey!: string | null;
+
+  @Column({
+    name: "ride_payload_hash",
+    type: "varchar",
+    length: 64,
+    nullable: true,
+  })
+  ridePayloadHash!: string | null;
+
+  @Column({ name: "passenger_count", type: "int", default: 1 })
+  passengerCount!: number;
+
+  @Column({
+    name: "ride_pricing_basis",
+    type: "varchar",
+    length: 20,
+    nullable: true,
+  })
+  ridePricingBasis!: string | null;
+
+  @Column({
+    name: "ride_unit_price",
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  rideUnitPrice!: string | null;
+
+  @Column({
+    name: "ride_minimum_unit_price",
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  rideMinimumUnitPrice!: string | null;
+
+  @Column({
+    name: "ride_price_step",
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  ridePriceStep!: string | null;
+
+  @Column({
+    name: "ride_commission_percent",
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  rideCommissionPercent!: string | null;
+
+  @Column({
+    name: "pickup_entrance",
+    type: "varchar",
+    length: 100,
+    nullable: true,
+  })
+  pickupEntrance!: string | null;
+
+  @Column({ name: "pickup_comment", type: "text", nullable: true })
+  pickupComment!: string | null;
+
+  @Column({ name: "needs_child_seat", type: "boolean", default: false })
+  needsChildSeat!: boolean;
+
+  @Column({ name: "shared_ride", type: "boolean", default: false })
+  sharedRide!: boolean;
+
+  @Column({
+    name: "ride_commission_fixed",
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  rideCommissionFixed!: string | null;
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt!: Date;
 }

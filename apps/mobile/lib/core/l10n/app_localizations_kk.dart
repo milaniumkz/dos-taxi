@@ -1274,4 +1274,119 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get driverChildSeatNotice =>
       '«Балалар» тарифін балалар орындығы болғанда ғана қосыңыз.';
+
+  @override
+  String get rideRequestTitle => 'Сапар өтінімі';
+
+  @override
+  String get rideRetry => 'Қайталау';
+
+  @override
+  String get rideEntrance => 'Кіреберіс (міндетті емес)';
+
+  @override
+  String get rideComment => 'Пікір (міндетті емес)';
+
+  @override
+  String get rideChildSeat => 'Балалар орындығы';
+
+  @override
+  String get rideTogether => 'Бірге';
+
+  @override
+  String get rideTogetherHint => 'Жүргізуші жолда жолаушыларды ала алады';
+
+  @override
+  String get ridePayment => 'Төлем тәсілі';
+
+  @override
+  String get rideCash => 'Қолма-қол';
+
+  @override
+  String get rideKaspi => 'Kaspi аударымы';
+
+  @override
+  String get rideHalyk => 'Halyk аударымы';
+
+  @override
+  String get rideSubmit => 'Өтінім беру';
+
+  @override
+  String get ridePerSeat => 'Бір орын бағасы';
+
+  @override
+  String get ridePerSalon => 'Бүкіл салон бағасы';
+
+  @override
+  String get ridePassengers => 'Жолаушылар саны';
+
+  @override
+  String get rideYourPrice => 'Сіздің бағаңыз';
+
+  @override
+  String get rideTotal => 'Барлығы';
+
+  @override
+  String get rideMinimum => 'Ең төменгі тапсырыс';
+
+  @override
+  String get rideDecrease => 'Азайту';
+
+  @override
+  String get rideIncrease => 'Көбейту';
+
+  @override
+  String get rideOffersTitle => 'Жүргізушілер ұсыныстары';
+
+  @override
+  String get rideOffersEmpty =>
+      'Жүргізушілер ұсыныстарын күтеміз. Жүргізушіні сіз таңдайсыз.';
+
+  @override
+  String get rideChooseDriver => 'Жүргізушіні таңдау';
+
+  @override
+  String get rideFeedTitle => 'Жақын өтінімдер';
+
+  @override
+  String get rideFeedEmpty => 'Жақын жерде жаңа өтінімдер жоқ';
+
+  @override
+  String get ridePropose => 'Баға ұсыну';
+
+  @override
+  String get rideWithdraw => 'Ұсынысты қайтарып алу';
+
+  @override
+  String get ridePending => 'Ұсыныс жіберілді. Жолаушының таңдауын күтеміз.';
+
+  @override
+  String get rideConfirmChildSeat => 'Менде балалар орындығы бар';
+
+  @override
+  String get ridePickupDistance => 'Жолаушыға дейін';
+
+  @override
+  String get rideCapacity => 'Жолаушы орындары';
+
+  @override
+  String get rideOffline => 'Өтінімдерді көру үшін желіге қосылыңыз';
+
+  @override
+  String get rideNext => 'Тағы көрсету';
+
+  @override
+  String get rideCancel => 'Өтінімді болдырмау';
+
+  @override
+  String get rideReload => 'Жаңарту';
+
+  @override
+  String get rideRating => 'Рейтинг';
+
+  @override
+  String get rideCity => 'Жұмыс қаласы';
+
+  @override
+  String get rideKilometres => 'км';
 }

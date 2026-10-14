@@ -1,0 +1,102 @@
+name: DOS Mobile Native Candidate
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Immutable full commit SHA to build
+        required: true
+      build_ios:
+        description: Build signed iOS archives on the configured Mac
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: dos-native-candidate-${{ inputs.release_sha }}
+  cancel-in-progress: false
+jobs:
+  android-test:
+    name: Android test APKs (not store signed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha }}
+          persist-credentials: false
+      - name: Verify pinned source
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.1'
+          channel: stable
+          cache: true
+      - name: Validate mobile
+        working-directory: apps/mobile
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter gen-l10n
+          flutter analyze --no-fatal-infos
+          flutter test
+      - name: Build passenger test APK
+        working-directory: apps/mobile
+        run: flutter build apk --debug --flavor passenger -t lib/main_passenger_prod.dart
+      - name: Build driver test APK
+        working-directory: apps/mobile
+        run: flutter build apk --debug --flavor driver -t lib/main_driver_prod.dart
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dos-android-test-apks-${{ inputs.release_sha }}
+          path: apps/mobile/build/app/outputs/flutter-apk/*-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+  ios-archive:
+    name: Signed iOS archives on Mac
+    if: inputs.build_ios
+    runs-on: [milanium-mac-arm64, repo-dos-taxi]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha }}
+          persist-credentials: false
+      - name: Verify pinned source and select existing Flutter
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          echo /Volumes/PD1000/job/flutter/bin >> "$GITHUB_PATH"
+          xcodebuild -version
+      - name: Prepare mobile
+        working-directory: apps/mobile
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter gen-l10n
+          flutter analyze --no-fatal-infos
+          flutter test
+      - name: Build signed passenger archive with existing Xcode account
+        working-directory: apps/mobile
+        run: flutter build ipa --release --flavor passenger -t lib/main_passenger_prod.dart --export-method app-store
+      - name: Preserve passenger archive
+        run: |
+          TASK_PASSENGER_CANDIDATE=$(mktemp -d /tmp/dos-passenger-candidate.XXXXXX)
+          echo "TASK_PASSENGER_CANDIDATE=$TASK_PASSENGER_CANDIDATE" >> "$GITHUB_ENV"
+          cp -R apps/mobile/build/ios/archive apps/mobile/build/ios/ipa "$TASK_PASSENGER_CANDIDATE/"
+      - name: Build signed driver archive with existing Xcode account
+        working-directory: apps/mobile
+        run: flutter build ipa --release --flavor driver -t lib/main_driver_prod.dart --export-method app-store
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dos-ios-store-candidates-${{ inputs.release_sha }}
+          path: |
+            ${{ env.TASK_PASSENGER_CANDIDATE }}
+            apps/mobile/build/ios/archive
+            apps/mobile/build/ios/ipa
+          if-no-files-found: error
+          retention-days: 14

@@ -114,6 +114,8 @@ class ExecutorRemoteDataSource {
   }
 
   Future<ExecutorProfileModel> updateVehicleSettings({
+    String? cityId,
+    int? passengerCapacity,
     String? vehicleMake,
     String? vehicleModel,
     int? vehicleYear,
@@ -122,6 +124,8 @@ class ExecutorRemoteDataSource {
     required List<String> enabledTariffs,
   }) async {
     final payload = <String, dynamic>{
+      'cityId': ?cityId,
+      'passengerCapacity': ?passengerCapacity,
       'enabledTariffs': enabledTariffs,
       if (vehicleMake != null && vehicleMake.trim().isNotEmpty)
         'vehicleMake': vehicleMake,

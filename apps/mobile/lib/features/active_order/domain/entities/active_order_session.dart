@@ -15,6 +15,7 @@ class ActiveOrderSession extends Equatable {
     required this.currency,
     required this.initialEtaSeconds,
     required this.vehicleLabel,
+    this.isNegotiated = false,
     this.initialOrderStatus = 'searching',
     this.executorName,
     this.executorRating,
@@ -22,6 +23,7 @@ class ActiveOrderSession extends Equatable {
     this.executorPhone,
   });
 
+  final bool isNegotiated;
   final String orderId;
   final ActiveOrderServiceType serviceType;
   final AddressSuggestion fromAddress;
@@ -39,6 +41,7 @@ class ActiveOrderSession extends Equatable {
 
   @override
   List<Object?> get props => [
+    isNegotiated,
     orderId,
     serviceType,
     fromAddress,

@@ -14,6 +14,12 @@ class ExecutorActiveOrderSessionModel extends ExecutorActiveOrderSession {
     required super.pickupLocation,
     required super.destinationAddress,
     required super.destinationLocation,
+    super.isNegotiated,
+    super.passengerCount,
+    super.pickupEntrance,
+    super.pickupComment,
+    super.needsChildSeat,
+    super.sharedRide,
     super.distanceMeters,
     super.durationSeconds,
     super.clientName,
@@ -37,6 +43,12 @@ class ExecutorActiveOrderSessionModel extends ExecutorActiveOrderSession {
     );
 
     return ExecutorActiveOrderSessionModel(
+      isNegotiated: json['isNegotiated'] == true,
+      passengerCount: (json['passengerCount'] as num?)?.toInt() ?? 1,
+      pickupEntrance: json['pickupEntrance'] as String?,
+      pickupComment: json['pickupComment'] as String?,
+      needsChildSeat: json['needsChildSeat'] == true,
+      sharedRide: json['sharedRide'] == true,
       orderId: json['id'] as String? ?? '',
       serviceType:
           json['serviceType'] as String? ??
