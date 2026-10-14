@@ -1383,4 +1383,129 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get rideKilometres => 'км';
+
+  @override
+  String get navToPickup => 'К пассажиру';
+
+  @override
+  String get navToDestination => 'К месту назначения';
+
+  @override
+  String get navBuilding => 'Строим маршрут по дорогам…';
+
+  @override
+  String get navRerouting => 'Перестраиваем маршрут…';
+
+  @override
+  String get navNoGps =>
+      'Нет точной геопозиции. Проверьте GPS и разрешение браузера.';
+
+  @override
+  String get navRouteError =>
+      'Не удалось построить маршрут по дорогам. Повторите попытку.';
+
+  @override
+  String get navRetry => 'Повторить';
+
+  @override
+  String get navFollow => 'Следить за движением';
+
+  @override
+  String get navSound => 'Озвучка';
+
+  @override
+  String get navVoiceUnavailable =>
+      'Нет голоса выбранного языка. Включите русский или казахский голос в настройках устройства и нажмите на динамик.';
+
+  @override
+  String get navTurnLeft => 'поверните налево';
+
+  @override
+  String get navTurnRight => 'поверните направо';
+
+  @override
+  String get navSlightLeft => 'плавно поверните налево';
+
+  @override
+  String get navSlightRight => 'плавно поверните направо';
+
+  @override
+  String get navSharpLeft => 'резко поверните налево';
+
+  @override
+  String get navSharpRight => 'резко поверните направо';
+
+  @override
+  String get navUturn => 'развернитесь';
+
+  @override
+  String get navStraight => 'продолжайте движение прямо';
+
+  @override
+  String get navKeepLeft => 'держитесь левее';
+
+  @override
+  String get navKeepRight => 'держитесь правее';
+
+  @override
+  String get navMerge => 'перестройтесь на основную дорогу';
+
+  @override
+  String get navRoundabout => 'двигайтесь по круговому движению';
+
+  @override
+  String navRoundaboutExit(int exit) {
+    return 'на круговом движении выберите съезд номер $exit';
+  }
+
+  @override
+  String get navExitRoundabout => 'съезжайте с кругового движения';
+
+  @override
+  String get navStopPickup => 'остановитесь у места подачи';
+
+  @override
+  String get navStopDestination => 'остановитесь у места назначения';
+
+  @override
+  String get navArrivedPickup => 'Вы подъехали к пассажиру';
+
+  @override
+  String get navArrivedDestination => 'Вы прибыли в место назначения';
+
+  @override
+  String navInMeters(int metres, String action) {
+    String _temp0 = intl.Intl.pluralLogic(
+      metres,
+      locale: localeName,
+      other: 'метров',
+      few: 'метра',
+      one: 'метр',
+    );
+    return 'Через $metres $_temp0 $action.';
+  }
+
+  @override
+  String navRoad(String road) {
+    return 'На дорогу: $road';
+  }
+
+  @override
+  String navRemaining(int distance, int minutes) {
+    return 'До цели: $distance м · $minutes мин';
+  }
+
+  @override
+  String navMetres(int distance) {
+    return '$distance м';
+  }
+
+  @override
+  String get navWait => 'Ожидаем начала поездки';
+
+  @override
+  String get navFinished => 'Навигация завершена';
+
+  @override
+  String get navMapSource => '© OpenStreetMap';
 }

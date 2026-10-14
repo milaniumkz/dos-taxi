@@ -543,5 +543,81 @@
   "rideReload": "Обновить",
   "rideRating": "Рейтинг",
   "rideCity": "Город работы",
-  "rideKilometres": "км"
+  "rideKilometres": "км",
+  "navToPickup": "К пассажиру",
+  "navToDestination": "К месту назначения",
+  "navBuilding": "Строим маршрут по дорогам…",
+  "navRerouting": "Перестраиваем маршрут…",
+  "navNoGps": "Нет точной геопозиции. Проверьте GPS и разрешение браузера.",
+  "navRouteError": "Не удалось построить маршрут по дорогам. Повторите попытку.",
+  "navRetry": "Повторить",
+  "navFollow": "Следить за движением",
+  "navSound": "Озвучка",
+  "navVoiceUnavailable": "Нет голоса выбранного языка. Включите русский или казахский голос в настройках устройства и нажмите на динамик.",
+  "navTurnLeft": "поверните налево",
+  "navTurnRight": "поверните направо",
+  "navSlightLeft": "плавно поверните налево",
+  "navSlightRight": "плавно поверните направо",
+  "navSharpLeft": "резко поверните налево",
+  "navSharpRight": "резко поверните направо",
+  "navUturn": "развернитесь",
+  "navStraight": "продолжайте движение прямо",
+  "navKeepLeft": "держитесь левее",
+  "navKeepRight": "держитесь правее",
+  "navMerge": "перестройтесь на основную дорогу",
+  "navRoundabout": "двигайтесь по круговому движению",
+  "navRoundaboutExit": "на круговом движении выберите съезд номер {exit}",
+  "navExitRoundabout": "съезжайте с кругового движения",
+  "navStopPickup": "остановитесь у места подачи",
+  "navStopDestination": "остановитесь у места назначения",
+  "navArrivedPickup": "Вы подъехали к пассажиру",
+  "navArrivedDestination": "Вы прибыли в место назначения",
+  "navInMeters": "Через {metres} {metres, plural, one{метр} few{метра} other{метров}} {action}.",
+  "navRoad": "На дорогу: {road}",
+  "navRemaining": "До цели: {distance} м · {minutes} мин",
+  "navMetres": "{distance} м",
+  "navWait": "Ожидаем начала поездки",
+  "navFinished": "Навигация завершена",
+  "@navRoundaboutExit": {
+    "placeholders": {
+      "exit": {
+        "type": "int"
+      }
+    }
+  },
+  "@navInMeters": {
+    "placeholders": {
+      "metres": {
+        "type": "int"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "@navRoad": {
+    "placeholders": {
+      "road": {
+        "type": "String"
+      }
+    }
+  },
+  "@navRemaining": {
+    "placeholders": {
+      "distance": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@navMetres": {
+    "placeholders": {
+      "distance": {
+        "type": "int"
+      }
+    }
+  },
+  "navMapSource": "© OpenStreetMap"
 }

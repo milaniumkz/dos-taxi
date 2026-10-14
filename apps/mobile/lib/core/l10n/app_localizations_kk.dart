@@ -1389,4 +1389,122 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get rideKilometres => 'км';
+
+  @override
+  String get navToPickup => 'Жолаушыға дейін';
+
+  @override
+  String get navToDestination => 'Баратын жерге дейін';
+
+  @override
+  String get navBuilding => 'Жол бойымен бағдар құрылады…';
+
+  @override
+  String get navRerouting => 'Бағдар қайта құрылады…';
+
+  @override
+  String get navNoGps =>
+      'Нақты геопозиция жоқ. GPS пен браузер рұқсатын тексеріңіз.';
+
+  @override
+  String get navRouteError =>
+      'Жол бойымен бағдар құру мүмкін болмады. Қайталап көріңіз.';
+
+  @override
+  String get navRetry => 'Қайталау';
+
+  @override
+  String get navFollow => 'Қозғалысты бақылау';
+
+  @override
+  String get navSound => 'Дыбыстық нұсқаулар';
+
+  @override
+  String get navVoiceUnavailable =>
+      'Таңдалған тілдің дауысы жоқ. Құрылғы баптауларында қазақ немесе орыс дауысын қосып, динамикті басыңыз.';
+
+  @override
+  String get navTurnLeft => 'солға бұрылыңыз';
+
+  @override
+  String get navTurnRight => 'оңға бұрылыңыз';
+
+  @override
+  String get navSlightLeft => 'сәл солға бұрылыңыз';
+
+  @override
+  String get navSlightRight => 'сәл оңға бұрылыңыз';
+
+  @override
+  String get navSharpLeft => 'шұғыл солға бұрылыңыз';
+
+  @override
+  String get navSharpRight => 'шұғыл оңға бұрылыңыз';
+
+  @override
+  String get navUturn => 'кері бұрылыңыз';
+
+  @override
+  String get navStraight => 'тура жүріңіз';
+
+  @override
+  String get navKeepLeft => 'сол жақпен жүріңіз';
+
+  @override
+  String get navKeepRight => 'оң жақпен жүріңіз';
+
+  @override
+  String get navMerge => 'негізгі жолға қосылыңыз';
+
+  @override
+  String get navRoundabout => 'айналма жолмен жүріңіз';
+
+  @override
+  String navRoundaboutExit(int exit) {
+    return 'айналма жолдан шығу нөмірі: $exit';
+  }
+
+  @override
+  String get navExitRoundabout => 'айналма жолдан шығыңыз';
+
+  @override
+  String get navStopPickup => 'жолаушының мекенжайында тоқтаңыз';
+
+  @override
+  String get navStopDestination => 'баратын жерде тоқтаңыз';
+
+  @override
+  String get navArrivedPickup => 'Жолаушының мекенжайына жеттіңіз';
+
+  @override
+  String get navArrivedDestination => 'Баратын жерге жеттіңіз';
+
+  @override
+  String navInMeters(int metres, String action) {
+    return '$metres метрден кейін $action.';
+  }
+
+  @override
+  String navRoad(String road) {
+    return 'Жол: $road';
+  }
+
+  @override
+  String navRemaining(int distance, int minutes) {
+    return 'Мақсатқа дейін: $distance м · $minutes мин';
+  }
+
+  @override
+  String navMetres(int distance) {
+    return '$distance м';
+  }
+
+  @override
+  String get navWait => 'Сапардың басталуын күтеміз';
+
+  @override
+  String get navFinished => 'Навигация аяқталды';
+
+  @override
+  String get navMapSource => '© OpenStreetMap';
 }

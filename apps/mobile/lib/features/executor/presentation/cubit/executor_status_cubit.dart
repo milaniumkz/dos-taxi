@@ -33,7 +33,8 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
   final AppConfig _config;
   final LocationService _locationService;
   Timer? _presenceTimer;
-  int _presenceTick = 0;
+  LatLng? _previousHeadingLocation;
+  double _heading = 0;
 
   Future<void> initialize() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
@@ -270,7 +271,7 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
       profile: profile,
       isOnline: isOnline,
       location: nextLocation,
-      heading: _buildHeading(),
+      heading: _buildHeading(nextLocation),
     );
     if (isClosed) {
       return;
@@ -322,6 +323,8 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
 
   void resetLocalSession() {
     _stopPresenceLoop();
+    _previousHeadingLocation = null;
+    _heading = 0;
     emit(
       ExecutorStatusState(
         stage: ExecutorScreenStage.onboarding,
@@ -377,7 +380,7 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
       profile: profile,
       isOnline: true,
       location: nextLocation,
-      heading: _buildHeading(),
+      heading: _buildHeading(nextLocation),
     );
     if (isClosed) {
       return;
@@ -415,9 +418,13 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
     return result.fold((_) => null, (location) => location);
   }
 
-  double _buildHeading() {
-    _presenceTick += 1;
-    return (_presenceTick * 27) % 360;
+  double _buildHeading(LatLng nextLocation) {
+    final previous = _previousHeadingLocation ?? state.currentLocation;
+    if (const Distance().as(LengthUnit.Meter, previous, nextLocation) > 6) {
+      _heading = (const Distance().bearing(previous, nextLocation) + 360) % 360;
+      _previousHeadingLocation = nextLocation;
+    }
+    return _heading;
   }
 
   void _emitFailure(Failure failure) {

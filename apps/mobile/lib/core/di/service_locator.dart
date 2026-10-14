@@ -1,3 +1,5 @@
+import '../../features/navigation/domain/navigation_ports.dart';
+import '../../features/navigation/data/navigation_adapters.dart';
 import '../../features/ride_marketplace/data/ride_repository_impl.dart';
 import '../../features/ride_marketplace/domain/ride_repository.dart';
 import 'package:dio/dio.dart';
@@ -108,6 +110,11 @@ Future<void> configureDependencies(AppConfig config) async {
       authSessionEvents: serviceLocator<AuthSessionEvents>(),
     ),
   );
+  serviceLocator.registerLazySingleton<NavigationRepository>(
+    () => ApiNavigationRepository(serviceLocator<ApiClient>()),
+  );
+  serviceLocator.registerFactory<NavigationLocation>(GpsNavigationLocation.new);
+  serviceLocator.registerFactory<NavigationSpeech>(SystemNavigationSpeech.new);
   serviceLocator.registerLazySingleton<RideRepository>(
     () => RideRepositoryImpl(serviceLocator<ApiClient>()),
   );
