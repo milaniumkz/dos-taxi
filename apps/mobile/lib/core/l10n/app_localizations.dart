@@ -2689,6 +2689,216 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'км'**
   String get rideKilometres;
+
+  /// No description provided for @navToPickup.
+  ///
+  /// In ru, this message translates to:
+  /// **'К пассажиру'**
+  String get navToPickup;
+
+  /// No description provided for @navToDestination.
+  ///
+  /// In ru, this message translates to:
+  /// **'К месту назначения'**
+  String get navToDestination;
+
+  /// No description provided for @navBuilding.
+  ///
+  /// In ru, this message translates to:
+  /// **'Строим маршрут по дорогам…'**
+  String get navBuilding;
+
+  /// No description provided for @navRerouting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перестраиваем маршрут…'**
+  String get navRerouting;
+
+  /// No description provided for @navNoGps.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет точной геопозиции. Проверьте GPS и разрешение браузера.'**
+  String get navNoGps;
+
+  /// No description provided for @navRouteError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось построить маршрут по дорогам. Повторите попытку.'**
+  String get navRouteError;
+
+  /// No description provided for @navRetry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить'**
+  String get navRetry;
+
+  /// No description provided for @navFollow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Следить за движением'**
+  String get navFollow;
+
+  /// No description provided for @navSound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Озвучка'**
+  String get navSound;
+
+  /// No description provided for @navVoiceUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет голоса выбранного языка. Включите русский или казахский голос в настройках устройства и нажмите на динамик.'**
+  String get navVoiceUnavailable;
+
+  /// No description provided for @navTurnLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'поверните налево'**
+  String get navTurnLeft;
+
+  /// No description provided for @navTurnRight.
+  ///
+  /// In ru, this message translates to:
+  /// **'поверните направо'**
+  String get navTurnRight;
+
+  /// No description provided for @navSlightLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'плавно поверните налево'**
+  String get navSlightLeft;
+
+  /// No description provided for @navSlightRight.
+  ///
+  /// In ru, this message translates to:
+  /// **'плавно поверните направо'**
+  String get navSlightRight;
+
+  /// No description provided for @navSharpLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'резко поверните налево'**
+  String get navSharpLeft;
+
+  /// No description provided for @navSharpRight.
+  ///
+  /// In ru, this message translates to:
+  /// **'резко поверните направо'**
+  String get navSharpRight;
+
+  /// No description provided for @navUturn.
+  ///
+  /// In ru, this message translates to:
+  /// **'развернитесь'**
+  String get navUturn;
+
+  /// No description provided for @navStraight.
+  ///
+  /// In ru, this message translates to:
+  /// **'продолжайте движение прямо'**
+  String get navStraight;
+
+  /// No description provided for @navKeepLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'держитесь левее'**
+  String get navKeepLeft;
+
+  /// No description provided for @navKeepRight.
+  ///
+  /// In ru, this message translates to:
+  /// **'держитесь правее'**
+  String get navKeepRight;
+
+  /// No description provided for @navMerge.
+  ///
+  /// In ru, this message translates to:
+  /// **'перестройтесь на основную дорогу'**
+  String get navMerge;
+
+  /// No description provided for @navRoundabout.
+  ///
+  /// In ru, this message translates to:
+  /// **'двигайтесь по круговому движению'**
+  String get navRoundabout;
+
+  /// No description provided for @navRoundaboutExit.
+  ///
+  /// In ru, this message translates to:
+  /// **'на круговом движении выберите съезд номер {exit}'**
+  String navRoundaboutExit(int exit);
+
+  /// No description provided for @navExitRoundabout.
+  ///
+  /// In ru, this message translates to:
+  /// **'съезжайте с кругового движения'**
+  String get navExitRoundabout;
+
+  /// No description provided for @navStopPickup.
+  ///
+  /// In ru, this message translates to:
+  /// **'остановитесь у места подачи'**
+  String get navStopPickup;
+
+  /// No description provided for @navStopDestination.
+  ///
+  /// In ru, this message translates to:
+  /// **'остановитесь у места назначения'**
+  String get navStopDestination;
+
+  /// No description provided for @navArrivedPickup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы подъехали к пассажиру'**
+  String get navArrivedPickup;
+
+  /// No description provided for @navArrivedDestination.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы прибыли в место назначения'**
+  String get navArrivedDestination;
+
+  /// No description provided for @navInMeters.
+  ///
+  /// In ru, this message translates to:
+  /// **'Через {metres} {metres, plural, one{метр} few{метра} other{метров}} {action}.'**
+  String navInMeters(int metres, String action);
+
+  /// No description provided for @navRoad.
+  ///
+  /// In ru, this message translates to:
+  /// **'На дорогу: {road}'**
+  String navRoad(String road);
+
+  /// No description provided for @navRemaining.
+  ///
+  /// In ru, this message translates to:
+  /// **'До цели: {distance} м · {minutes} мин'**
+  String navRemaining(int distance, int minutes);
+
+  /// No description provided for @navMetres.
+  ///
+  /// In ru, this message translates to:
+  /// **'{distance} м'**
+  String navMetres(int distance);
+
+  /// No description provided for @navWait.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ожидаем начала поездки'**
+  String get navWait;
+
+  /// No description provided for @navFinished.
+  ///
+  /// In ru, this message translates to:
+  /// **'Навигация завершена'**
+  String get navFinished;
+
+  /// No description provided for @navMapSource.
+  ///
+  /// In ru, this message translates to:
+  /// **'© OpenStreetMap'**
+  String get navMapSource;
 }
 
 class _AppLocalizationsDelegate

@@ -1437,6 +1437,43 @@
         ]
       }
     },
+    "/api/v1/geo/navigation": {
+      "post": {
+        "operationId": "GeoController_navigation",
+        "summary": "Build a driving road route with language-neutral turn maneuvers",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "geo"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/geo/executors-nearby": {
       "get": {
         "operationId": "GeoController_executorsNearby",
@@ -5687,9 +5724,48 @@
           "to"
         ]
       },
+      "NavigationManeuverDto": {
+        "type": "object",
+        "properties": {
+          "point": {
+            "$ref": "#/components/schemas/GeoPointDto"
+          },
+          "type": {
+            "type": "string"
+          },
+          "modifier": {
+            "type": "string"
+          },
+          "exit": {
+            "type": "number"
+          },
+          "roadName": {
+            "type": "string"
+          },
+          "distanceFromStartMeters": {
+            "type": "number"
+          },
+          "bearingAfter": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "point",
+          "type",
+          "roadName",
+          "distanceFromStartMeters",
+          "bearingAfter"
+        ]
+      },
       "RouteResponseDto": {
         "type": "object",
         "properties": {
+          "maneuvers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NavigationManeuverDto"
+            }
+          },
           "polyline": {
             "type": "string"
           },

@@ -1,5 +1,22 @@
-import { Body, Controller, Get, Post, Query } from "@nestjs/common";
-import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { UserRole } from "@dos/shared-types";
+import { Roles } from "../../shared/decorators/roles.decorator";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+  HttpCode,
+} from "@nestjs/common";
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiBearerAuth,
+} from "@nestjs/swagger";
 
 import { AddressSuggestionResponseDto } from "./dto/address-suggestion.response.dto";
 import { AutocompleteQueryDto } from "./dto/autocomplete-query.dto";
@@ -43,6 +60,19 @@ export class GeoController {
   @ApiOkResponse({ type: RouteResponseDto })
   route(@Body() dto: RouteRequestDto): Promise<RouteResponseDto> {
     return this.geoService.route(dto);
+  }
+
+  @Post("navigation")
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.EXECUTOR)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Build a driving road route with language-neutral turn maneuvers",
+  })
+  @ApiOkResponse({ type: RouteResponseDto })
+  navigation(@Body() dto: RouteRequestDto): Promise<RouteResponseDto> {
+    return this.geoService.route(dto, true);
   }
 
   @Get("executors-nearby")

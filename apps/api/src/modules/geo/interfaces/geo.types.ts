@@ -10,7 +10,17 @@ export type GeoAddressSuggestion = {
   lng: number;
 };
 
+export type GeoManeuver = {
+  point: GeoPoint;
+  type: string;
+  modifier?: string;
+  exit?: number;
+  roadName: string;
+  distanceFromStartMeters: number;
+  bearingAfter: number;
+};
 export type GeoRouteResult = {
+  maneuvers?: GeoManeuver[];
   polyline: string;
   points: GeoPoint[];
   distanceMeters: number;

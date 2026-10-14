@@ -1,22 +1,25 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsDefined,
   IsOptional,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
-import { GeoPointDto } from './geo-point.dto';
+import { GeoPointDto } from "./geo-point.dto";
 
 export class RouteRequestDto {
   @ApiProperty({ type: GeoPointDto })
+  @IsDefined()
   @ValidateNested()
   @Type(() => GeoPointDto)
   from!: GeoPointDto;
 
   @ApiProperty({ type: GeoPointDto })
+  @IsDefined()
   @ValidateNested()
   @Type(() => GeoPointDto)
   to!: GeoPointDto;

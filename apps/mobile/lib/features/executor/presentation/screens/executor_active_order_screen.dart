@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
@@ -13,7 +12,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/app_formatters.dart';
 import '../../../../shared/widgets/dos_ui.dart';
-import '../../../home/presentation/widgets/map_widget.dart';
+import '../../../navigation/domain/navigation_route.dart';
+import '../../../navigation/presentation/driver_navigation_view.dart';
 import '../../../order_chat/presentation/screens/order_chat_screen.dart';
 import '../../domain/entities/executor_active_order_session.dart';
 import '../cubit/executor_status_cubit.dart';
@@ -30,6 +30,9 @@ class ExecutorActiveOrderScreen extends StatefulWidget {
 }
 
 class _ExecutorActiveOrderScreenState extends State<ExecutorActiveOrderScreen> {
+  final _navigationKey = GlobalKey<DriverNavigationViewState>();
+  final _controlsKey = GlobalKey();
+  double _controlsHeight = 280;
   final _recipientCodeController = TextEditingController();
   final _picker = ImagePicker();
   XFile? _proofPhoto;
@@ -44,6 +47,19 @@ class _ExecutorActiveOrderScreenState extends State<ExecutorActiveOrderScreen> {
     super.dispose();
   }
 
+  void _measureControls() {
+    final box = _controlsKey.currentContext?.findRenderObject();
+    if (box is RenderBox) {
+      final height =
+          box.size.height +
+          AppSpacing.md * 2 +
+          MediaQuery.paddingOf(context).bottom;
+      if ((_controlsHeight - height).abs() > 1) {
+        setState(() => _controlsHeight = height);
+      }
+    }
+  }
+
   Future<void> _pickProofPhoto() async {
     final image = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -55,73 +71,6 @@ class _ExecutorActiveOrderScreenState extends State<ExecutorActiveOrderScreen> {
     setState(() {
       _proofPhoto = image;
     });
-  }
-
-  Future<void> _openNavigation(
-    BuildContext context,
-    AppLocalizations l10n,
-    ExecutorActiveOrderSession session,
-    LatLng currentLocation,
-  ) async {
-    final destination = _navigationDestinationFor(session);
-    final options = await _availableNavigationOptions(
-      l10n: l10n,
-      from: currentLocation,
-      to: destination,
-    );
-
-    if (!context.mounted) {
-      return;
-    }
-
-    final selected = await showModalBottomSheet<_NavigationMapOption>(
-      context: context,
-      backgroundColor: AppColors.darkSurface,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Text(
-                  l10n.driverActiveOrderNavigationTitle,
-                  style: Theme.of(
-                    sheetContext,
-                  ).textTheme.titleMedium?.copyWith(color: AppColors.darkText),
-                ),
-              ),
-              for (final option in options)
-                ListTile(
-                  leading: Icon(option.icon, color: AppColors.primary),
-                  title: Text(
-                    option.label,
-                    style: const TextStyle(color: AppColors.darkText),
-                  ),
-                  onTap: () => Navigator.of(sheetContext).pop(option),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (selected == null) {
-      return;
-    }
-
-    final opened = await launchUrl(
-      selected.uri,
-      mode: LaunchMode.externalApplication,
-    );
-    if (!context.mounted || opened) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.driverActiveOrderNavigationUnavailable)),
-    );
   }
 
   Future<void> _callPhone(
@@ -175,15 +124,21 @@ class _ExecutorActiveOrderScreenState extends State<ExecutorActiveOrderScreen> {
             locationState.currentLocation,
           );
 
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _measureControls();
+          });
           return Scaffold(
             backgroundColor: AppColors.darkBackground,
             body: Stack(
               children: [
                 Positioned.fill(
-                  child: _ExecutorActiveOrderMap(
-                    currentLocation: locationState.currentLocation,
-                    pickupLocation: session.pickupLocation,
-                    destinationLocation: session.destinationLocation,
+                  child: DriverNavigationView(
+                    key: _navigationKey,
+                    topInset: MediaQuery.paddingOf(context).top + 72,
+                    bottomInset: _controlsHeight,
+                    initialLocation: locationState.currentLocation,
+                    pickup: session.pickupLocation,
+                    destination: session.destinationLocation,
                     status: session.status,
                   ),
                 ),
@@ -278,20 +233,15 @@ class _ExecutorActiveOrderScreenState extends State<ExecutorActiveOrderScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       child: _DriverActiveOrderCard(
+                        key: _controlsKey,
                         l10n: l10n,
                         session: session,
                         incomingState: incomingState,
                         recipientCodeController: _recipientCodeController,
                         proofPhoto: _proofPhoto,
                         onPickProofPhoto: _pickProofPhoto,
-                        onOpenNavigation: () => unawaited(
-                          _openNavigation(
-                            context,
-                            l10n,
-                            session,
-                            locationState.currentLocation,
-                          ),
-                        ),
+                        onOpenNavigation: () =>
+                            _navigationKey.currentState?.recenter(),
                         onOpenChat: () => context.push(
                           OrderChatScreen.routePath,
                           extra: OrderChatArgs(
@@ -489,94 +439,6 @@ class _ExecutorActiveOrderScreenState extends State<ExecutorActiveOrderScreen> {
     return _taximeterDistanceMeters;
   }
 
-  LatLng _navigationDestinationFor(ExecutorActiveOrderSession session) {
-    return session.status == 'accepted'
-        ? session.pickupLocation
-        : session.destinationLocation;
-  }
-
-  Future<List<_NavigationMapOption>> _availableNavigationOptions({
-    required AppLocalizations l10n,
-    required LatLng from,
-    required LatLng to,
-  }) async {
-    final installed = <_NavigationMapOption>[];
-    final candidates = <_NavigationMapCandidate>[
-      _NavigationMapCandidate(
-        label: 'Яндекс Карты',
-        icon: Icons.map_rounded,
-        uris: [_yandexMapsRouteUri(from, to)],
-      ),
-      _NavigationMapCandidate(
-        label: '2ГИС',
-        icon: Icons.location_city_rounded,
-        uris: [_twoGisRouteUri(from, to)],
-      ),
-      _NavigationMapCandidate(
-        label: 'Google Maps',
-        icon: Icons.assistant_direction_rounded,
-        uris: [_googleNavigationUri(to), _googleMapsRouteUri(from, to)],
-      ),
-      _NavigationMapCandidate(
-        label: 'Карты телефона',
-        icon: Icons.navigation_rounded,
-        uris: [_geoRouteUri(to)],
-      ),
-    ];
-
-    for (final candidate in candidates) {
-      final uri = await candidate.availableUri();
-      if (uri != null) {
-        installed.add(
-          _NavigationMapOption(
-            label: candidate.label,
-            icon: candidate.icon,
-            uri: uri,
-          ),
-        );
-      }
-    }
-
-    return [
-      ...installed,
-      _NavigationMapOption(
-        label: l10n.driverActiveOrderNavigationBrowser,
-        icon: Icons.public_rounded,
-        uri: _webYandexRouteUri(from, to),
-      ),
-    ];
-  }
-
-  Uri _yandexMapsRouteUri(LatLng from, LatLng to) => Uri.parse(
-    'yandexmaps://maps.yandex.ru/?rtext=${_latLngText(from)}~${_latLngText(to)}&rtt=auto',
-  );
-
-  Uri _twoGisRouteUri(LatLng from, LatLng to) => Uri.parse(
-    'dgis://2gis.ru/routeSearch/rsType/car/from/${_lngLatText(from)}/to/${_lngLatText(to)}',
-  );
-
-  Uri _googleNavigationUri(LatLng to) =>
-      Uri.parse('google.navigation:q=${_latLngText(to)}&mode=d');
-
-  Uri _googleMapsRouteUri(LatLng from, LatLng to) => Uri.parse(
-    'comgooglemaps://?saddr=${_latLngText(from)}&daddr=${_latLngText(to)}&directionsmode=driving',
-  );
-
-  Uri _geoRouteUri(LatLng to) =>
-      Uri.parse('geo:${_latLngText(to)}?q=${_latLngText(to)}');
-
-  Uri _webYandexRouteUri(LatLng from, LatLng to) => Uri.https(
-    'yandex.ru',
-    '/maps/',
-    {'rtext': '${_latLngText(from)}~${_latLngText(to)}', 'rtt': 'auto'},
-  );
-
-  String _latLngText(LatLng value) =>
-      '${value.latitude.toStringAsFixed(6)},${value.longitude.toStringAsFixed(6)}';
-
-  String _lngLatText(LatLng value) =>
-      '${value.longitude.toStringAsFixed(6)},${value.latitude.toStringAsFixed(6)}';
-
   bool _isChatClosed(String status) {
     return status == 'completed' ||
         status == 'cancelled_client' ||
@@ -619,6 +481,7 @@ class _PrimaryActionButton extends StatelessWidget {
 
 class _DriverActiveOrderCard extends StatelessWidget {
   const _DriverActiveOrderCard({
+    super.key,
     required this.l10n,
     required this.session,
     required this.incomingState,
@@ -648,7 +511,7 @@ class _DriverActiveOrderCard extends StatelessWidget {
     final targetAddress = _targetAddress;
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.45,
       ),
       child: SingleChildScrollView(
         child: DosCard(
@@ -796,14 +659,14 @@ class _DriverActiveOrderCard extends StatelessWidget {
   }
 
   String get _targetLabel {
-    if (session.status == 'accepted') {
+    if (isPickupNavigation(session.status)) {
       return l10n.driverActiveOrderPickupLabel;
     }
     return l10n.driverActiveOrderDestinationLabel;
   }
 
   String get _targetAddress {
-    if (session.status == 'accepted') {
+    if (isPickupNavigation(session.status)) {
       return [
         session.pickupAddress,
         if ((session.pickupEntrance ?? '').isNotEmpty)
@@ -877,170 +740,6 @@ class _DriverRoundAction extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _NavigationMapCandidate {
-  const _NavigationMapCandidate({
-    required this.label,
-    required this.icon,
-    required this.uris,
-  });
-
-  final String label;
-  final IconData icon;
-  final List<Uri> uris;
-
-  Future<Uri?> availableUri() async {
-    for (final uri in uris) {
-      if (await canLaunchUrl(uri)) {
-        return uri;
-      }
-    }
-    return null;
-  }
-}
-
-class _NavigationMapOption {
-  const _NavigationMapOption({
-    required this.label,
-    required this.icon,
-    required this.uri,
-  });
-
-  final String label;
-  final IconData icon;
-  final Uri uri;
-}
-
-class _ExecutorActiveOrderMap extends StatefulWidget {
-  const _ExecutorActiveOrderMap({
-    required this.currentLocation,
-    required this.pickupLocation,
-    required this.destinationLocation,
-    required this.status,
-  });
-
-  final LatLng currentLocation;
-  final LatLng pickupLocation;
-  final LatLng destinationLocation;
-  final String status;
-
-  @override
-  State<_ExecutorActiveOrderMap> createState() =>
-      _ExecutorActiveOrderMapState();
-}
-
-class _ExecutorActiveOrderMapState extends State<_ExecutorActiveOrderMap> {
-  final _mapController = MapController();
-
-  @override
-  void didUpdateWidget(covariant _ExecutorActiveOrderMap oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (_isSamePoint(oldWidget.currentLocation, widget.currentLocation)) {
-      return;
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      _mapController.move(widget.currentLocation, _mapController.camera.zoom);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final nextTarget = widget.status == 'accepted'
-        ? widget.pickupLocation
-        : widget.destinationLocation;
-    return DarkDriverMap(
-      child: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCenter: widget.currentLocation,
-          initialZoom: 16,
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-          ),
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.dos.dos_mobile',
-          ),
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: [widget.pickupLocation, widget.destinationLocation],
-                strokeWidth: 3,
-                color: AppColors.darkText.withValues(alpha: 0.35),
-              ),
-              Polyline(
-                points: [widget.currentLocation, nextTarget],
-                strokeWidth: 5,
-                color: AppColors.primary,
-              ),
-            ],
-          ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: widget.pickupLocation,
-                width: 50,
-                height: 50,
-                child: const _MapMarker(
-                  icon: Icons.trip_origin_rounded,
-                  color: AppColors.success,
-                ),
-              ),
-              Marker(
-                point: widget.destinationLocation,
-                width: 54,
-                height: 54,
-                child: const _MapMarker(
-                  icon: Icons.location_on_rounded,
-                  color: AppColors.primary,
-                ),
-              ),
-              Marker(
-                point: widget.currentLocation,
-                width: 58,
-                height: 58,
-                child: const _MapMarker(
-                  icon: Icons.navigation_rounded,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  bool _isSamePoint(LatLng first, LatLng second) {
-    return (first.latitude - second.latitude).abs() < 0.000001 &&
-        (first.longitude - second.longitude).abs() < 0.000001;
-  }
-}
-
-class _MapMarker extends StatelessWidget {
-  const _MapMarker({required this.icon, required this.color});
-
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-      ),
-      child: Icon(icon, color: Colors.white),
     );
   }
 }

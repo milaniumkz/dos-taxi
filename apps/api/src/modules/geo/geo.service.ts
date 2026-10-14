@@ -220,9 +220,14 @@ export class GeoService {
     return result;
   }
 
-  async route(dto: RouteRequestDto): Promise<GeoRouteResult> {
+  async route(
+    dto: RouteRequestDto,
+    navigation = false,
+  ): Promise<GeoRouteResult> {
     const points: GeoPoint[] = [dto.from, ...(dto.waypoints ?? []), dto.to];
-    return this.osrmAdapter.route(points);
+    return navigation
+      ? this.osrmAdapter.route(points, true)
+      : this.osrmAdapter.route(points);
   }
 
   async findNearbyExecutors(query: NearbyExecutorsQueryDto): Promise<
