@@ -1553,4 +1553,8 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get rideOfferAlertsBlocked =>
       'Браузер баптауларында сайт дыбысы мен хабарландыруларға рұқсат беріңіз.';
+
+  @override
+  String get rideOfferSoundEnabled =>
+      'Дыбыс қосылды. Жаңа ұсыныстар келгенде белгі беріледі.';
 }
