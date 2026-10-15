@@ -40,3 +40,13 @@ test('refresh refuses reserved identity collisions before cancelling any orders'
  await assert.rejects(refreshPreview({query:async()=>({rows:[{phone:'real',name:'real'}]})},async()=>{calls++;},'12345'),/collision/);
  assert.equal(calls,0);
 });
+test('clear-only cancels fixtures without quoting, creating or waiting',async()=>{
+ const {clearPreview}=require('./seed-jetekshi-rides.cjs');const rows=fixtures();let cancels=0;
+ const db={query:async(sql,args)=>{
+  const f=rows.find(x=>x.userId===args[0]);
+  if(sql.startsWith('SELECT phone'))return {rows:[{phone:f.phone,name:f.name,is_blocked:false}]};
+  assert.match(sql,/executor_id IS NULL/);assert.equal(args[1],f.data.pickupComment);return {rows:[{id:'old-'+f.userId}]};
+ }};
+ const count=await clearPreview(db,async(path,data,user,key,method)=>{assert.equal(method,'PATCH');assert.match(path,/\/cancel$/);cancels++;return {status:'cancelled_client'};});
+ assert.equal(count,10);assert.equal(cancels,10);
+});

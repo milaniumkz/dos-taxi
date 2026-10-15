@@ -18,8 +18,7 @@ function fixtures() {
       ]}
   }));
 }
-async function refreshPreview(db, request, runId, wait = ms => new Promise(resolve => setTimeout(resolve, ms)), report = () => {}) {
-  if (!/^\d+$/.test(runId)) throw new Error('Explicit preview run ID required');
+async function clearPreview(db, request, report = () => {}) {
   // Cancel only unassigned searching fixtures owned by the ten reserved identities.
   const cancellations = [];
   for (const f of fixtures()) {
@@ -34,6 +33,11 @@ async function refreshPreview(db, request, runId, wait = ms => new Promise(resol
     if (result.status !== 'cancelled_client') throw new Error('Test order cancellation failed; stopped');
   }
   report({event:'test_orders_cleared',count:cancellations.length});
+  return cancellations.length;
+}
+async function refreshPreview(db, request, runId, wait = ms => new Promise(resolve => setTimeout(resolve, ms)), report = () => {}) {
+  if (!/^\d+$/.test(runId)) throw new Error('Explicit preview run ID required');
+  await clearPreview(db, request, report);
   return seed(db, request, {runId, wait, report});
 }
 async function seed(db,request,options={}) {
@@ -69,9 +73,14 @@ async function main() {
     const response=await fetch('http://127.0.0.1:3000/api/v1'+path,{method,signal:AbortSignal.timeout(30000),headers:{'content-type':'application/json',authorization:'Bearer '+token,...(key?{'x-idempotency-key':key}:{})},body:JSON.stringify(data)});
     const body=await response.json();if(!response.ok) throw new Error('Preview API failed: '+response.status+' '+String(body.code||''));return body;
   };
-  try {const results=process.env.REFRESH_JETEKSHI_PREVIEW === "1"
+  try {
+    if (process.env.CLEAR_JETEKSHI_PREVIEW === "1") {
+      await clearPreview(db, request, event => console.log(JSON.stringify(event)));
+      return;
+    }
+    const results=process.env.REFRESH_JETEKSHI_PREVIEW === "1"
     ? await refreshPreview(db,request,process.env.PREVIEW_RUN_ID,undefined,event=>console.log(JSON.stringify(event)))
     : await seed(db,request);console.log(JSON.stringify({preview:'Жетекши',count:results.length,orders:results}));} finally {await db.end();}
 }
-module.exports={fixtures,seed,refreshPreview};
+module.exports={fixtures,seed,refreshPreview,clearPreview};
 if(require.main===module || !process.argv[1]) main().catch(e=>{console.error(e.message);process.exitCode=1;});
