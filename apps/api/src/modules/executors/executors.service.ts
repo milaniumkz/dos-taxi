@@ -319,8 +319,6 @@ export class ExecutorsService {
       this.changed(dto.vehicleYear, executor.vehicleYear) ||
       this.changed(dto.vehicleColor, executor.vehicleColor) ||
       this.changed(dto.vehiclePlate, executor.vehiclePlate) ||
-      this.changed(dto.passengerCapacity, executor.passengerCapacity) ||
-      this.changed(dto.cityId, executor.cityId) ||
       (dto.enabledTariffs !== undefined &&
         this.tariffsChanged(
           this.normalizeEnabledTariffs(dto.enabledTariffs),

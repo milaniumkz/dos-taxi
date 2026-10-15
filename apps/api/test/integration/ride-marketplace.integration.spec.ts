@@ -22,6 +22,7 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { databaseEntities } from "../../src/database/entities";
 import { CityEntity } from "../../src/modules/admin/entities/city.entity";
+import { ExecutorLocationEntity } from "../../src/modules/executors/entities/executor-location.entity";
 import { ExecutorEntity } from "../../src/modules/executors/entities/executor.entity";
 import { DriverBonusSettingEntity } from "../../src/modules/executors/entities/driver-bonus-setting.entity";
 import { DriverBonusPayoutEntity } from "../../src/modules/executors/entities/driver-bonus-payout.entity";
@@ -149,7 +150,17 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
         { provide: NotificationsService, useValue: notifications },
         { provide: DispatchQueueService, useValue: dispatch },
         { provide: PricingService, useValue: pricing },
-        { provide: GeoService, useValue: {} },
+        {
+          provide: GeoService,
+          useValue: {
+            reverse: jest.fn(async () => ({
+              title: "улица",
+              subtitle: "Аральск",
+              lat: 46.8,
+              lng: 61.67,
+            })),
+          },
+        },
         { provide: PromoCodesService, useValue: {} },
       ],
     }).compile();
@@ -229,6 +240,64 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
     });
     expect(rubSeats.minimumUnitPrice).toBe("71.43");
     expect(rubSeats.minimumOrderPrice).toBe("142.86");
+  });
+  it("retains approved legacy drivers and resolves their missing city from fresh presence", async () => {
+    const d = await driver();
+    await db.getRepository(ExecutorEntity).update(d.id, { cityId: null });
+    await db
+      .getRepository(ExecutorLocationEntity)
+      .save({ executorId: d.id, lat: 46.80123, lng: 61.675111 });
+    await market.feed(d.userId, { lat: 46.80123, lng: 61.675111 });
+    expect(
+      await db.getRepository(ExecutorEntity).findOneByOrFail({ id: d.id }),
+    ).toMatchObject({
+      cityId: city.id,
+      verificationStatus: "verified",
+      isOnline: true,
+    });
+    await db.getRepository(ExecutorEntity).update(d.id, { isOnline: false });
+    await expect(
+      market.feed(d.userId, { lat: 46.8, lng: 61.67 }),
+    ).rejects.toMatchObject({ response: { code: "RIDE_DRIVER_OFFLINE" } });
+    await db
+      .getRepository(ExecutorEntity)
+      .update(d.id, {
+        isOnline: true,
+        verificationStatus: "pending",
+        cityId: null,
+      });
+    await expect(
+      market.feed(d.userId, { lat: 46.8, lng: 61.67 }),
+    ).rejects.toMatchObject({ response: { code: "EXECUTOR_NOT_VERIFIED" } });
+    expect(
+      (await db.getRepository(ExecutorEntity).findOneByOrFail({ id: d.id }))
+        .cityId,
+    ).toBeNull();
+  });
+  it("does not guess a legacy driver's city from a default map coordinate or stale GPS", async () => {
+    const d = await driver();
+    await db.getRepository(ExecutorEntity).update(d.id, { cityId: null });
+    await expect(
+      market.feed(d.userId, { lat: 46.8, lng: 61.67 }),
+    ).rejects.toMatchObject({
+      response: { code: "RIDE_DRIVER_CITY_REQUIRED" },
+    });
+    await db
+      .getRepository(ExecutorLocationEntity)
+      .save({ executorId: d.id, lat: 46.80123, lng: 61.675111 });
+    await db.query(
+      "UPDATE executor_locations SET updated_at=now()-interval '1 hour' WHERE executor_id=$1",
+      [d.id],
+    );
+    await expect(
+      market.feed(d.userId, { lat: 46.8, lng: 61.67 }),
+    ).rejects.toMatchObject({
+      response: { code: "RIDE_DRIVER_CITY_REQUIRED" },
+    });
+    expect(
+      (await db.getRepository(ExecutorEntity).findOneByOrFail({ id: d.id }))
+        .verificationStatus,
+    ).toBe("verified");
   });
   it("creates an idempotent unassigned request and sorts feed by pickup distance", async () => {
     const client = await user();

@@ -1,6 +1,11 @@
 import { isUUID } from "class-validator";
 import { createHash } from "node:crypto";
-import { Currency, ExecutorType, OrderStatus } from "@dos/shared-types";
+import {
+  Currency,
+  ExecutorType,
+  OrderStatus,
+  ServiceType,
+} from "@dos/shared-types";
 import {
   BadRequestException,
   ConflictException,
@@ -14,6 +19,7 @@ import {
 import { DataSource, EntityManager, In } from "typeorm";
 import { CityEntity } from "../admin/entities/city.entity";
 import { ExecutorEntity } from "../executors/entities/executor.entity";
+import { ExecutorLocationEntity } from "../executors/entities/executor-location.entity";
 import { NotificationsService } from "../notifications/notifications.service";
 import { OrdersService } from "../orders/orders.service";
 import { OrderEntity } from "../orders/entities/order.entity";
@@ -256,15 +262,59 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
     if (
       !driver ||
       driver.executorType !== ExecutorType.DRIVER ||
-      driver.verificationStatus !== "verified" ||
-      !driver.isOnline ||
       !user ||
-      user.isBlocked ||
-      !driver.cityId
+      user.isBlocked
     )
       throw new ForbiddenException({
         code: "RIDE_DRIVER_NOT_ELIGIBLE",
         message: "RIDE_DRIVER_NOT_ELIGIBLE",
+      });
+    if (driver.verificationStatus !== "verified") {
+      throw new ForbiddenException({
+        code: "EXECUTOR_NOT_VERIFIED",
+        message: "EXECUTOR_NOT_VERIFIED",
+      });
+    }
+    if (!driver.isOnline) {
+      throw new ForbiddenException({
+        code: "RIDE_DRIVER_OFFLINE",
+        message: "RIDE_DRIVER_OFFLINE",
+      });
+    }
+    if (!driver.cityId && lock) {
+      // Legacy approved profiles did not require a city. Use only fresh presence,
+      // never a default map center or an arbitrary first city.
+      const position = await manager
+        .getRepository(ExecutorLocationEntity)
+        .findOneBy({ executorId: driver.id });
+      let city: CityEntity | null = null;
+      if (
+        position &&
+        Date.now() - position.updatedAt.getTime() < 300000 &&
+        Date.now() >= position.updatedAt.getTime()
+      ) {
+        try {
+          city = await this.orders.resolveBookingCity(
+            undefined,
+            [{ lat: position.lat, lng: position.lng }],
+            ServiceType.INTERCITY,
+          );
+        } catch {
+          /* Explicit city selection remains available when GPS cannot resolve it. */
+        }
+      }
+      if (!city?.isActive)
+        throw new ForbiddenException({
+          code: "RIDE_DRIVER_CITY_REQUIRED",
+          message: "RIDE_DRIVER_CITY_REQUIRED",
+        });
+      driver.cityId = city.id;
+      await manager.getRepository(ExecutorEntity).save(driver);
+    }
+    if (!driver.cityId)
+      throw new ForbiddenException({
+        code: "RIDE_DRIVER_CITY_REQUIRED",
+        message: "RIDE_DRIVER_CITY_REQUIRED",
       });
     const city = await manager
       .getRepository(CityEntity)
@@ -282,7 +332,9 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
     return driver;
   }
   async feed(userId: string, query: RideFeedQueryDto) {
-    const driver = await this.driver(this.db.manager, userId);
+    const driver = await this.db.transaction((manager) =>
+      this.driver(manager, userId, true),
+    );
     const repository = this.db.getRepository(OrderEntity);
     if (
       await repository.exists({
