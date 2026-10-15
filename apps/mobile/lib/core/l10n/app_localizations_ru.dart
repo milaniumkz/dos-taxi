@@ -1557,4 +1557,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get rideOfferSoundEnabled =>
       'Звук включён. Новые предложения будут сопровождаться сигналом.';
+
+  @override
+  String get rideExtras => 'Пожелания';
+
+  @override
+  String get rideExtrasDone => 'Готово';
 }

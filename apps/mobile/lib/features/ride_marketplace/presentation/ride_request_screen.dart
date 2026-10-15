@@ -45,28 +45,81 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
       },
       builder: (context, s) => Scaffold(
         appBar: AppBar(title: Text(l.rideRequestTitle)),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (s.quote != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          l.rideTotal,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const Spacer(),
+                        Text(
+                          _total(context, cubit, s),
+                          key: const ValueKey('ride-total'),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: s.quote == null || s.busy
+                        ? null
+                        : () => cubit.submit(
+                            payment: payment,
+                            entrance: entrance.text,
+                            comment: comment.text,
+                            childSeat: child,
+                            shared: shared,
+                          ),
+                    child: Text(l.rideSubmit),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         body: AbsorbPointer(
           absorbing: s.busy,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
             children: [
               Card(
+                margin: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.trip_origin),
-                      title: Text(cubit.pickup.displayTitle),
-                      onTap: () => _address(context, cubit, true),
+                    _routeRow(
+                      context,
+                      cubit.pickup.displayTitle,
+                      Icons.trip_origin,
+                      () => _address(context, cubit, true),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.place),
-                      title: Text(cubit.destination.displayTitle),
-                      onTap: () => _address(context, cubit, false),
+                    Divider(
+                      height: 1,
+                      indent: 42,
+                      endIndent: 12,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                    _routeRow(
+                      context,
+                      cubit.destination.displayTitle,
+                      Icons.place,
+                      () => _address(context, cubit, false),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               if (s.busy) const LinearProgressIndicator(),
               if (s.error != null) ...[
                 Text(
@@ -80,67 +133,212 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                   ),
               ],
               if (s.quote != null) _pricing(context, cubit, s),
-              TextField(
-                controller: entrance,
-                maxLength: 100,
-                decoration: InputDecoration(labelText: l.rideEntrance),
-              ),
-              TextField(
-                controller: comment,
-                maxLength: 1000,
-                maxLines: 2,
-                decoration: InputDecoration(labelText: l.rideComment),
-              ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l.rideChildSeat),
-                value: child,
-                onChanged: (v) => setState(() => child = v ?? false),
-              ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l.rideTogether),
-                subtitle: Text(l.rideTogetherHint),
-                value: shared,
-                onChanged: (v) => setState(() => shared = v ?? false),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l.ridePayment,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              for (final entry in {
-                'cash': l.rideCash,
-                'transfer_kaspi': l.rideKaspi,
-                'transfer_halyk': l.rideHalyk,
-              }.entries)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(entry.value),
-                  leading: Icon(
-                    payment == entry.key
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                  ),
-                  onTap: () => setState(() => payment = entry.key),
-                ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: s.quote == null || s.busy
-                    ? null
-                    : () => cubit.submit(
-                        payment: payment,
-                        entrance: entrance.text,
-                        comment: comment.text,
-                        childSeat: child,
-                        shared: shared,
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: entrance,
+                      maxLength: 100,
+                      decoration: InputDecoration(
+                        labelText: l.rideEntrance,
+                        counterText: '',
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                       ),
-                child: Text(l.rideSubmit),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _details(context),
+                      icon: const Icon(Icons.tune, size: 18),
+                      label: Text(l.rideExtras),
+                    ),
+                  ),
+                ],
+              ),
+              if (child || shared || comment.text.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    [
+                      if (child) l.rideChildSeat,
+                      if (shared) l.rideTogether,
+                      if (comment.text.trim().isNotEmpty) comment.text.trim(),
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Card(
+                margin: EdgeInsets.zero,
+                child: ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.payments_outlined),
+                  title: Text(
+                    l.ridePayment,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  subtitle: Text(
+                    _payments(l)[payment]!,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _payment(context),
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Map<String, String> _payments(AppLocalizations l) => {
+    'cash': l.rideCash,
+    'transfer_kaspi': l.rideKaspi,
+    'transfer_halyk': l.rideHalyk,
+  };
+
+  Widget _routeRow(
+    BuildContext context,
+    String address,
+    IconData icon,
+    VoidCallback edit,
+  ) => InkWell(
+    onTap: edit,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              address,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          const Icon(Icons.edit_outlined, size: 16),
+        ],
+      ),
+    ),
+  );
+
+  Future<void> _payment(BuildContext context) async {
+    final l = AppLocalizations.of(context)!;
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheet) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              l.ridePayment,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          for (final entry in _payments(l).entries)
+            ListTile(
+              title: Text(entry.value),
+              leading: Icon(
+                payment == entry.key
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_off,
+              ),
+              onTap: () => Navigator.pop(sheet, entry.key),
+            ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+    if (selected != null && mounted) setState(() => payment = selected);
+  }
+
+  Future<void> _details(BuildContext context) async {
+    final l = AppLocalizations.of(context)!;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, refresh) => SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              MediaQuery.viewInsetsOf(sheet).bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l.rideExtras,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: comment,
+                  maxLength: 1000,
+                  maxLines: 2,
+                  decoration: InputDecoration(labelText: l.rideComment),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l.rideChildSeat),
+                  value: child,
+                  onChanged: (v) => refresh(() => child = v ?? false),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l.rideTogether),
+                  subtitle: Text(l.rideTogetherHint),
+                  value: shared,
+                  onChanged: (v) => refresh(() => shared = v ?? false),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(sheet),
+                    child: Text(l.rideExtrasDone),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  String _total(
+    BuildContext context,
+    RideRequestCubit cubit,
+    RideRequestState state,
+  ) {
+    final q = state.quote!, count = (q['passengerCount'] as num).toInt();
+    final unit =
+        (double.parse(q['minimumUnitPrice'].toString()) * 100).round() +
+        cubit.steps * (double.parse(q['priceStep'].toString()) * 100).round();
+    return AppFormatters.formatCurrency(
+      context,
+      unit * count / 100,
+      currencyCode: q['currency'].toString(),
+      decimalDigits: q['currency'] == 'RUB' ? 2 : 0,
     );
   }
 
@@ -182,33 +380,45 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
       decimalDigits: currency == 'RUB' ? 2 : 0,
     );
     return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           children: [
-            Text(
-              seat ? l.ridePerSeat : l.ridePerSalon,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    seat ? l.ridePerSeat : l.ridePerSalon,
+                    maxLines: 2,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    '${l.rideMinimum}: ${amount((double.parse(q['minimumOrderPrice'].toString()) * 100).round())}',
+                    maxLines: 2,
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
             ),
             if (seat)
               RideStepper(
+                compact: true,
                 label: l.ridePassengers,
                 value: '$count',
                 onMinus: count > 1 ? () => cubit.refreshQuote(count - 1) : null,
                 onPlus: count < 8 ? () => cubit.refreshQuote(count + 1) : null,
               ),
             RideStepper(
+              compact: true,
               label: l.rideYourPrice,
               value: amount(unit),
               onMinus: cubit.steps > 0 ? () => cubit.changePrice(-1) : null,
               onPlus: cubit.steps < 1000 ? () => cubit.changePrice(1) : null,
-            ),
-            Text(
-              '${l.rideTotal}: ${amount(unit * count)}',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            Text(
-              '${l.rideMinimum}: ${q['minimumOrderPrice']} ${currency == 'RUB' ? '₽' : '₸'}',
             ),
           ],
         ),
@@ -259,49 +469,60 @@ class RideStepper extends StatelessWidget {
     required this.value,
     this.onMinus,
     this.onPlus,
+    this.compact = false,
   });
   final String label, value;
+  final bool compact;
   final VoidCallback? onMinus, onPlus;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Column(
-      children: [
-        Text(label),
-        Row(
-          children: [
-            IconButton.filledTonal(
-              style: IconButton.styleFrom(
-                foregroundColor: AppColors.text,
-                backgroundColor: AppColors.primary,
-                disabledForegroundColor: AppColors.muted,
-                disabledBackgroundColor: AppColors.surfaceAlt,
+    padding: EdgeInsets.symmetric(vertical: compact ? 2 : 8),
+    child: compact
+        ? Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
-              tooltip: AppLocalizations.of(context)!.rideDecrease,
-              onPressed: onMinus,
-              icon: const Icon(Icons.remove),
-            ),
-            Expanded(
-              child: Text(
-                value,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            IconButton.filledTonal(
-              style: IconButton.styleFrom(
-                foregroundColor: AppColors.text,
-                backgroundColor: AppColors.primary,
-                disabledForegroundColor: AppColors.muted,
-                disabledBackgroundColor: AppColors.surfaceAlt,
-              ),
-              tooltip: AppLocalizations.of(context)!.rideIncrease,
-              onPressed: onPlus,
-              icon: const Icon(Icons.add),
-            ),
-          ],
+              SizedBox(width: 180, child: _controls(context)),
+            ],
+          )
+        : Column(children: [Text(label), _controls(context)]),
+  );
+
+  Widget _controls(BuildContext context) => Row(
+    children: [
+      IconButton.filledTonal(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.text,
+          backgroundColor: AppColors.primary,
+          disabledForegroundColor: AppColors.muted,
+          disabledBackgroundColor: AppColors.surfaceAlt,
         ),
-      ],
-    ),
+        tooltip: AppLocalizations.of(context)!.rideDecrease,
+        onPressed: onMinus,
+        icon: const Icon(Icons.remove),
+      ),
+      Expanded(
+        child: Text(
+          value,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+      ),
+      IconButton.filledTonal(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.text,
+          backgroundColor: AppColors.primary,
+          disabledForegroundColor: AppColors.muted,
+          disabledBackgroundColor: AppColors.surfaceAlt,
+        ),
+        tooltip: AppLocalizations.of(context)!.rideIncrease,
+        onPressed: onPlus,
+        icon: const Icon(Icons.add),
+      ),
+    ],
   );
 }

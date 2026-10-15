@@ -1557,4 +1557,10 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get rideOfferSoundEnabled =>
       'Дыбыс қосылды. Жаңа ұсыныстар келгенде белгі беріледі.';
+
+  @override
+  String get rideExtras => 'Қосымша тілектер';
+
+  @override
+  String get rideExtrasDone => 'Дайын';
 }
