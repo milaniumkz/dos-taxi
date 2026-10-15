@@ -46,15 +46,15 @@ class WebNotificationPresenter {
     }
     stopDriverOrderTone();
     final now = context.currentTime;
-    // Two short, gently fading notes; no media download or decoder needed.
+    // Two soft, lower-pitched, gently fading notes; no media download or decoder needed.
     for (var i = 0; i < 2; i++) {
       final oscillator = context.createOscillator();
       final gain = context.createGain();
-      final start = now + i * .26;
-      oscillator.frequency.value = i == 0 ? 880 : 1174;
+      final start = now + i * .2;
+      oscillator.frequency.value = i == 0 ? 523.25 : 659.25;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(.35, start + .015);
-      gain.gain.linearRampToValueAtTime(0, start + .22);
+      gain.gain.linearRampToValueAtTime(.16, start + .035);
+      gain.gain.linearRampToValueAtTime(0, start + .44);
       oscillator.connect(gain);
       gain.connect(context.destination);
       _tones.add(oscillator);
@@ -64,7 +64,7 @@ class WebNotificationPresenter {
         gain.disconnect();
       }).toJS;
       oscillator.start(start);
-      oscillator.stop(start + .23);
+      oscillator.stop(start + .45);
     }
   }
 
