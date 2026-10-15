@@ -88,12 +88,12 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
     const count = basis === "seat" ? (dto.passengerCount ?? 1) : 1;
     const rate = Number(city.rideExchangeRate);
     const factor = city.currency === Currency.KZT ? 1 : rate;
-    const minimumTotalMinor = Math.ceil(
+    const minimumBaseMinor = Math.ceil(
       (Number(city.rideMinimumOrderKzt) * 100) / factor - 1e-8,
     );
     const rounding = city.currency === Currency.KZT ? 100 : 1;
-    const minimumUnitMinor =
-      Math.ceil(minimumTotalMinor / count / rounding) * rounding;
+    const minimumUnitMinor = Math.ceil(minimumBaseMinor / rounding) * rounding;
+    const minimumTotalMinor = minimumUnitMinor * count;
     const stepMinor = Math.max(
       rounding,
       Math.round((Number(city.ridePriceStepKzt) * 100) / factor / rounding) *

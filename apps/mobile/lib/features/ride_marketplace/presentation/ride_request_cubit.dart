@@ -46,13 +46,14 @@ class RideRequestCubit extends Cubit<RideRequestState> {
   };
   Future<void> refreshQuote([int? count]) async {
     if (state.busy && _submitted != null) return;
+    final preservedSteps = count != null ? steps : 0;
     if (count != null) passengers = count;
     final revision = ++_revision;
     emit(const RideRequestState(busy: true));
     final result = await repository.quote(_route);
     if (isClosed || revision != _revision) return;
     result.fold((f) => emit(RideRequestState(error: f.message)), (q) {
-      steps = 0;
+      steps = preservedSteps;
       emit(RideRequestState(quote: q));
     });
   }

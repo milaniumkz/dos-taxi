@@ -181,15 +181,25 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       await db.destroy();
     }
   });
-  it("quotes a 500 KZT minimum total and 7 KZT/RUB; salon hides quantity", async () => {
+  it("quotes 500 KZT per seat and 7 KZT/RUB; salon hides quantity", async () => {
     const quote = await market.quote({
       cityId: city.id,
       serviceType: ServiceType.TAXI,
       routePoints: points,
       passengerCount: 2,
     });
-    expect(quote.minimumOrderPrice).toBe("500.00");
-    expect(quote.minimumUnitPrice).toBe("250.00");
+    expect(quote.minimumOrderPrice).toBe("1000.00");
+    expect(quote.minimumUnitPrice).toBe("500.00");
+    for (const count of [1, 2, 3]) {
+      const seats = await market.quote({
+        cityId: city.id,
+        serviceType: ServiceType.TAXI,
+        routePoints: points,
+        passengerCount: count,
+      });
+      expect(seats.minimumUnitPrice).toBe("500.00");
+      expect(seats.minimumOrderPrice).toBe((500 * count).toFixed(2));
+    }
     const rub = await db.getRepository(CityEntity).save({
       nameRu: "Байконур",
       nameKk: "Байқоңыр",
@@ -208,6 +218,17 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
     expect(rubQuote.minimumOrderPrice).toBe("71.43");
     expect(rubQuote.passengerCount).toBe(1);
     expect(rubQuote.pricingBasis).toBe("salon");
+    await db
+      .getRepository(CityEntity)
+      .update(rub.id, { ridePricingBasis: "seat" });
+    const rubSeats = await market.quote({
+      cityId: rub.id,
+      serviceType: ServiceType.TAXI,
+      routePoints: points,
+      passengerCount: 2,
+    });
+    expect(rubSeats.minimumUnitPrice).toBe("71.43");
+    expect(rubSeats.minimumOrderPrice).toBe("142.86");
   });
   it("creates an idempotent unassigned request and sorts feed by pickup distance", async () => {
     const client = await user();
@@ -216,7 +237,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       priceSteps: 1,
       sharedRide: true,
     });
-    expect(order.estimatedPrice).toBe("600.00");
+    expect(order.estimatedPrice).toBe("1100.00");
     expect(order.executorId).toBeNull();
     expect(order.isNegotiated).toBe(true);
     expect(order.pickupEntrance).toBe("2");
@@ -419,7 +440,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       .set("X-Idempotency-Key", randomUUID())
       .send(data)
       .expect(201);
-    expect(created.body.estimatedPrice).toBe("500.00");
+    expect(created.body.estimatedPrice).toBe("1000.00");
     await http()
       .get("/ride-requests/feed")
       .auth(passenger, { type: "bearer" })
@@ -445,7 +466,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       .send({ version: proposal.body.version })
       .expect(201);
     expect(chosen.body.executorId).toBe(d.id);
-    expect(chosen.body.estimatedPrice).toBe("600.00");
+    expect(chosen.body.estimatedPrice).toBe("1100.00");
     await orders.transition(
       created.body.id,
       OrderStatus.CANCELLED_CLIENT,

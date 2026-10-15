@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/utils/app_formatters.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../active_order/presentation/screens/active_order_screen.dart';
 import '../../home/domain/entities/address_suggestion.dart';
 import 'ride_request_cubit.dart';
@@ -270,6 +271,12 @@ class RideStepper extends StatelessWidget {
         Row(
           children: [
             IconButton.filledTonal(
+              style: IconButton.styleFrom(
+                foregroundColor: AppColors.text,
+                backgroundColor: AppColors.primary,
+                disabledForegroundColor: AppColors.muted,
+                disabledBackgroundColor: AppColors.surfaceAlt,
+              ),
               tooltip: AppLocalizations.of(context)!.rideDecrease,
               onPressed: onMinus,
               icon: const Icon(Icons.remove),
@@ -282,6 +289,12 @@ class RideStepper extends StatelessWidget {
               ),
             ),
             IconButton.filledTonal(
+              style: IconButton.styleFrom(
+                foregroundColor: AppColors.text,
+                backgroundColor: AppColors.primary,
+                disabledForegroundColor: AppColors.muted,
+                disabledBackgroundColor: AppColors.surfaceAlt,
+              ),
               tooltip: AppLocalizations.of(context)!.rideIncrease,
               onPressed: onPlus,
               icon: const Icon(Icons.add),
