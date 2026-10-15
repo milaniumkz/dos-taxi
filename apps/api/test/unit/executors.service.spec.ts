@@ -51,6 +51,7 @@ describe('ExecutorsService', () => {
     } as unknown as jest.Mocked<Repository<CityEntity>>;
     redisStoreService = {
       setJson: jest.fn(),
+      delete: jest.fn(),
     } as unknown as jest.Mocked<RedisStoreService>;
     s3StorageService = {
       uploadExecutorDocument: jest.fn(),
@@ -88,6 +89,21 @@ describe('ExecutorsService', () => {
     expect(executorsRepository.create).toHaveBeenCalled();
   });
 
+  it('keeps prior approval and online status when choosing a city or capacity', async () => {
+    usersRepository.findOne.mockResolvedValue({id:'user-1',name:'Driver'} as UserEntity);
+    const profile={id:'executor-1',userId:'user-1',executorType:ExecutorType.DRIVER,verificationStatus:'verified',isOnline:true,cityId:null,passengerCapacity:4} as ExecutorEntity;
+    executorsRepository.findOne.mockResolvedValue(profile);
+    citiesRepository.findOne.mockResolvedValue({id:'city-2'} as CityEntity);
+    await executorsService.updateProfile('user-1',{cityId:'city-2',passengerCapacity:6});
+    expect(executorsRepository.save).toHaveBeenCalledWith(expect.objectContaining({verificationStatus:'verified',isOnline:true,cityId:'city-2',passengerCapacity:6}));
+    expect(redisStoreService.delete).not.toHaveBeenCalled();
+  });
+  it('still requests review for a changed vehicle identity', async () => {
+    usersRepository.findOne.mockResolvedValue({id:'user-1',name:'Driver'} as UserEntity);
+    executorsRepository.findOne.mockResolvedValue({id:'executor-1',userId:'user-1',executorType:ExecutorType.DRIVER,verificationStatus:'verified',isOnline:true,vehiclePlate:'A123BC77'} as ExecutorEntity);
+    await executorsService.updateProfile('user-1',{vehiclePlate:'B456BC77'});
+    expect(executorsRepository.save).toHaveBeenCalledWith(expect.objectContaining({verificationStatus:'pending',isOnline:false}));
+  });
   it('updates online status and mirrors location to redis', async () => {
     executorsRepository.findOne.mockResolvedValue({
       id: 'executor-1',
