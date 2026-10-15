@@ -1527,4 +1527,30 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get rideSoundBlocked =>
       'Не удалось включить звук. Разрешите звук для сайта в настройках браузера и попробуйте снова.';
+
+  @override
+  String get rideEnableOfferAlerts => 'Включить звук и уведомления';
+
+  @override
+  String get rideNewOfferTitle => 'Новое предложение водителя';
+
+  @override
+  String rideNewOfferBody(String driver, String price) {
+    return '$driver предлагает $price за поездку.';
+  }
+
+  @override
+  String get rideOfferAlertsEnabled => 'Звук и push-уведомления включены.';
+
+  @override
+  String get rideOfferPushOnly =>
+      'Push-уведомления включены. Разрешите звук для сайта в браузере.';
+
+  @override
+  String get rideOfferSoundOnly =>
+      'Звук включён. Push не подключён — проверьте разрешение уведомлений в браузере.';
+
+  @override
+  String get rideOfferAlertsBlocked =>
+      'Разрешите звук и уведомления для сайта в настройках браузера.';
 }

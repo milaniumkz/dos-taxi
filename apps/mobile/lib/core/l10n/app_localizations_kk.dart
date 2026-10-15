@@ -1526,4 +1526,31 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get rideSoundBlocked =>
       'Дыбысты қосу мүмкін болмады. Браузер баптауларында сайтқа дыбысқа рұқсат беріп, қайталап көріңіз.';
+
+  @override
+  String get rideEnableOfferAlerts => 'Дыбыс пен хабарландыруларды қосу';
+
+  @override
+  String get rideNewOfferTitle => 'Жүргізушіден жаңа ұсыныс';
+
+  @override
+  String rideNewOfferBody(String driver, String price) {
+    return '$driver сапарға $price ұсынады.';
+  }
+
+  @override
+  String get rideOfferAlertsEnabled =>
+      'Дыбыс пен push-хабарландырулар қосылды.';
+
+  @override
+  String get rideOfferPushOnly =>
+      'Push-хабарландырулар қосылды. Браузерде сайт дыбысына рұқсат беріңіз.';
+
+  @override
+  String get rideOfferSoundOnly =>
+      'Дыбыс қосылды. Push қосылмады — браузердегі хабарландыру рұқсатын тексеріңіз.';
+
+  @override
+  String get rideOfferAlertsBlocked =>
+      'Браузер баптауларында сайт дыбысы мен хабарландыруларға рұқсат беріңіз.';
 }

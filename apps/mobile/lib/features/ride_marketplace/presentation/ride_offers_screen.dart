@@ -1,3 +1,7 @@
+import 'dart:async';
+import '../../../core/api/api_client.dart';
+import '../../../core/notifications/app_notification_service.dart';
+import '../../../core/notifications/web_notification_presenter.dart';
 import 'ride_poll_lifecycle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,9 +20,50 @@ class RideOffersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repository = serviceLocator<RideRepository>();
+    WebNotificationPresenter.armAudioOnNextGesture();
+    final l = AppLocalizations.of(context)!;
     return BlocProvider(
-      create: (_) =>
-          RidePollCubit(repository, () => repository.offers(orderId))..start(),
+      create: (_) {
+        if (serviceLocator.isRegistered<ApiClient>() &&
+            serviceLocator.isRegistered<AppNotificationService>()) {
+          unawaited(
+            serviceLocator<AppNotificationService>().enablePushNotifications(
+              serviceLocator<ApiClient>(),
+              requestPermission: false,
+            ),
+          );
+        }
+        return RidePollCubit(
+          repository,
+          () => repository.offers(orderId),
+          onNewItems: (items) {
+            if (!serviceLocator.isRegistered<AppNotificationService>()) return;
+            for (final item in items) {
+              final amount = AppFormatters.formatCurrency(
+                context,
+                double.parse(item['totalPrice'].toString()),
+                currencyCode: context
+                    .read<ActiveOrderCubit>()
+                    .state
+                    .session
+                    .currency,
+              );
+              unawaited(
+                serviceLocator<AppNotificationService>().showRideOfferAlert(
+                  orderId: orderId,
+                  offerId: item['id'].toString(),
+                  version: '${item['version'] ?? 1}',
+                  title: l.rideNewOfferTitle,
+                  body: l.rideNewOfferBody(
+                    item['driverName']?.toString() ?? '',
+                    amount,
+                  ),
+                ),
+              );
+            }
+          },
+        )..start();
+      },
       child: RidePollLifecycle(child: _OffersBody(orderId: orderId)),
     );
   }
@@ -51,6 +96,34 @@ class _OffersBody extends StatelessWidget {
           appBar: AppBar(
             title: Text(l.rideOffersTitle),
             actions: [
+              IconButton(
+                tooltip: l.rideEnableOfferAlerts,
+                icon: const Icon(Icons.notifications_active_outlined),
+                onPressed: () async {
+                  final notifications =
+                      serviceLocator<AppNotificationService>();
+                  final soundFuture = notifications.testRideFeedAlert();
+                  final pushFuture = notifications.enablePushNotifications(
+                    serviceLocator<ApiClient>(),
+                  );
+                  final push = await pushFuture;
+                  final sound = await soundFuture;
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        push && sound
+                            ? l.rideOfferAlertsEnabled
+                            : push
+                            ? l.rideOfferPushOnly
+                            : sound
+                            ? l.rideOfferSoundOnly
+                            : l.rideOfferAlertsBlocked,
+                      ),
+                    ),
+                  );
+                },
+              ),
               IconButton(
                 tooltip: l.rideReload,
                 onPressed: cubit.refresh,

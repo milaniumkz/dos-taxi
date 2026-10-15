@@ -1,3 +1,4 @@
+import '../api/api_client.dart';
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -52,6 +53,7 @@ class AppNotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
+  final Set<String> _seenRideOffers = {};
   StreamSubscription<RemoteMessage>? _foregroundSubscription;
   Timer? _driverOrderAlarmTimer;
   int _driverOrderAlarmTicks = 0;
@@ -170,6 +172,16 @@ class AppNotificationService {
     }
 
     final type = message.data['type'] ?? '';
+    if (type == 'ride_price_offer') {
+      await showRideOfferAlert(
+        orderId: message.data['orderId'] ?? '',
+        offerId: message.data['offerId'] ?? '',
+        version: message.data['version'] ?? '1',
+        title: title,
+        body: body,
+      );
+      return;
+    }
     if (type == 'executor_incoming_order') {
       unawaited(startDriverIncomingOrderAlarm());
     } else if (_shouldPlayImmediateAlert(type)) {
@@ -310,6 +322,59 @@ class AppNotificationService {
   }
 
   Future<void> playRideFeedAlert() => _playSystemAlert();
+
+  Future<bool> enablePushNotifications(
+    ApiClient api, {
+    bool requestPermission = true,
+  }) async {
+    try {
+      final settings = requestPermission
+          ? await FirebaseMessaging.instance.requestPermission(
+              alert: true,
+              badge: true,
+              sound: true,
+            )
+          : await FirebaseMessaging.instance.getNotificationSettings();
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) {
+        return false;
+      }
+      await initialize();
+      final token = await deviceToken();
+      if (token == null || token.isEmpty) return false;
+      await api.dio.post<void>(
+        '/notifications/devices',
+        data: {'token': token, 'platform': devicePlatform},
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> showRideOfferAlert({
+    required String orderId,
+    required String offerId,
+    required String version,
+    required String title,
+    required String body,
+  }) async {
+    final key = '$orderId:$offerId:$version';
+    if (!_seenRideOffers.add(key)) return;
+    if (_seenRideOffers.length > 256) {
+      _seenRideOffers.remove(_seenRideOffers.first);
+    }
+    await _playSystemAlert();
+    await _showLocalNotification(
+      id: key.hashCode & 0x7fffffff,
+      title: title,
+      body: body,
+      payload: 'ride_price_offer:$orderId',
+      channelId: _orderAlertsChannel.id,
+      channelName: _orderAlertsChannel.name,
+      channelDescription: _orderAlertsChannel.description,
+    );
+  }
 
   Future<bool> testRideFeedAlert() async {
     if (kIsWeb) return WebNotificationPresenter.enableDriverAudio();

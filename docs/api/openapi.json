@@ -471,6 +471,36 @@
         ]
       }
     },
+    "/api/v1/notifications/devices": {
+      "post": {
+        "operationId": "NotificationDevicesController_register",
+        "summary": "Register or refresh the authenticated user push device without signing in again",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterNotificationDeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/orders/estimate": {
       "post": {
         "operationId": "OrdersController_estimate",
@@ -5176,6 +5206,27 @@
         },
         "required": [
           "success"
+        ]
+      },
+      "RegisterNotificationDeviceDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "web",
+              "android",
+              "ios"
+            ]
+          }
+        },
+        "required": [
+          "token",
+          "platform"
         ]
       },
       "EstimateRoutePointDto": {
