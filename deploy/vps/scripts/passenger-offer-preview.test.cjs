@@ -27,3 +27,6 @@ test('stops if passenger order was assigned before offer submission',async()=>{
  const db=database();const query=db.query;db.query=async(sql,args)=>sql.startsWith('SELECT status')?{rows:[{status:'accepted',executor_id:'real-driver'}]}:query(sql,args);
  let calls=0;await assert.rejects(seed(db,async()=>calls++),/no longer open/);assert.equal(calls,0);assert.equal(db.changes.length,0);
 });
+test('refuses if the active request changed since inspection',async()=>{
+ const db=database();let calls=0;await assert.rejects(seed(db,async()=>calls++,async()=>{},()=>{},'other-request'),/Active request changed/);assert.equal(calls,0);assert.equal(db.changes.length,0);
+});

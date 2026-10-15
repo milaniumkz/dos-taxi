@@ -5,9 +5,9 @@ async function inspect(db){
  const orders=(await db.query("SELECT o.id,o.city_id,o.passenger_count,o.needs_child_seat,o.ride_unit_price,o.ride_price_step,o.currency,c.ride_minimum_driver_balance,(SELECT count(*)::int FROM notification_device_tokens d WHERE d.user_id=o.client_id AND d.is_active) AS push_devices FROM orders o JOIN users u ON u.id=o.client_id JOIN cities c ON c.id=o.city_id WHERE o.status='searching' AND o.executor_id IS NULL AND o.is_negotiated AND u.phone NOT LIKE 'TEST_%' ORDER BY o.created_at DESC LIMIT 2")).rows;
  return orders;
 }
-async function seed(db,request,wait=ms=>new Promise(r=>setTimeout(r,ms)),report=()=>{}){
+async function seed(db,request,wait=ms=>new Promise(r=>setTimeout(r,ms)),report=()=>{},expectedOrderId){
  const active=await inspect(db);if(active.length!==1)throw new Error('Exactly one open non-test passenger request is required');
- const order=active[0];if(!order.city_id)throw new Error('Request has no service city');
+ const order=active[0];if(expectedOrderId && order.id!==expectedOrderId)throw new Error('Active request changed; stopped');if(!order.city_id)throw new Error('Request has no service city');
  const ids=[];
  try{
   for(let i=0;i<5;i++){
@@ -40,11 +40,12 @@ async function main(){
    console.log(JSON.stringify({activeRequests:orders.map(o=>({id:o.id,cityId:o.city_id,pushDevices:o.push_devices})),pushConfiguration:{projectConfigured:!!process.env.FIREBASE_PROJECT_ID,serviceAccountConfigured:!!process.env.FIREBASE_CLIENT_EMAIL&&!!process.env.FIREBASE_PRIVATE_KEY,stubEnabled:process.env.NOTIFICATIONS_PUSH_STUB==='true'}}));return;
   }
   if(!process.env.JWT_SECRET)throw new Error('Required runtime configuration missing');
+  if(!/^[0-9a-f-]{36}$/i.test(process.env.PREVIEW_ORDER_ID||''))throw new Error('Explicit preview request ID required');
   const request=async(path,data,userId)=>{
    const enc=x=>Buffer.from(JSON.stringify(x)).toString('base64url');const now=Math.floor(Date.now()/1000);const unsigned=enc({alg:'HS256',typ:'JWT'})+'.'+enc({sub:userId,role:'executor',iat:now,exp:now+300});const token=unsigned+'.'+createHmac('sha256',process.env.JWT_SECRET).update(unsigned).digest('base64url');
    const response=await fetch('http://127.0.0.1:3000/api/v1'+path,{method:'POST',signal:AbortSignal.timeout(15000),headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify(data)});const body=await response.json();if(!response.ok)throw new Error('Preview API failed: '+response.status+' '+String(body.code||''));return body;
   };
-  console.log(JSON.stringify(await seed(db,request,undefined,event=>console.log(JSON.stringify(event)))));
+  console.log(JSON.stringify(await seed(db,request,undefined,event=>console.log(JSON.stringify(event)),process.env.PREVIEW_ORDER_ID)));
  }finally{await db.end();}
 }
 module.exports={inspect,seed};
