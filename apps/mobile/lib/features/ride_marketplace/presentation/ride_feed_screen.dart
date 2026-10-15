@@ -37,29 +37,6 @@ class RideFeedScreen extends StatelessWidget {
             DriverBonusProgressCard(balance: status.profile?.balance ?? 0),
           ],
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            style: TextButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-            ),
-            onPressed: () async {
-              final enabled = await serviceLocator<AppNotificationService>()
-                  .testRideFeedAlert();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    enabled ? l.rideSoundEnabled : l.rideSoundBlocked,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.volume_up_outlined, size: 18),
-            label: Text(l.rideTestSound),
-          ),
-        ),
         Expanded(
           child: online
               ? _onlineFeed(context, status)

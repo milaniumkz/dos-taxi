@@ -24,7 +24,7 @@ class Alerts extends Mock implements AppNotificationService {}
 void main() {
   for (final locale in ['ru', 'kk']) {
     testWidgets(
-      '$locale five passenger offers visible, initial arrivals sound and sound test is accessible',
+      '$locale five passenger offers visible, initial arrivals sound without a diagnostic button',
       (tester) async {
         tester.view.physicalSize = const Size(360, 640);
         tester.view.devicePixelRatio = 1;
@@ -118,9 +118,7 @@ void main() {
             body: any(named: 'body'),
           ),
         ).called(1);
-        await tester.tap(find.byIcon(Icons.volume_up_outlined));
-        await tester.pump();
-        verify(() => alerts.testRideFeedAlert()).called(1);
+        expect(find.byIcon(Icons.volume_up_outlined), findsNothing);
         count = 7;
         await tester.pump(const Duration(seconds: 3));
         await tester.pump();

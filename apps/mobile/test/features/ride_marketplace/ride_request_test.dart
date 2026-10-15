@@ -150,20 +150,35 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.textContaining(RegExp(r'Итого:.*500')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
+        matches(RegExp(r'500')),
+      );
       await tester.tap(find.byIcon(Icons.add).first);
       await tester.pumpAndSettle();
-      expect(find.textContaining(RegExp(r'Итого:.*1\s*000')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
+        matches(RegExp(r'1\s*000')),
+      );
       await tester.tap(find.byIcon(Icons.add).first);
       await tester.pumpAndSettle();
-      expect(find.textContaining(RegExp(r'Итого:.*1\s*500')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
+        matches(RegExp(r'1\s*500')),
+      );
       await tester.tap(find.byIcon(Icons.add).last);
       await tester.pumpAndSettle();
-      expect(find.textContaining(RegExp(r'Итого:.*1\s*650')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
+        matches(RegExp(r'1\s*650')),
+      );
       await tester.tap(find.byIcon(Icons.remove).first);
       await tester.pumpAndSettle();
       expect(cubit.steps, 1);
-      expect(find.textContaining(RegExp(r'Итого:.*1\s*100')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
+        matches(RegExp(r'1\s*100')),
+      );
       final buttons = tester
           .widgetList<IconButton>(find.byType(IconButton))
           .where((b) => b.style?.foregroundColor != null);
@@ -205,6 +220,7 @@ void main() {
             BlocProvider.value(
               value: cubit,
               child: MaterialApp(
+                theme: AppTheme.light(),
                 locale: Locale(locale),
                 supportedLocales: AppLocalizations.supportedLocales,
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -213,6 +229,17 @@ void main() {
             ),
           );
           await tester.pump();
+          final l = AppLocalizations.of(
+            tester.element(find.byType(RideRequestScreen)),
+          )!;
+          expect(find.text(l.rideSubmit).hitTestable(), findsOneWidget);
+          expect(
+            tester
+                .state<ScrollableState>(find.byType(Scrollable).first)
+                .position
+                .maxScrollExtent,
+            0,
+          );
           expect(
             tester.widgetList<TextField>(find.byType(TextField)).length,
             inInclusiveRange(1, 2),
@@ -226,6 +253,37 @@ void main() {
           await tester.pump();
           expect(cubit.steps, 1);
           expect(find.textContaining('78,57'), findsWidgets);
+          await tester.enterText(find.byType(TextField).first, '2');
+          await tester.tap(find.byIcon(Icons.tune));
+          await tester.pumpAndSettle();
+          await tester.enterText(find.byType(TextField).last, 'У ворот');
+          await tester.tap(find.byType(CheckboxListTile).first);
+          await tester.pump();
+          await tester.tap(find.byType(CheckboxListTile).last);
+          await tester.pump();
+          await tester.tap(find.widgetWithText(FilledButton, l.rideExtrasDone));
+          await tester.pumpAndSettle();
+          expect(find.textContaining('У ворот'), findsOneWidget);
+          await tester.tap(find.byIcon(Icons.payments_outlined));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text(l.rideHalyk));
+          await tester.pumpAndSettle();
+          expect(find.text(l.rideHalyk), findsOneWidget);
+          expect(find.text(l.rideSubmit).hitTestable(), findsOneWidget);
+          Map<String, dynamic>? submitted;
+          when(() => repo.create(any(), any())).thenAnswer((call) async {
+            submitted = call.positionalArguments[0] as Map<String, dynamic>;
+            return const Left(
+              Failure(code: 'NETWORK_ERROR', message: 'offline'),
+            );
+          });
+          await tester.tap(find.text(l.rideSubmit));
+          await tester.pumpAndSettle();
+          expect(submitted?['pickupEntrance'], '2');
+          expect(submitted?['pickupComment'], 'У ворот');
+          expect(submitted?['needsChildSeat'], true);
+          expect(submitted?['sharedRide'], true);
+          expect(submitted?['paymentMethod'], 'transfer_halyk');
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
           await cubit.close();

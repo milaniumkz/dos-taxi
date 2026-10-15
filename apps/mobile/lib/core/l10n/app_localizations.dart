@@ -2977,6 +2977,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Звук включён. Новые предложения будут сопровождаться сигналом.'**
   String get rideOfferSoundEnabled;
+
+  /// No description provided for @rideExtras.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пожелания'**
+  String get rideExtras;
+
+  /// No description provided for @rideExtrasDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Готово'**
+  String get rideExtrasDone;
 }
 
 class _AppLocalizationsDelegate

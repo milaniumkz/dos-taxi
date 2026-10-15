@@ -168,14 +168,7 @@ void main() {
         lessThanOrEqualTo(tester.view.physicalSize.height),
       );
       expect(find.text('Подача 5').hitTestable(), findsNothing);
-      await tester.tap(find.text('Проверить звук'));
-      await tester.pump();
-      expect(find.textContaining('Звук включён.'), findsOneWidget);
-      verify(() => notifications.testRideFeedAlert()).called(1);
-      ScaffoldMessenger.of(
-        tester.element(find.text('Проверить звук')),
-      ).clearSnackBars();
-      await tester.pumpAndSettle();
+      expect(find.text('Проверить звук'), findsNothing);
       await tester.tap(find.text('Ближайшая подача'));
       await tester.pumpAndSettle();
       expect(find.textContaining('У ворот'), findsOneWidget);
