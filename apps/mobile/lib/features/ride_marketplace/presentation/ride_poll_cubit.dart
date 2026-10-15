@@ -24,6 +24,7 @@ class RidePollCubit extends Cubit<RidePollState> {
     this.repository,
     this.load, {
     this.nextPage,
+    this.onNewRequests,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        super(const RidePollState());
@@ -32,6 +33,9 @@ class RidePollCubit extends Cubit<RidePollState> {
   final Future<Either<Failure, Map<String, dynamic>>> Function() load;
   final Future<Either<Failure, Map<String, dynamic>>> Function(int offset)?
   nextPage;
+  final void Function()? onNewRequests;
+  final Set<String> _seenRequests = {};
+  bool _feedInitialized = false;
   int _pages = 1;
   Timer? _timer, _clock;
   bool _fetching = false;
@@ -59,6 +63,10 @@ class RidePollCubit extends Cubit<RidePollState> {
     if (state.data == null) emit(const RidePollState(loading: true));
     try {
       var result = await load();
+      final firstPage = result.fold(
+        (_) => <dynamic>[],
+        (data) => data['items'] as List? ?? <dynamic>[],
+      );
       for (var page = 1; page < _pages && nextPage != null; page++) {
         Map<String, dynamic>? current;
         result.fold((_) {}, (data) => current = data);
@@ -75,7 +83,22 @@ class RidePollCubit extends Cubit<RidePollState> {
       if (isClosed || generation != _generation) return;
       result.fold(
         (f) => emit(RidePollState(data: state.data, error: f.message)),
-        (data) => emit(RidePollState(data: _waitingData(data))),
+        (data) {
+          final firstIds = firstPage
+              .map((r) => (r as Map)['id'].toString())
+              .toSet();
+          final hasNew =
+              _feedInitialized &&
+              firstIds.any((id) => !_seenRequests.contains(id));
+          _seenRequests.addAll(
+            (data['items'] as List? ?? []).map(
+              (r) => (r as Map)['id'].toString(),
+            ),
+          );
+          _feedInitialized = true;
+          emit(RidePollState(data: _waitingData(data)));
+          if (hasNew) onNewRequests?.call();
+        },
       );
     } finally {
       _fetching = false;

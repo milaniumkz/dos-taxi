@@ -1,3 +1,6 @@
+import 'dart:async';
+import '../../../core/notifications/app_notification_service.dart';
+import '../../../core/notifications/web_notification_presenter.dart';
 import 'ride_poll_lifecycle.dart';
 import 'driver_offer_wait_gate.dart';
 import '../../executor/presentation/widgets/driver_bonus_progress_card.dart';
@@ -46,21 +49,33 @@ class RideFeedScreen extends StatelessWidget {
 
   Widget _onlineFeed(BuildContext context, ExecutorStatusState status) {
     final repo = serviceLocator<RideRepository>();
+    WebNotificationPresenter.armAudioOnNextGesture();
     var lat = status.currentLocation.latitude,
         lng = status.currentLocation.longitude;
     return BlocProvider(
       key: ValueKey(status.profile!.id),
-      create: (_) => RidePollCubit(repo, () async {
-        final current = context.read<ExecutorStatusCubit>().state;
-        if (current.profile != null) {
-          await context.read<IncomingOrderCubit>().synchronizeDashboardSession(
-            current.profile!,
-          );
-        }
-        lat = current.currentLocation.latitude;
-        lng = current.currentLocation.longitude;
-        return repo.feed(lat, lng, 0);
-      }, nextPage: (offset) => repo.feed(lat, lng, offset))..start(),
+      create: (_) => RidePollCubit(
+        repo,
+        () async {
+          final current = context.read<ExecutorStatusCubit>().state;
+          if (current.profile != null) {
+            await context
+                .read<IncomingOrderCubit>()
+                .synchronizeDashboardSession(current.profile!);
+          }
+          lat = current.currentLocation.latitude;
+          lng = current.currentLocation.longitude;
+          return repo.feed(lat, lng, 0);
+        },
+        nextPage: (offset) => repo.feed(lat, lng, offset),
+        onNewRequests: () {
+          if (serviceLocator.isRegistered<AppNotificationService>()) {
+            unawaited(
+              serviceLocator<AppNotificationService>().playRideFeedAlert(),
+            );
+          }
+        },
+      )..start(),
       child: const RidePollLifecycle(
         child: DriverOfferWaitGate(child: _FeedBody()),
       ),
@@ -139,63 +154,91 @@ class _CompactRequestCard extends StatelessWidget {
       decimalDigits: request['currency'] == 'RUB' ? 2 : 0,
     );
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      child: InkWell(
-        onTap: disabled ? null : () => _details(context),
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.trip_origin, size: 14),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      (points.first as Map)['address'].toString(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, height: 1.1),
+      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+      elevation: 2,
+      shadowColor: Colors.black26,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(left: BorderSide(color: Color(0xFFFFCC00), width: 4)),
+        ),
+        child: InkWell(
+          onTap: disabled ? null : () => _details(context),
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.trip_origin, size: 14),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        (points.first as Map)['address'].toString(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          height: 1.1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.place, size: 14),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      (points.last as Map)['address'].toString(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, height: 1.1),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.place, size: 14),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        (points.last as Map)['address'].toString(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, height: 1.1),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    price,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                  ],
+                ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFCC00),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        price,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  const Icon(Icons.people_outline, size: 14),
-                  Text(
-                    ' ${request['passengerCount']} · ${((request['pickupDistanceMeters'] as num) / 1000).toStringAsFixed(1)} ${l.rideKilometres}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const Icon(Icons.chevron_right, size: 18),
-                ],
-              ),
-            ],
+                    const Spacer(),
+                    const Icon(Icons.people_outline, size: 14),
+                    Text(
+                      ' ${request['passengerCount']} · ${((request['pickupDistanceMeters'] as num) / 1000).toStringAsFixed(1)} ${l.rideKilometres}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    const Icon(Icons.chevron_right, size: 18),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
