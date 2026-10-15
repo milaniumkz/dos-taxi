@@ -1508,4 +1508,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get navMapSource => '© OpenStreetMap';
+
+  @override
+  String get rideWaitTitle => 'Ожидаем ответа пассажира';
+
+  @override
+  String rideWaitSeconds(int seconds) {
+    return 'Осталось $seconds с';
+  }
 }

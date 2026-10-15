@@ -335,7 +335,24 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
     const driver = await this.db.transaction((manager) =>
       this.driver(manager, userId, true),
     );
+    const pendingOffer = await this.db
+      .getRepository(RidePriceOfferEntity)
+      .createQueryBuilder("offer")
+      .innerJoin(
+        OrderEntity,
+        "pending_order",
+        "pending_order.id=offer.order_id",
+      )
+      .where(
+        "offer.executor_id=:driverId AND offer.status='pending' AND offer.expires_at>now() AND pending_order.status='searching' AND pending_order.executor_id IS NULL",
+        { driverId: driver.id },
+      )
+      .orderBy("offer.updated_at", "DESC")
+      .getOne();
     const repository = this.db.getRepository(OrderEntity);
+    const pendingOrder = pendingOffer
+      ? await repository.findOneBy({ id: pendingOffer.orderId })
+      : null;
     if (
       await repository.exists({
         where: { executorId: driver.id, status: In(driverBusyStatuses) },
@@ -391,6 +408,10 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
     );
     return {
       items,
+      pendingOffer: pendingOffer
+        ? { ...pendingOffer, currency: pendingOrder?.currency }
+        : null,
+      serverTime: new Date().toISOString(),
       nextOffset: entities.length > limit ? (query.offset ?? 0) + limit : null,
     };
   }
@@ -441,6 +462,23 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           message: "RIDE_PRICE_BELOW_MINIMUM",
         });
       const offers = manager.getRepository(RidePriceOfferEntity);
+      const waiting = await offers
+        .createQueryBuilder("pending")
+        .innerJoin(
+          OrderEntity,
+          "waiting_order",
+          "waiting_order.id=pending.order_id",
+        )
+        .where(
+          "pending.executor_id=:driverId AND pending.order_id<>:orderId AND pending.status='pending' AND pending.expires_at>now() AND waiting_order.status='searching' AND waiting_order.executor_id IS NULL",
+          { driverId: driver.id, orderId },
+        )
+        .getExists();
+      if (waiting)
+        throw new ConflictException({
+          code: "RIDE_OFFER_PENDING",
+          message: "RIDE_OFFER_PENDING",
+        });
       const existing = await offers.findOneBy({
         orderId,
         executorId: driver.id,
@@ -472,7 +510,11 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       return { offer, order, driver, changed: true };
     });
     if (offered.changed) await this.flushNotifications();
-    return offered.offer;
+    return {
+      ...offered.offer,
+      currency: offered.order.currency,
+      serverTime: new Date().toISOString(),
+    };
   }
   async withdraw(userId: string, orderId: string) {
     const driver = await this.db

@@ -4487,6 +4487,17 @@
       "RideOfferResponseDto": {
         "type": "object",
         "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "RUB",
+              "KZT"
+            ]
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -4680,6 +4691,18 @@
       "RideFeedResponseDto": {
         "type": "object",
         "properties": {
+          "pendingOffer": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RideOfferResponseDto"
+              }
+            ]
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          },
           "items": {
             "type": "array",
             "items": {

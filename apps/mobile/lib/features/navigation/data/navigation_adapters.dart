@@ -7,6 +7,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/errors/failure.dart';
 import '../domain/navigation_ports.dart';
 import '../domain/navigation_route.dart';
+import '../domain/navigation_voice_profile.dart';
 
 class ApiNavigationRepository implements NavigationRepository {
   ApiNavigationRepository(this.client);
@@ -136,6 +137,11 @@ class SystemNavigationSpeech implements NavigationSpeech {
               )
               .toList();
           if (available.isNotEmpty) {
+            available.sort(
+              (a, b) => navigationVoiceQuality(
+                b,
+              ).compareTo(navigationVoiceQuality(a)),
+            );
             final v = available.first;
             final voiceLocale = v['locale'].toString().replaceAll('_', '-');
             await _tts.setLanguage(voiceLocale);
@@ -143,7 +149,8 @@ class SystemNavigationSpeech implements NavigationSpeech {
               'name': v['name'].toString(),
               'locale': voiceLocale,
             });
-            await _tts.setSpeechRate(0.48);
+            await _tts.setSpeechRate(navigationSpeechRate(web: kIsWeb));
+            await _tts.setPitch(1.0);
             await _tts.setVolume(1);
             _enabled = true;
             return true;

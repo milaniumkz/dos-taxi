@@ -619,5 +619,14 @@
       }
     }
   },
-  "navMapSource": "© OpenStreetMap"
+  "navMapSource": "© OpenStreetMap",
+  "rideWaitTitle": "Ожидаем ответа пассажира",
+  "rideWaitSeconds": "Осталось {seconds} с",
+  "@rideWaitSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
 }

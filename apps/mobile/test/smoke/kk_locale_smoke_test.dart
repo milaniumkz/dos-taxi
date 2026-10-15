@@ -475,6 +475,8 @@ void main() {
           child: const ExecutorHomeScreen(),
         ),
       );
+      await tester.tap(find.byType(ExpansionTile));
+      await tester.pumpAndSettle();
       expect(find.textContaining('13'), findsOneWidget);
       final bar = tester
           .widgetList<LinearProgressIndicator>(

@@ -2899,6 +2899,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'© OpenStreetMap'**
   String get navMapSource;
+
+  /// No description provided for @rideWaitTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ожидаем ответа пассажира'**
+  String get rideWaitTitle;
+
+  /// No description provided for @rideWaitSeconds.
+  ///
+  /// In ru, this message translates to:
+  /// **'Осталось {seconds} с'**
+  String rideWaitSeconds(int seconds);
 }
 
 class _AppLocalizationsDelegate

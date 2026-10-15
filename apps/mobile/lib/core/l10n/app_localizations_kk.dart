@@ -1507,4 +1507,12 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get navMapSource => '© OpenStreetMap';
+
+  @override
+  String get rideWaitTitle => 'Жолаушының жауабын күтеміз';
+
+  @override
+  String rideWaitSeconds(int seconds) {
+    return '$seconds с қалды';
+  }
 }

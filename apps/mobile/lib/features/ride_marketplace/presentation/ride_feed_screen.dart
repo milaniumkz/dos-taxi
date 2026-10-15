@@ -1,4 +1,5 @@
 import 'ride_poll_lifecycle.dart';
+import 'driver_offer_wait_gate.dart';
 import '../../executor/presentation/widgets/driver_bonus_progress_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,8 +25,16 @@ class RideFeedScreen extends StatelessWidget {
           '${l.driverDashboardBalanceLabel}: ${AppFormatters.formatCurrency(context, status.profile?.balance ?? 0, currencyCode: status.profile?.cityCurrency ?? 'KZT', decimalDigits: status.profile?.cityCurrency == 'RUB' ? 2 : 0)}',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        DriverBonusProgressCard(balance: status.profile?.balance ?? 0),
-        const SizedBox(height: 12),
+        ExpansionTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          tilePadding: EdgeInsets.zero,
+          title: Text(l.driverBonusesLabel),
+          children: [
+            DriverBonusProgressCard(balance: status.profile?.balance ?? 0),
+          ],
+        ),
+        const SizedBox(height: 4),
         Expanded(
           child: online
               ? _onlineFeed(context, status)
@@ -52,7 +61,9 @@ class RideFeedScreen extends StatelessWidget {
         lng = current.currentLocation.longitude;
         return repo.feed(lat, lng, 0);
       }, nextPage: (offset) => repo.feed(lat, lng, offset))..start(),
-      child: const RidePollLifecycle(child: _FeedBody()),
+      child: const RidePollLifecycle(
+        child: DriverOfferWaitGate(child: _FeedBody()),
+      ),
     );
   }
 }
@@ -66,39 +77,42 @@ class _FeedBody extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<RidePollCubit>();
         final items = state.data?['items'] as List? ?? [];
-        return RefreshIndicator(
-          onRefresh: cubit.refresh,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              Text(
-                l.rideFeedTitle,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              if (state.loading) const LinearProgressIndicator(),
-              if (state.error != null)
-                Text(
-                  state.error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              if (items.isEmpty && !state.loading)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(l.rideFeedEmpty),
-                ),
-              for (final raw in items)
-                _RequestCard(
-                  key: ValueKey((raw as Map)['id']),
-                  request: Map<String, dynamic>.from(raw),
-                  disabled: state.actionId != null,
-                ),
-              if (state.data?['nextOffset'] != null)
-                TextButton(
-                  onPressed: state.actionId != null ? null : cubit.more,
-                  child: Text(l.rideNext),
-                ),
-            ],
+        return LayoutBuilder(
+          builder: (context, constraints) => RefreshIndicator(
+            onRefresh: cubit.refresh,
+            child: ListView(
+              padding: EdgeInsets.zero,
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                if (state.loading) const LinearProgressIndicator(),
+                if (state.error != null)
+                  Text(
+                    state.error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                if (items.isEmpty && !state.loading)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l.rideFeedEmpty),
+                  ),
+                for (final raw in items)
+                  SizedBox(
+                    height: constraints.maxHeight / 4,
+                    child: _CompactRequestCard(
+                      key: ValueKey((raw as Map)['id']),
+                      request: Map<String, dynamic>.from(raw),
+                      disabled: state.actionId != null,
+                    ),
+                  ),
+                if (state.data?['nextOffset'] != null)
+                  TextButton(
+                    onPressed: state.actionId != null ? null : cubit.more,
+                    child: Text(l.rideNext),
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -106,8 +120,8 @@ class _FeedBody extends StatelessWidget {
   }
 }
 
-class _RequestCard extends StatefulWidget {
-  const _RequestCard({
+class _CompactRequestCard extends StatelessWidget {
+  const _CompactRequestCard({
     super.key,
     required this.request,
     required this.disabled,
@@ -115,10 +129,153 @@ class _RequestCard extends StatefulWidget {
   final Map<String, dynamic> request;
   final bool disabled;
   @override
-  State<_RequestCard> createState() => _RequestCardState();
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!,
+        points = request['routePoints'] as List;
+    final price = AppFormatters.formatCurrency(
+      context,
+      double.parse(request['totalPrice'].toString()),
+      currencyCode: request['currency'] as String,
+      decimalDigits: request['currency'] == 'RUB' ? 2 : 0,
+    );
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      child: InkWell(
+        onTap: disabled ? null : () => _details(context),
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.trip_origin, size: 14),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      (points.first as Map)['address'].toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, height: 1.1),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.place, size: 14),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      (points.last as Map)['address'].toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, height: 1.1),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    price,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.people_outline, size: 14),
+                  Text(
+                    ' ${request['passengerCount']} · ${((request['pickupDistanceMeters'] as num) / 1000).toStringAsFixed(1)} ${l.rideKilometres}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const Icon(Icons.chevron_right, size: 18),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _details(BuildContext context) async {
+    final cubit = context.read<RidePollCubit>();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => BlocProvider.value(
+        value: cubit,
+        child: BlocConsumer<RidePollCubit, RidePollState>(
+          listener: (_, state) {
+            if (state.data?['pendingOffer'] != null) {
+              final route = ModalRoute.of(sheetContext);
+              if (route != null && route.isActive) {
+                Navigator.of(sheetContext).removeRoute(route);
+              }
+            }
+          },
+          builder: (context, state) {
+            final items = state.data?['items'] as List? ?? [];
+            final current = items
+                .cast<Map>()
+                .where((r) => r['id'] == request['id'])
+                .firstOrNull;
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * .9,
+              ),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.paddingOf(context).bottom + 16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 12),
+                      const Icon(Icons.drag_handle),
+                      if (state.error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            state.error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      _RequestDetails(
+                        request: current == null
+                            ? request
+                            : Map<String, dynamic>.from(current),
+                        disabled: state.actionId != null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
-class _RequestCardState extends State<_RequestCard> {
+class _RequestDetails extends StatefulWidget {
+  const _RequestDetails({required this.request, required this.disabled});
+  final Map<String, dynamic> request;
+  final bool disabled;
+  @override
+  State<_RequestDetails> createState() => _RequestDetailsState();
+}
+
+class _RequestDetailsState extends State<_RequestDetails> {
   int steps = 0;
   bool childSeat = false;
   @override

@@ -29,6 +29,10 @@ void main() {
   testWidgets(
     'online driver proposes a button price only after confirming requested child seat',
     (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final status = Status(),
           incoming = Incoming(),
           rides = RideRepo(),
@@ -79,8 +83,9 @@ void main() {
         'passengerCount': 2,
         'currency': 'KZT',
         'paymentMethod': 'cash',
-        'unitPrice': '250.00',
-        'minimumUnitPrice': '250.00',
+        'unitPrice': '500.00',
+        'totalPrice': '1000.00',
+        'minimumUnitPrice': '500.00',
         'priceStep': '50.00',
         'pickupDistanceMeters': 500,
         'needsChildSeat': true,
@@ -94,7 +99,22 @@ void main() {
       };
       when(() => rides.feed(any(), any(), any())).thenAnswer(
         (_) async => Right({
-          'items': [request],
+          'items': [
+            request,
+            ...List.generate(
+              9,
+              (i) => {
+                ...request,
+                'id': 'request-${i + 2}',
+                'routePoints': [
+                  {'address': 'Подача ${i + 2}'},
+                  {'address': 'Назначение ${i + 2}'},
+                ],
+              },
+            ),
+          ],
+          'pendingOffer': request['myOffer'],
+          'serverTime': DateTime.now().toIso8601String(),
           'nextOffset': null,
         }),
       );
@@ -103,11 +123,15 @@ void main() {
           'priceSteps': 1,
           'hasChildSeat': true,
           'status': 'pending',
+          'orderId': 'request-1',
+          'totalPrice': '1100.00',
+          'currency': 'KZT',
+          'serverTime': DateTime.now().toIso8601String(),
           'expiresAt': DateTime.now()
-              .add(const Duration(minutes: 5))
+              .add(const Duration(seconds: 30))
               .toIso8601String(),
         };
-        return const Right({});
+        return Right(Map<String, dynamic>.from(request['myOffer'] as Map));
       });
       serviceLocator.registerSingleton<RideRepository>(rides);
       serviceLocator.registerSingleton<ExecutorRepository>(executor);
@@ -130,6 +154,14 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.text('Ближайшая подача'), findsOneWidget);
+      expect(find.byIcon(Icons.add), findsNothing);
+      expect(
+        tester.getRect(find.text('Подача 4')).bottom,
+        lessThanOrEqualTo(tester.view.physicalSize.height),
+      );
+      expect(find.text('Подача 5').hitTestable(),findsNothing);
+      await tester.tap(find.text('Ближайшая подача'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('У ворот'), findsOneWidget);
       expect(
         tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
@@ -145,7 +177,9 @@ void main() {
       await tester.tap(find.byType(FilledButton));
       await tester.pump();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
       verify(() => rides.propose('request-1', 1, true)).called(1);
+      expect(find.text('Ожидаем ответа пассажира'), findsOneWidget);
       expect(
         find.text('Предложение отправлено. Ждём выбора пассажира.'),
         findsOneWidget,

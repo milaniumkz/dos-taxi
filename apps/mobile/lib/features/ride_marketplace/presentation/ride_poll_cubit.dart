@@ -20,25 +20,36 @@ class RidePollState {
 }
 
 class RidePollCubit extends Cubit<RidePollState> {
-  RidePollCubit(this.repository, this.load, {this.nextPage})
-    : super(const RidePollState());
+  RidePollCubit(
+    this.repository,
+    this.load, {
+    this.nextPage,
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now,
+       super(const RidePollState());
+  final DateTime Function() _now;
   final RideRepository repository;
   final Future<Either<Failure, Map<String, dynamic>>> Function() load;
   final Future<Either<Failure, Map<String, dynamic>>> Function(int offset)?
   nextPage;
   int _pages = 1;
-  Timer? _timer;
+  Timer? _timer, _clock;
   bool _fetching = false;
   int _generation = 0;
   void start() {
     refresh();
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 3), (_) => refresh());
+    _clock?.cancel();
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    _tick();
   }
 
   void pause() {
     _timer?.cancel();
     _timer = null;
+    _clock?.cancel();
+    _clock = null;
   }
 
   Future<void> refresh() async {
@@ -64,7 +75,7 @@ class RidePollCubit extends Cubit<RidePollState> {
       if (isClosed || generation != _generation) return;
       result.fold(
         (f) => emit(RidePollState(data: state.data, error: f.message)),
-        (data) => emit(RidePollState(data: data)),
+        (data) => emit(RidePollState(data: _waitingData(data))),
       );
     } finally {
       _fetching = false;
@@ -97,13 +108,14 @@ class RidePollCubit extends Cubit<RidePollState> {
   }
 
   Future<void> propose(String id, int steps, bool child) =>
-      _action(id, () => repository.propose(id, steps, child));
+      _action(id, () => repository.propose(id, steps, child), proposal: true);
   Future<void> withdraw(String id) =>
       _action(id, () => repository.withdraw(id));
   Future<void> _action(
     String id,
-    Future<Either<Failure, Map<String, dynamic>>> Function() action,
-  ) async {
+    Future<Either<Failure, Map<String, dynamic>>> Function() action, {
+    bool proposal = false,
+  }) async {
     if (state.actionId != null) return;
     _generation++;
     emit(RidePollState(data: state.data, actionId: id));
@@ -111,9 +123,68 @@ class RidePollCubit extends Cubit<RidePollState> {
     if (isClosed) return;
     result.fold(
       (f) => emit(RidePollState(data: state.data, error: f.message)),
-      (_) => emit(RidePollState(data: state.data)),
+      (response) {
+        final data = {...?state.data};
+        data['pendingOffer'] = proposal && response['expiresAt'] != null
+            ? {...response, 'orderId': id}
+            : null;
+        data['serverTime'] = response['serverTime'];
+        emit(RidePollState(data: _waitingData(data)));
+      },
     );
     if (state.error == null) await refresh();
+  }
+
+  Map<String, dynamic> _waitingData(Map<String, dynamic> data) {
+    final pending = data['pendingOffer'];
+    if (pending is! Map) return data;
+    final expires = DateTime.tryParse(pending['expiresAt']?.toString() ?? '');
+    final server =
+        DateTime.tryParse(data['serverTime']?.toString() ?? '') ?? _now();
+    if (expires == null) return {...data, 'pendingOffer': null};
+    final ms = expires.difference(server).inMilliseconds.clamp(0, 30000);
+    return {
+      ...data,
+      'pendingOffer': {
+        ...pending,
+        'clientExpiresAt': _now()
+            .add(Duration(milliseconds: ms))
+            .toIso8601String(),
+      },
+    };
+  }
+
+  int get waitingSeconds {
+    final offer = state.data?['pendingOffer'];
+    final deadline = offer is Map
+        ? DateTime.tryParse(offer['clientExpiresAt']?.toString() ?? '')
+        : null;
+    return deadline == null
+        ? 0
+        : (deadline.difference(_now()).inMilliseconds / 1000).ceil().clamp(
+            0,
+            30,
+          );
+  }
+
+  void _tick() {
+    if (isClosed || state.data?['pendingOffer'] == null) return;
+    final data = {...state.data!};
+    final pending = Map<String, dynamic>.from(data['pendingOffer'] as Map);
+    final expiry = DateTime.tryParse(
+      pending['clientExpiresAt']?.toString() ?? '',
+    );
+    if (expiry == null || !expiry.isAfter(_now())) {
+      data['pendingOffer'] = null;
+      emit(
+        RidePollState(data: data, error: state.error, actionId: state.actionId),
+      );
+      unawaited(refresh());
+    } else {
+      emit(
+        RidePollState(data: data, error: state.error, actionId: state.actionId),
+      );
+    }
   }
 
   @override
