@@ -2,6 +2,7 @@ import { ExecutorType, ServiceType } from "@dos/shared-types";
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -40,6 +41,12 @@ type AutocompleteOptions = {
 
 @Injectable()
 export class GeoService {
+  private readonly logger = new Logger(GeoService.name);
+  private readonly reverseRequests = new Map<
+    string,
+    Promise<GeoAddressSuggestion>
+  >();
+
   constructor(
     @InjectRepository(CityEntity)
     private readonly citiesRepository: Repository<CityEntity>,
@@ -206,17 +213,58 @@ export class GeoService {
   }
 
   async reverse(lat: number, lng: number): Promise<GeoAddressSuggestion> {
-    const cacheKey = `geo:reverse:${lat.toFixed(5)}:${lng.toFixed(5)}`;
+    const cacheKey = `geo:reverse:v2:${lat.toFixed(5)}:${lng.toFixed(5)}`;
     const cached =
       await this.redisStoreService.getJson<GeoAddressSuggestion>(cacheKey);
-    if (cached) {
-      return this.compactAddressSuggestion(cached);
-    }
+    if (cached) return { ...this.compactAddressSuggestion(cached), lat, lng };
 
-    const result = this.compactAddressSuggestion(
-      await this.nominatimAdapter.reverseGeocode(lat, lng),
-    );
-    await this.redisStoreService.setJson(cacheKey, result, 86_400);
+    let request = this.reverseRequests.get(cacheKey);
+    if (!request) {
+      request = this.resolveReverse(lat, lng, cacheKey);
+      this.reverseRequests.set(cacheKey, request);
+    }
+    try {
+      // A provider labels the pin; its nearest building must never move that pin.
+      return { ...(await request), lat, lng };
+    } finally {
+      if (this.reverseRequests.get(cacheKey) === request)
+        this.reverseRequests.delete(cacheKey);
+    }
+  }
+
+  private async resolveReverse(
+    lat: number,
+    lng: number,
+    cacheKey: string,
+  ): Promise<GeoAddressSuggestion> {
+    let address: GeoAddressSuggestion | null = null;
+    try {
+      address = await this.nominatimAdapter.reverseGeocode(lat, lng);
+    } catch {
+      this.logger.warn(
+        "Primary reverse geocoder unavailable; trying configured fallback",
+      );
+    }
+    if (!address?.title.trim()) {
+      try {
+        address = await this.yandexGeocoderAdapter.reverseGeocode(lat, lng);
+      } catch {
+        this.logger.warn(
+          "Secondary reverse geocoder unavailable; keeping coordinate pin",
+        );
+      }
+    }
+    const named = Boolean(address?.title.trim());
+    const result = named
+      ? { ...this.compactAddressSuggestion(address!), lat, lng }
+      : {
+          title: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+          subtitle: "",
+          lat,
+          lng,
+        };
+    // Recover named addresses quickly after a temporary outage. Never invent a street.
+    await this.redisStoreService.setJson(cacheKey, result, named ? 86_400 : 30);
     return result;
   }
 

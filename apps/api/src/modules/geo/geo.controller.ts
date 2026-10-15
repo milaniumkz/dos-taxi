@@ -47,7 +47,11 @@ export class GeoController {
   }
 
   @Get("reverse")
-  @ApiOperation({ summary: "Reverse geocode coordinates via OSM/Nominatim" })
+  @ApiOperation({
+    summary: "Label an exact map pin using reverse geocoding",
+    description:
+      "Preserves requested coordinates. Falls back to a configured secondary geocoder, then a coordinate label when address providers are unavailable.",
+  })
   @ApiOkResponse({ type: AddressSuggestionResponseDto })
   reverse(
     @Query() query: ReverseQueryDto,

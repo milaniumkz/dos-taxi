@@ -1354,7 +1354,8 @@
     "/api/v1/geo/reverse": {
       "get": {
         "operationId": "GeoController_reverse",
-        "summary": "Reverse geocode coordinates via OSM/Nominatim",
+        "summary": "Label an exact map pin using reverse geocoding",
+        "description": "Preserves requested coordinates. Falls back to a configured secondary geocoder, then a coordinate label when address providers are unavailable.",
         "parameters": [
           {
             "name": "lat",
