@@ -89,7 +89,7 @@ export class CityEntity {
   })
   rideMinimumDriverBalance!: string;
 
-  @Column({ name: "ride_offer_ttl_seconds", type: "int", default: 300 })
+  @Column({ name: "ride_offer_ttl_seconds", type: "int", default: 30 })
   rideOfferTtlSeconds!: number;
 
   @Column({

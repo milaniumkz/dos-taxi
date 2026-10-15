@@ -619,5 +619,14 @@
       }
     }
   },
-  "navMapSource": "© OpenStreetMap"
+  "navMapSource": "© OpenStreetMap",
+  "rideWaitTitle": "Жолаушының жауабын күтеміз",
+  "rideWaitSeconds": "{seconds} с қалды",
+  "@rideWaitSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
 }

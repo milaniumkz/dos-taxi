@@ -24,6 +24,8 @@ export class RideQuoteResponseDto {
   @ApiProperty() commissionFixed!: string;
 }
 export class RideOfferResponseDto {
+  @ApiPropertyOptional({ enum: Currency }) currency?: Currency;
+  @ApiPropertyOptional({ format: "date-time" }) serverTime?: string;
   @ApiProperty({ format: "uuid" }) id!: string;
   @ApiProperty({ format: "uuid" }) orderId!: string;
   @ApiProperty({ format: "uuid" }) executorId!: string;
@@ -66,6 +68,9 @@ export class RideFeedItemDto {
   myOffer?: RideOfferResponseDto | null;
 }
 export class RideFeedResponseDto {
+  @ApiPropertyOptional({ type: RideOfferResponseDto, nullable: true })
+  pendingOffer?: RideOfferResponseDto | null;
+  @ApiPropertyOptional({ format: "date-time" }) serverTime?: string;
   @ApiProperty({ type: [RideFeedItemDto] }) items!: RideFeedItemDto[];
   @ApiProperty({ type: Number, nullable: true }) nextOffset!: number | null;
 }

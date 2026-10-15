@@ -259,13 +259,11 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
     await expect(
       market.feed(d.userId, { lat: 46.8, lng: 61.67 }),
     ).rejects.toMatchObject({ response: { code: "RIDE_DRIVER_OFFLINE" } });
-    await db
-      .getRepository(ExecutorEntity)
-      .update(d.id, {
-        isOnline: true,
-        verificationStatus: "pending",
-        cityId: null,
-      });
+    await db.getRepository(ExecutorEntity).update(d.id, {
+      isOnline: true,
+      verificationStatus: "pending",
+      cityId: null,
+    });
     await expect(
       market.feed(d.userId, { lat: 46.8, lng: 61.67 }),
     ).rejects.toMatchObject({ response: { code: "EXECUTOR_NOT_VERIFIED" } });
@@ -331,6 +329,45 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       [...feed.items.map((x) => x.pickupDistanceMeters)].sort((a, b) => a - b),
     );
     await orders.cancelOrder(client.id, order.id);
+  });
+  it("waits 30 seconds on one proposal, exposes it outside pagination and supports withdrawal", async () => {
+    const one = await user(),
+      two = await user(),
+      d = await driver();
+    const a = await request(one.id),
+      b = await request(two.id);
+    const before = Date.now();
+    const offer = await market.submit(d.userId, a.order.id, { priceSteps: 0 });
+    expect(offer.expiresAt.getTime() - before).toBeGreaterThanOrEqual(29000);
+    expect(offer.expiresAt.getTime() - before).toBeLessThan(32000);
+    await expect(
+      market.submit(d.userId, b.order.id, { priceSteps: 0 }),
+    ).rejects.toMatchObject({ response: { code: "RIDE_OFFER_PENDING" } });
+    const feed = await market.feed(d.userId, {
+      lat: 46.8,
+      lng: 61.67,
+      offset: 10000,
+    });
+    expect(feed.items).toHaveLength(0);
+    expect(feed.pendingOffer?.id).toBe(offer.id);
+    expect(feed.serverTime).toBeTruthy();
+    await market.withdraw(d.userId, a.order.id);
+    expect(
+      (await market.feed(d.userId, { lat: 46.8, lng: 61.67 })).pendingOffer,
+    ).toBeNull();
+    await expect(
+      market.accept(one.id, a.order.id, offer.id, { version: offer.version }),
+    ).rejects.toThrow("RIDE_OFFER_UNAVAILABLE");
+    const second = await market.submit(d.userId, b.order.id, { priceSteps: 0 });
+    await db.query(
+      "UPDATE ride_price_offers SET expires_at=now()-interval '1 second' WHERE id=$1",
+      [second.id],
+    );
+    await expect(
+      market.accept(two.id, b.order.id, second.id, { version: second.version }),
+    ).rejects.toThrow("RIDE_OFFER_UNAVAILABLE");
+    await orders.cancelOrder(one.id, a.order.id);
+    await orders.cancelOrder(two.id, b.order.id);
   });
   it("does not select a driver on proposal; rejects changed version and other passengers", async () => {
     const c = await user(),
