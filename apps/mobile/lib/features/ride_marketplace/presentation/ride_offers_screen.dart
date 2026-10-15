@@ -156,25 +156,6 @@ class _OffersBody extends StatelessWidget {
                         ],
                       ),
                     ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.volume_up_outlined, size: 18),
-                      label: Text(l.rideTestSound),
-                      onPressed: () async {
-                        final ready =
-                            await serviceLocator<AppNotificationService>()
-                                .testRideFeedAlert();
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ready
-                                  ? l.rideOfferSoundEnabled
-                                  : l.rideSoundBlocked,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
                   ],
                 ),
               ),
