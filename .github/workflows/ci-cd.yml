@@ -49,6 +49,8 @@ jobs:
       with:
         name: dos-shared-types
         path: packages/shared-types/dist
+    - name: Test bounded preview fixture operation
+      run: node --test deploy/vps/scripts/seed-jetekshi-rides.test.cjs
     - name: Test OTP, administration, promos and bonuses
       run: pnpm --filter @dos/api exec jest --runInBand test/integration/error-messages.integration.spec.ts test/integration/runtime-envelope.integration.spec.ts
         test/integration/reverse-geocoding.integration.spec.ts
