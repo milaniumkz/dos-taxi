@@ -1,6 +1,8 @@
 class WebNotificationPresenter {
   static void armAudioOnNextGesture() {}
 
+  static Future<bool> enableDriverAudio() async => false;
+
   static Future<void> playDriverOrderTone() async {}
 
   static void stopDriverOrderTone() {}

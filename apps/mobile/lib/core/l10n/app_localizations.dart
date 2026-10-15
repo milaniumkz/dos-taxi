@@ -2911,6 +2911,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Осталось {seconds} с'**
   String rideWaitSeconds(int seconds);
+
+  /// No description provided for @rideTestSound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить звук'**
+  String get rideTestSound;
+
+  /// No description provided for @rideSoundEnabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звук включён. Новые заявки будут сопровождаться сигналом.'**
+  String get rideSoundEnabled;
+
+  /// No description provided for @rideSoundBlocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось включить звук. Разрешите звук для сайта в настройках браузера и попробуйте снова.'**
+  String get rideSoundBlocked;
 }
 
 class _AppLocalizationsDelegate

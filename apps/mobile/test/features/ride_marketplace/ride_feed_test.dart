@@ -1,3 +1,4 @@
+import 'package:dos_mobile/core/notifications/app_notification_service.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dos_mobile/core/di/service_locator.dart';
@@ -24,6 +25,8 @@ class Incoming extends MockCubit<IncomingOrderState>
 class RideRepo extends Mock implements RideRepository {}
 
 class ExecutorRepo extends Mock implements ExecutorRepository {}
+
+class Notifications extends Mock implements AppNotificationService {}
 
 void main() {
   testWidgets(
@@ -133,6 +136,11 @@ void main() {
         };
         return Right(Map<String, dynamic>.from(request['myOffer'] as Map));
       });
+      final notifications = Notifications();
+      when(
+        () => notifications.testRideFeedAlert(),
+      ).thenAnswer((_) async => true);
+      serviceLocator.registerSingleton<AppNotificationService>(notifications);
       serviceLocator.registerSingleton<RideRepository>(rides);
       serviceLocator.registerSingleton<ExecutorRepository>(executor);
       addTearDown(() => serviceLocator.reset());
@@ -159,7 +167,15 @@ void main() {
         tester.getRect(find.text('Подача 4')).bottom,
         lessThanOrEqualTo(tester.view.physicalSize.height),
       );
-      expect(find.text('Подача 5').hitTestable(),findsNothing);
+      expect(find.text('Подача 5').hitTestable(), findsNothing);
+      await tester.tap(find.text('Проверить звук'));
+      await tester.pump();
+      expect(find.textContaining('Звук включён.'), findsOneWidget);
+      verify(() => notifications.testRideFeedAlert()).called(1);
+      ScaffoldMessenger.of(
+        tester.element(find.text('Проверить звук')),
+      ).clearSnackBars();
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Ближайшая подача'));
       await tester.pumpAndSettle();
       expect(find.textContaining('У ворот'), findsOneWidget);

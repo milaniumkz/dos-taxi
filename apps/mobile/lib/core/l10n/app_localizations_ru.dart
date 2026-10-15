@@ -1516,4 +1516,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String rideWaitSeconds(int seconds) {
     return 'Осталось $seconds с';
   }
+
+  @override
+  String get rideTestSound => 'Проверить звук';
+
+  @override
+  String get rideSoundEnabled =>
+      'Звук включён. Новые заявки будут сопровождаться сигналом.';
+
+  @override
+  String get rideSoundBlocked =>
+      'Не удалось включить звук. Разрешите звук для сайта в настройках браузера и попробуйте снова.';
 }
