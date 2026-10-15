@@ -301,12 +301,15 @@ class AppNotificationService {
   }
 
   bool _shouldPlayImmediateAlert(String type) {
-    return type == 'ride_price_offer' || type == 'executor_incoming_order' ||
+    return type == 'ride_price_offer' ||
+        type == 'executor_incoming_order' ||
         type == 'balance_topup_invoiced' ||
         type == 'order_waiting' ||
         type == 'order_started' ||
         type == 'order_cancelled';
   }
+
+  Future<void> playRideFeedAlert() => _playSystemAlert();
 
   Future<void> _playSystemAlert() async {
     try {
