@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dos_mobile/core/config/app_config.dart';
 import 'package:dos_mobile/core/di/service_locator.dart';
@@ -31,11 +33,9 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
         addTearDown(tester.view.resetViewInsets);
         final auth = _AuthCubit();
-        whenListen(
-          auth,
-          const Stream<AuthState>.empty(),
-          initialState: const AuthIdle(),
-        );
+        final states = StreamController<AuthState>();
+        addTearDown(states.close);
+        whenListen(auth, states.stream, initialState: const AuthIdle());
         when(() => auth.sendOtp(any())).thenAnswer((_) async {});
         serviceLocator.registerSingleton<AppConfig>(
           AppConfig.driver(
@@ -77,6 +77,16 @@ void main() {
         expect(button.hitTestable(), findsOneWidget);
         await tester.tap(button);
         verify(() => auth.sendOtp('+77000000002')).called(1);
+        states.add(const AuthLoading());
+        await tester.pump();
+        await tester.pump();
+        expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
+        states.add(const AuthError('NETWORK_UNAVAILABLE'));
+        await tester.pump();
+        await tester.pumpAndSettle();
+        expect(tester.widget<ElevatedButton>(button).onPressed, isNotNull);
+        expect(find.text('NETWORK_UNAVAILABLE'), findsNothing);
+        expect(find.byType(SnackBar), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

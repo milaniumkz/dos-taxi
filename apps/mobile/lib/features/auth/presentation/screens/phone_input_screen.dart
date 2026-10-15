@@ -234,9 +234,19 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                         canSubmitPhone: canSubmitPhone && _retrySeconds == 0,
                         onShowPhoneForm: () =>
                             setState(() => _showPhoneForm = true),
-                        onSubmit: () =>
-                            context.read<AuthCubit>().sendOtp(normalizedPhone),
+                        onSubmit: () {
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          context.read<AuthCubit>().sendOtp(normalizedPhone);
+                        },
                       ),
+                      if (state is AuthError) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          ErrorMessageLocalizer.resolve(l10n, state.message),
+                          style: const TextStyle(color: AppColors.danger),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -376,6 +386,12 @@ class _AuthSubmitButtons extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: canPress ? action : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.text,
+                disabledBackgroundColor: AppColors.darkSurfaceAlt,
+                disabledForegroundColor: AppColors.darkMuted,
+              ),
               child: _AuthButtonContent(
                 isLoading: isLoading,
                 label: isPhoneForm
