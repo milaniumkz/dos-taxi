@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:dos_mobile/core/errors/failure.dart';
+import 'package:dos_mobile/core/theme/app_theme.dart';
 import 'package:dos_mobile/core/l10n/app_localizations.dart';
 import 'package:dos_mobile/features/home/domain/entities/address_suggestion.dart';
 import 'package:dos_mobile/features/ride_marketplace/domain/ride_repository.dart';
@@ -33,10 +34,10 @@ Map<String, dynamic> quote({
   'pricingBasis': basis,
   'currency': currency,
   'passengerCount': basis == 'seat' ? count : 1,
-  'minimumUnitPrice': currency == 'RUB'
-      ? '71.43'
-      : (500 / count).ceil().toString(),
-  'minimumOrderPrice': currency == 'RUB' ? '71.43' : '500.00',
+  'minimumUnitPrice': currency == 'RUB' ? '71.43' : '500.00',
+  'minimumOrderPrice': currency == 'RUB'
+      ? (71.43 * (basis == 'seat' ? count : 1)).toStringAsFixed(2)
+      : (500 * (basis == 'seat' ? count : 1)).toStringAsFixed(2),
   'priceStep': currency == 'RUB' ? '7.14' : '50.00',
 };
 void main() {
@@ -79,6 +80,30 @@ void main() {
       await cubit.close();
     },
   );
+  test(
+    'changing seat count preserves the chosen per-seat price steps',
+    () async {
+      final repo = Repo();
+      when(() => repo.quote(any())).thenAnswer(
+        (call) async => Right(
+          quote(
+            count:
+                (call.positionalArguments[0] as Map)['passengerCount'] as int,
+          ),
+        ),
+      );
+      final cubit = RideRequestCubit(repo, pickup, destination, 'taxi');
+      await cubit.refreshQuote();
+      cubit.changePrice(2);
+      await cubit.refreshQuote(2);
+      expect(cubit.steps, 2);
+      expect(cubit.state.quote!['minimumUnitPrice'], '500.00');
+      expect(cubit.state.quote!['minimumOrderPrice'], '1000.00');
+      await cubit.refreshQuote(3);
+      expect(cubit.steps, 2);
+      await cubit.close();
+    },
+  );
   test('ignores an obsolete quote after route/count changes', () async {
     final repo = Repo();
     final first = Completer<Either<Failure, Map<String, dynamic>>>(),
@@ -98,6 +123,69 @@ void main() {
     expect(cubit.steps, 0);
     await cubit.close();
   });
+  testWidgets(
+    'seat total grows 500, 1000, 1500 and quantity keeps the chosen unit price',
+    (tester) async {
+      final repo = Repo();
+      when(() => repo.quote(any())).thenAnswer(
+        (call) async => Right(
+          quote(
+            count:
+                (call.positionalArguments[0] as Map)['passengerCount'] as int,
+          ),
+        ),
+      );
+      final cubit = RideRequestCubit(repo, pickup, destination, 'taxi');
+      await cubit.refreshQuote();
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: cubit,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            locale: const Locale('ru'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const RideRequestScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.textContaining(RegExp(r'Итого:.*500')), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.add).first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining(RegExp(r'Итого:.*1\s*000')), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.add).first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining(RegExp(r'Итого:.*1\s*500')), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.add).last);
+      await tester.pumpAndSettle();
+      expect(find.textContaining(RegExp(r'Итого:.*1\s*650')), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.remove).first);
+      await tester.pumpAndSettle();
+      expect(cubit.steps, 1);
+      expect(find.textContaining(RegExp(r'Итого:.*1\s*100')), findsOneWidget);
+      final buttons = tester
+          .widgetList<IconButton>(find.byType(IconButton))
+          .where((b) => b.style?.foregroundColor != null);
+      for (final button in buttons) {
+        for (final states in [
+          <WidgetState>{},
+          <WidgetState>{WidgetState.disabled},
+        ]) {
+          final fg = button.style!.foregroundColor!.resolve(states)!,
+              bg = button.style!.backgroundColor!.resolve(states)!;
+          final a = fg.computeLuminance(), b = bg.computeLuminance();
+          expect(
+            (a > b ? (a + .05) / (b + .05) : (b + .05) / (a + .05)),
+            greaterThan(3),
+          );
+        }
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await cubit.close();
+    },
+  );
   for (final locale in ['ru', 'kk']) {
     for (final basis in ['seat', 'salon']) {
       testWidgets(

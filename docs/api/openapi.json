@@ -4443,15 +4443,16 @@
             ]
           },
           "passengerCount": {
-            "type": "number"
+            "type": "number",
+            "example": 2
           },
           "minimumOrderPrice": {
             "type": "string",
-            "example": "500.00"
+            "example": "1000.00"
           },
           "minimumUnitPrice": {
             "type": "string",
-            "example": "250.00"
+            "example": "500.00"
           },
           "priceStep": {
             "type": "string",

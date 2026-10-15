@@ -15,9 +15,9 @@ export class RideQuoteResponseDto {
   @ApiProperty() cityName!: string;
   @ApiProperty({ enum: Currency }) currency!: Currency;
   @ApiProperty({ enum: ["seat", "salon"] }) pricingBasis!: string;
-  @ApiProperty() passengerCount!: number;
-  @ApiProperty({ example: "500.00" }) minimumOrderPrice!: string;
-  @ApiProperty({ example: "250.00" }) minimumUnitPrice!: string;
+  @ApiProperty({ example: 2 }) passengerCount!: number;
+  @ApiProperty({ example: "1000.00" }) minimumOrderPrice!: string;
+  @ApiProperty({ example: "500.00" }) minimumUnitPrice!: string;
   @ApiProperty({ example: "50.00" }) priceStep!: string;
   @ApiProperty({ example: 7 }) exchangeRate!: number;
   @ApiProperty() commissionPercent!: string;
