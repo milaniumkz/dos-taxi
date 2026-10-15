@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { NotificationDevicesController } from "./notification-devices.controller";
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { UserEntity } from '../users/entities/user.entity';
+import { UserEntity } from "../users/entities/user.entity";
 
-import { NotificationDeviceTokenEntity } from './entities/notification-device-token.entity';
-import { NotificationTemplateEntity } from './entities/notification-template.entity';
-import { NotificationTemplateRenderer } from './notification-template.renderer';
-import { NotificationsQueueService } from './notifications-queue.service';
-import { NotificationsService } from './notifications.service';
+import { NotificationDeviceTokenEntity } from "./entities/notification-device-token.entity";
+import { NotificationTemplateEntity } from "./entities/notification-template.entity";
+import { NotificationTemplateRenderer } from "./notification-template.renderer";
+import { NotificationsQueueService } from "./notifications-queue.service";
+import { NotificationsService } from "./notifications.service";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { NotificationsService } from './notifications.service';
       NotificationDeviceTokenEntity,
     ]),
   ],
+  controllers: [NotificationDevicesController],
   providers: [
     NotificationTemplateRenderer,
     NotificationsQueueService,

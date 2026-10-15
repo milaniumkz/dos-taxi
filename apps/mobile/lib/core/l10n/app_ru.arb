@@ -631,5 +631,22 @@
   },
   "rideTestSound": "Проверить звук",
   "rideSoundEnabled": "Звук включён. Новые заявки будут сопровождаться сигналом.",
-  "rideSoundBlocked": "Не удалось включить звук. Разрешите звук для сайта в настройках браузера и попробуйте снова."
+  "rideSoundBlocked": "Не удалось включить звук. Разрешите звук для сайта в настройках браузера и попробуйте снова.",
+  "rideEnableOfferAlerts": "Включить звук и уведомления",
+  "rideNewOfferTitle": "Новое предложение водителя",
+  "rideNewOfferBody": "{driver} предлагает {price} за поездку.",
+  "rideOfferAlertsEnabled": "Звук и push-уведомления включены.",
+  "rideOfferPushOnly": "Push-уведомления включены. Разрешите звук для сайта в браузере.",
+  "rideOfferSoundOnly": "Звук включён. Push не подключён — проверьте разрешение уведомлений в браузере.",
+  "rideOfferAlertsBlocked": "Разрешите звук и уведомления для сайта в настройках браузера.",
+  "@rideNewOfferBody": {
+    "placeholders": {
+      "driver": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -51,4 +51,35 @@ void main() {
       await cubit.close();
     },
   );
+  test(
+    'passenger offer revisions notify once per version and expose new items',
+    () async {
+      var items = <Map<String, dynamic>>[
+        {'id': 'existing', 'version': 1},
+      ];
+      final received = <String>[];
+      final cubit = RidePollCubit(
+        Repository(),
+        () async => Right({'items': items}),
+        onNewItems: (rows) => received.addAll(
+          rows.map((row) => '${row['id']}:${row['version']}'),
+        ),
+      );
+      await cubit.refresh();
+      expect(received, isEmpty);
+      items = [
+        {'id': 'new-offer', 'version': 1},
+        {'id': 'existing', 'version': 1},
+      ];
+      await cubit.refresh();
+      await cubit.refresh();
+      expect(received, ['new-offer:1']);
+      items = [
+        {'id': 'new-offer', 'version': 2},
+      ];
+      await cubit.refresh();
+      expect(received, ['new-offer:1', 'new-offer:2']);
+      await cubit.close();
+    },
+  );
 }

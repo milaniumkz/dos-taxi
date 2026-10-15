@@ -2929,6 +2929,48 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось включить звук. Разрешите звук для сайта в настройках браузера и попробуйте снова.'**
   String get rideSoundBlocked;
+
+  /// No description provided for @rideEnableOfferAlerts.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включить звук и уведомления'**
+  String get rideEnableOfferAlerts;
+
+  /// No description provided for @rideNewOfferTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новое предложение водителя'**
+  String get rideNewOfferTitle;
+
+  /// No description provided for @rideNewOfferBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'{driver} предлагает {price} за поездку.'**
+  String rideNewOfferBody(String driver, String price);
+
+  /// No description provided for @rideOfferAlertsEnabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звук и push-уведомления включены.'**
+  String get rideOfferAlertsEnabled;
+
+  /// No description provided for @rideOfferPushOnly.
+  ///
+  /// In ru, this message translates to:
+  /// **'Push-уведомления включены. Разрешите звук для сайта в браузере.'**
+  String get rideOfferPushOnly;
+
+  /// No description provided for @rideOfferSoundOnly.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звук включён. Push не подключён — проверьте разрешение уведомлений в браузере.'**
+  String get rideOfferSoundOnly;
+
+  /// No description provided for @rideOfferAlertsBlocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разрешите звук и уведомления для сайта в настройках браузера.'**
+  String get rideOfferAlertsBlocked;
 }
 
 class _AppLocalizationsDelegate

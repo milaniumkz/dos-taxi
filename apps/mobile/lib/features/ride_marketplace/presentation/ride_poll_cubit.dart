@@ -25,6 +25,7 @@ class RidePollCubit extends Cubit<RidePollState> {
     this.load, {
     this.nextPage,
     this.onNewRequests,
+    this.onNewItems,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        super(const RidePollState());
@@ -34,6 +35,8 @@ class RidePollCubit extends Cubit<RidePollState> {
   final Future<Either<Failure, Map<String, dynamic>>> Function(int offset)?
   nextPage;
   final void Function()? onNewRequests;
+  final void Function(List<Map<String, dynamic>> items)? onNewItems;
+  String _identity(Map row) => "${row['id']}:${row['version'] ?? 1}";
   final Set<String> _seenRequests = {};
   bool _feedInitialized = false;
   int _pages = 1;
@@ -84,20 +87,22 @@ class RidePollCubit extends Cubit<RidePollState> {
       result.fold(
         (f) => emit(RidePollState(data: state.data, error: f.message)),
         (data) {
-          final firstIds = firstPage
-              .map((r) => (r as Map)['id'].toString())
-              .toSet();
-          final hasNew =
-              _feedInitialized &&
-              firstIds.any((id) => !_seenRequests.contains(id));
+          final newItems = _feedInitialized
+              ? firstPage
+                    .where((r) => !_seenRequests.contains(_identity(r as Map)))
+                    .map((r) => Map<String, dynamic>.from(r as Map))
+                    .toList()
+              : <Map<String, dynamic>>[];
+          final hasNew = newItems.isNotEmpty;
           _seenRequests.addAll(
-            (data['items'] as List? ?? []).map(
-              (r) => (r as Map)['id'].toString(),
-            ),
+            (data['items'] as List? ?? []).map((r) => _identity(r as Map)),
           );
           _feedInitialized = true;
           emit(RidePollState(data: _waitingData(data)));
-          if (hasNew) onNewRequests?.call();
+          if (hasNew) {
+            onNewRequests?.call();
+            onNewItems?.call(newItems);
+          }
         },
       );
     } finally {

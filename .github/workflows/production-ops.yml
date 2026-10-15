@@ -15,9 +15,15 @@ on:
           - seed-jetekshi-rides
           - refresh-jetekshi-rides
           - clear-jetekshi-rides
+          - passenger-offer-diagnostics
+          - seed-passenger-offers
           - booking-diagnostics
           - https-status
           - https-ip
+      preview_order_id:
+        description: "Exact inspected passenger request UUID; required only for seed-passenger-offers"
+        required: false
+        default: ""
       rollback_backup:
         description: "Backup directory for rollback, e.g. backups/predeploy-YYYYMMDD-HHMMSS-abcdef123456"
         required: false
@@ -59,11 +65,12 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
           OPERATION: ${{ inputs.operation }}
+          PREVIEW_ORDER_ID: ${{ inputs.preview_order_id }}
           ROLLBACK_BACKUP: ${{ inputs.rollback_backup }}
         run: |
           set -euo pipefail
           case "$OPERATION" in
-            health|logs|restart|rollback|https-status|https-ip|booking-diagnostics|seed-jetekshi-rides|refresh-jetekshi-rides|clear-jetekshi-rides) ;;
+            health|logs|restart|rollback|https-status|https-ip|booking-diagnostics|seed-jetekshi-rides|refresh-jetekshi-rides|clear-jetekshi-rides|passenger-offer-diagnostics|seed-passenger-offers) ;;
             *) echo "Unsupported operation"; exit 1 ;;
           esac
           if [[ "$OPERATION" == https-* ]]; then
@@ -80,17 +87,25 @@ jobs:
           command = shlex.join(["bash", script, mode, f'{os.environ["VPS_PATH"]}/deploy/vps', "89.126.200.51", renderer])
           subprocess.run(["ssh", "-p", port, host, command], check=True)
           PY
-          elif [[ "$OPERATION" == booking-diagnostics || "$OPERATION" == seed-jetekshi-rides || "$OPERATION" == refresh-jetekshi-rides || "$OPERATION" == clear-jetekshi-rides ]]; then
+          elif [[ "$OPERATION" == booking-diagnostics || "$OPERATION" == seed-jetekshi-rides || "$OPERATION" == refresh-jetekshi-rides || "$OPERATION" == clear-jetekshi-rides || "$OPERATION" == passenger-offer-diagnostics || "$OPERATION" == seed-passenger-offers ]]; then
             python3 - <<'PYBOOK'
           import os, shlex, subprocess
           host = f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}'
           port = os.environ.get("VPS_PORT") or "22"
           script_name = "seed-jetekshi-rides.cjs" if os.environ["OPERATION"] in ("seed-jetekshi-rides", "refresh-jetekshi-rides", "clear-jetekshi-rides") else "booking-diagnostics.cjs"
+          if os.environ["OPERATION"] in ("passenger-offer-diagnostics", "seed-passenger-offers"):
+              script_name = "passenger-offer-preview.cjs"
           script = f'/tmp/dos-booking-{os.environ["GITHUB_SHA"]}.cjs'
           subprocess.run(["scp", "-P", port, "deploy/vps/scripts/" + script_name, f"{host}:{script}"], check=True)
           preview_env = " -e REFRESH_JETEKSHI_PREVIEW=1 -e PREVIEW_RUN_ID=" + shlex.quote(os.environ["GITHUB_RUN_ID"]) if os.environ["OPERATION"] == "refresh-jetekshi-rides" else ""
           if os.environ["OPERATION"] == "clear-jetekshi-rides":
               preview_env = " -e CLEAR_JETEKSHI_PREVIEW=1"
+          if os.environ["OPERATION"] == "seed-passenger-offers":
+              import re
+              order_id = os.environ.get("PREVIEW_ORDER_ID", "")
+              if not re.fullmatch(r"[0-9a-fA-F-]{36}", order_id):
+                  raise ValueError("Exact inspected request UUID required")
+              preview_env = " -e SEED_PASSENGER_OFFERS=1 -e PREVIEW_ORDER_ID=" + shlex.quote(order_id)
           command = "cd " + shlex.quote(os.environ["VPS_PATH"] + "/deploy/vps") + " && docker compose --env-file .env -f docker-compose.yml exec -T" + preview_env + " api node < " + shlex.quote(script)
           subprocess.run(["ssh", "-p", port, host, command], check=True)
           PYBOOK

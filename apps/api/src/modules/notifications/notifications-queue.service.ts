@@ -302,6 +302,19 @@ export class NotificationsQueueService
               channelId: this.androidChannelIdFor(job.type),
               sound: "default",
             },
+            ...(job.type === "ride_price_offer"
+              ? {
+                  webpush: {
+                    headers: { TTL: "30", Urgency: "high" },
+                    notification: {
+                      tag: `ride-offer:${job.data?.offerId ?? ""}:${job.data?.version ?? "1"}`,
+                      renotify: true,
+                      requireInteraction: true,
+                      icon: "/passenger/icons/Icon-192.png",
+                    },
+                  },
+                }
+              : {}),
             android: {
               priority: "high",
               notification: {

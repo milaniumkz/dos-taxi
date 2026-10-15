@@ -120,3 +120,11 @@ Push `ride_price_offer` содержит `orderId`, `offerId`, `version`, `drive
 После подтверждённой отправки цены открывается недиспускаемый экран ожидания с суммой, отсчётом и кнопкой отзыва. Другие действия внутри приложения до завершения ожидания закрыты. Отзыв, истечение 30 секунд или выбор пассажира закрывают ожидание; при назначении открывается активная поездка. Восстановление ленты после перезагрузки также восстанавливает активное ожидание. ОС/браузер могут закрыть приложение; серверное время жизни предложения продолжает действовать независимо от клиента.
 
 Миграция `0035` задаёт всем городам и новым записям срок 30 секунд, сокращает ещё ожидающие старые предложения до 30 секунд от последнего обновления. Принятые предложения и цены не меняются. Откат не продлевает действующие предложения.
+
+### Passenger offer alerts
+
+Passenger web polls invoke the same localized sound/notification path as foreground `ride_price_offer` push messages. `(orderId, offerId, version)` suppresses duplicate alerts from push and polling; revised prices produce a new alert. Initial history loading stays silent.
+
+`POST /api/v1/notifications/devices` (Bearer JWT, 204) registers a device after notification permission is granted, without another OTP login. Body: `{"token":"<FCM token>","platform":"web"}`; supported platforms: `web`, `android`, `ios`. Identity and role always come from the JWT. The passenger offers screen has a bell control that requests permission, registers the token, and tests the sound. A granted permission is also registered automatically when reopening that screen. Push requires configured Firebase delivery and a browser/device token; website audio requires a user gesture. Background notification sound follows browser/OS settings.
+
+Production Ops provides `passenger-offer-diagnostics` (counts/configuration presence only) and an explicitly invoked `seed-passenger-offers` preview. The latter refuses unless exactly one non-test, searching, negotiated request exists; it uses five clearly marked test drivers, sends normal API proposals five seconds apart, keeps the normal 30-second expiry, and takes those test drivers offline after expiry. It never assigns a driver or starts a trip.
