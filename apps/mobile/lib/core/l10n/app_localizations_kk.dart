@@ -1515,4 +1515,15 @@ class AppLocalizationsKk extends AppLocalizations {
   String rideWaitSeconds(int seconds) {
     return '$seconds с қалды';
   }
+
+  @override
+  String get rideTestSound => 'Дыбысты тексеру';
+
+  @override
+  String get rideSoundEnabled =>
+      'Дыбыс қосылды. Жаңа өтінімдер келгенде белгі беріледі.';
+
+  @override
+  String get rideSoundBlocked =>
+      'Дыбысты қосу мүмкін болмады. Браузер баптауларында сайтқа дыбысқа рұқсат беріп, қайталап көріңіз.';
 }

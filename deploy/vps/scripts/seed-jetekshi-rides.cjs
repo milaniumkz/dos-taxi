@@ -18,9 +18,29 @@ function fixtures() {
       ]}
   }));
 }
-async function seed(db,request) {
+async function refreshPreview(db, request, runId, wait = ms => new Promise(resolve => setTimeout(resolve, ms)), report = () => {}) {
+  if (!/^\d+$/.test(runId)) throw new Error('Explicit preview run ID required');
+  // Cancel only unassigned searching fixtures owned by the ten reserved identities.
+  const cancellations = [];
+  for (const f of fixtures()) {
+    const user = (await db.query('SELECT phone,name,is_blocked FROM users WHERE id=$1', [f.userId])).rows[0];
+    if (user && (user.phone !== f.phone || user.name !== f.name || user.is_blocked)) throw new Error('Reserved test identity collision; stopped');
+    const rows = (await db.query("SELECT id FROM orders WHERE client_id=$1 AND status='searching' AND executor_id IS NULL AND pickup_comment=$2", [f.userId, f.data.pickupComment])).rows;
+    if (rows.length > 10) throw new Error('Unexpected fixture count; stopped');
+    cancellations.push(...rows.map(row => ({ id: row.id, userId: f.userId })));
+  }
+  for (const order of cancellations) {
+    const result = await request('/orders/' + order.id + '/cancel', {reason:'Завершение проверки тестовой ленты'}, order.userId, undefined, 'PATCH');
+    if (result.status !== 'cancelled_client') throw new Error('Test order cancellation failed; stopped');
+  }
+  report({event:'test_orders_cleared',count:cancellations.length});
+  return seed(db, request, {runId, wait, report});
+}
+async function seed(db,request,options={}) {
   const results=[];
-  for(const f of fixtures()) {
+  for(const [index, original] of fixtures().entries()) {
+    const f = {...original, key: options.runId ? uuid("paced-" + options.runId + "-" + index) : original.key};
+    if (options.runId && index > 0) await options.wait(30000);
     await db.query('INSERT INTO users(id,phone,name) VALUES($1,$2,$3) ON CONFLICT(id) DO NOTHING',[f.userId,f.phone,f.name]);
     const user=(await db.query('SELECT phone,name,is_blocked FROM users WHERE id=$1',[f.userId])).rows[0];
     if(!user || user.phone!==f.phone || user.name!==f.name || user.is_blocked) throw new Error('Reserved test identity collision; stopped');
@@ -34,6 +54,7 @@ async function seed(db,request) {
     const order=await request('/ride-requests',{...f.data,termsKey:quote.termsKey},f.userId,f.key);
     if(!order.id || order.status!=='searching') throw new Error('Preview request was not left open');
     results.push({id:order.id,total:order.estimatedPrice,existing:false});
+    options.report?.({event:"test_order_created",number:index+1,at:new Date().toISOString()});
   }
   if(results.length!==10) throw new Error('Expected exactly ten preview requests');
   return results;
@@ -41,14 +62,16 @@ async function seed(db,request) {
 async function main() {
   if(!process.env.JWT_SECRET || !process.env.DATABASE_URL) throw new Error('Required runtime configuration missing');
   const {Client}=require('pg');const db=new Client({connectionString:process.env.DATABASE_URL});await db.connect();
-  const request=async(path,data,userId,key)=>{
+  const request=async(path,data,userId,key,method="POST")=>{
     const encode=x=>Buffer.from(JSON.stringify(x)).toString('base64url');
     const now=Math.floor(Date.now()/1000), unsigned=encode({alg:'HS256',typ:'JWT'})+'.'+encode({sub:userId,role:'client',iat:now,exp:now+600});
     const token=unsigned+'.'+createHmac('sha256',process.env.JWT_SECRET).update(unsigned).digest('base64url');
-    const response=await fetch('http://127.0.0.1:3000/api/v1'+path,{method:'POST',signal:AbortSignal.timeout(30000),headers:{'content-type':'application/json',authorization:'Bearer '+token,...(key?{'x-idempotency-key':key}:{})},body:JSON.stringify(data)});
+    const response=await fetch('http://127.0.0.1:3000/api/v1'+path,{method,signal:AbortSignal.timeout(30000),headers:{'content-type':'application/json',authorization:'Bearer '+token,...(key?{'x-idempotency-key':key}:{})},body:JSON.stringify(data)});
     const body=await response.json();if(!response.ok) throw new Error('Preview API failed: '+response.status+' '+String(body.code||''));return body;
   };
-  try {const results=await seed(db,request);console.log(JSON.stringify({preview:'Жетекши',count:results.length,orders:results}));} finally {await db.end();}
+  try {const results=process.env.REFRESH_JETEKSHI_PREVIEW === "1"
+    ? await refreshPreview(db,request,process.env.PREVIEW_RUN_ID,undefined,event=>console.log(JSON.stringify(event)))
+    : await seed(db,request);console.log(JSON.stringify({preview:'Жетекши',count:results.length,orders:results}));} finally {await db.end();}
 }
-module.exports={fixtures,seed};
+module.exports={fixtures,seed,refreshPreview};
 if(require.main===module || !process.argv[1]) main().catch(e=>{console.error(e.message);process.exitCode=1;});

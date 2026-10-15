@@ -311,6 +311,12 @@ class AppNotificationService {
 
   Future<void> playRideFeedAlert() => _playSystemAlert();
 
+  Future<bool> testRideFeedAlert() async {
+    if (kIsWeb) return WebNotificationPresenter.enableDriverAudio();
+    await _playSystemAlert();
+    return true;
+  }
+
   Future<void> _playSystemAlert() async {
     try {
       if (kIsWeb) {

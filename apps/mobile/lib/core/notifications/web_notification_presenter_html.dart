@@ -1,57 +1,79 @@
+import 'dart:async';
 import 'dart:html' as html;
+import 'dart:js_interop';
 
 class WebNotificationPresenter {
-  static const String _alarmDataUri =
-      'data:audio/wav;base64,UklGRmQLAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YUALAAAAAMcA0wHkAL79M/ud/BQCTgf9BgAAdfcL9SX85gdmDgcJ9fqR7z7xAABPEBYU0wZ18gDoVPECCJAZhhYAAO3nyeI29i8TmSFQFAb1Tt224QAA2B9YJsEMLOfN1Avm8Q3TKw4mAABk2IbQR/B4Hsw0mR8X7wzLLtIAAGAvmziwEuPbmsHC2uATFT6WNQAA3MhEvljqwSn/R+IqKOnJuKXCAADoPt1Knxia0Geuec/PGVhQH0UAAFS5Aaxp5Ao1MlsrNjrjh6YdswAAcU4gXY4eUcU0mzDEvh+aYqdUAADLqb+Ze95TQGZudEFL3UWUlaMAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAAAyXY9tmSNKvM6MSryZI49tMl0AAM6icZJn3LZDMnO2Q2fccZLOogAAMl2PbZkjSrzOjEq8mSOPbTJdAADOonGSZ9y2QzJztkNn3HGSzqIAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAAAyXY9tmSNKvM6MSryZI49tMl0AAM6icZJn3LZDMnO2Q2fccZLOogAAMl2PbZkjSrzOjEq8mSOPbTJdAADOonGSZ9y2QzJztkNn3HGSzqIAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAAAyXY9tmSNKvM6MSryZI49tMl0AAM6icZJn3LZDMnO2Q2fccZLOogAAMl2PbZkjSrzOjEq8mSOPbTJdAADOonGSZ9y2QzJztkNn3HGSzqIAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAAAyXY9tmSNKvM6MSryZI49tMl0AAM6icZJn3LZDMnO2Q2fccZLOogAAMl2PbZkjSrzOjEq8mSOPbTJdAADOonGSZ9y2QzJztkNn3HGSzqIAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAAAyXY9tmSNKvM6MSryZI49tMl0AAM6icZJn3LZDMnO2Q2fccZLOogAAMl2PbZkjSrzOjEq8mSOPbTJdAADOonGSZ9y2QzJztkNn3HGSzqIAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAAAyXY9tmSNKvM6MSryZI49tMl0AAM6icZJn3LZDMnO2Q2fccZLOogAAMl2PbZkjSrzOjEq8mSOPbTJdAADOonGSZ9y2QzJztkNn3HGSzqIAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAAAyXY9tmSNKvM6MSryZI49tMl0AAM6icZJn3LZDMnO2Q2fccZLOogAAMl2PbZkjSrzOjEq8mSOPbTJdAADOonGSZ9y2QzJztkNn3HGSzqIAADJdj22ZI0q8zoxKvJkjj20yXQAAzqJxkmfctkMyc7ZDZ9xxks6iAACdXDBs7iL7vWeQ1L4KIhVo9FcAADapqZpL38k9ZmjxPC/gxJ7frQAA91B+XnsecsbOnkvHlx1jWk5MAADctFqov+NSNf9ZejSi5HashbkAAFFFzVAIGunONK3CzyQZsUyoQAAAg8AMtjLo3CyZSwMsFukouizFAACqORtDlRVg15q7ONixFP8+ATUAACnMvsOl7GUkMz2MI4nt2sfS0AAABC5pNSIR1t8Ayq/gPhBNMVspAADP13DRGPHuG8wuFhv88YzVeNwAAF4ityevDE3oZ9gm6csLmyO1HQAAdeMi34v1eBNmIJ8Sb/Y+4x7oAAC3FgUaOwjE8M3mnfFYB+kVDxIAABzv1Oz++QELABIoCuL68PDF8wAAEQtTDMgDO/kz9RP65AI4CGgGAADC+ob6cf6KApoDsQFV/6H+a/8=';
-  static bool _audioPrimed = false;
+  static _AudioContext? _context;
   static bool _gestureArmed = false;
-  static final html.AudioElement _audio = html.AudioElement(_alarmDataUri)
-    ..preload = 'auto';
+  static final Set<_Oscillator> _tones = {};
 
   static void armAudioOnNextGesture() {
-    if (_audioPrimed || _gestureArmed) {
-      return;
-    }
-
+    if (_gestureArmed) return;
     _gestureArmed = true;
-    void prime(html.Event _) {
-      html.window.removeEventListener('pointerdown', prime, true);
-      html.window.removeEventListener('keydown', prime, true);
-      _audioPrimed = true;
-      final audio = _audio
-        ..muted = true
-        ..volume = 0;
-      audio
-          .play()
-          .then((_) {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.muted = false;
-            audio.volume = 1;
-          })
-          .catchError((_) {
-            _audioPrimed = false;
-            _gestureArmed = false;
-          });
+    // Keep listening: mobile browsers may suspend audio after backgrounding.
+    void unlock(html.Event _) {
+      unawaited(_unlock());
     }
 
-    html.window.addEventListener('pointerdown', prime, true);
-    html.window.addEventListener('keydown', prime, true);
+    html.window.addEventListener('pointerdown', unlock, true);
+    html.window.addEventListener('touchend', unlock, true);
+    html.window.addEventListener('keydown', unlock, true);
+  }
+
+  static Future<bool> _unlock() async {
+    try {
+      final context = _context ??= _AudioContext();
+      // resume() must be invoked synchronously within the user gesture.
+      if (context.state != 'running') {
+        await context.resume().toDart.timeout(const Duration(seconds: 1));
+      }
+      return context.state == 'running';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> enableDriverAudio() async {
+    if (!await _unlock()) return false;
+    await playDriverOrderTone();
+    return true;
   }
 
   static Future<void> playDriverOrderTone() async {
-    try {
-      final audio = _audio
-        ..muted = false
-        ..volume = 1
-        ..currentTime = 0;
-      await audio.play();
-    } catch (_) {
-      // Browser may block audio until the driver taps the page once.
+    final context = _context;
+    if (context == null || context.state != 'running') {
+      throw StateError('Driver audio requires a user gesture');
+    }
+    stopDriverOrderTone();
+    final now = context.currentTime;
+    // Two short, gently fading notes; no media download or decoder needed.
+    for (var i = 0; i < 2; i++) {
+      final oscillator = context.createOscillator();
+      final gain = context.createGain();
+      final start = now + i * .26;
+      oscillator.frequency.value = i == 0 ? 880 : 1174;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(.35, start + .015);
+      gain.gain.linearRampToValueAtTime(0, start + .22);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      _tones.add(oscillator);
+      oscillator.onended = (() {
+        _tones.remove(oscillator);
+        oscillator.disconnect();
+        gain.disconnect();
+      }).toJS;
+      oscillator.start(start);
+      oscillator.stop(start + .23);
     }
   }
 
-  static void stopDriverOrderTone() {}
+  static void stopDriverOrderTone() {
+    for (final tone in _tones.toList()) {
+      tone.stop();
+    }
+    _tones.clear();
+  }
 
   static Future<void> show({
     required String title,
@@ -70,4 +92,36 @@ class WebNotificationPresenter {
       icon: '/passenger/icons/Icon-192.png',
     );
   }
+}
+
+@JS('AudioContext')
+extension type _AudioContext._(JSObject _) implements JSObject {
+  external factory _AudioContext();
+  external String get state;
+  external double get currentTime;
+  external JSObject get destination;
+  external JSPromise<JSAny?> resume();
+  external _Oscillator createOscillator();
+  external _Gain createGain();
+}
+
+extension type _Oscillator(JSObject _) implements JSObject {
+  external _Param get frequency;
+  external void connect(JSObject destination);
+  external void disconnect();
+  external void start(double when);
+  external void stop([double when]);
+  external set onended(JSFunction callback);
+}
+
+extension type _Gain(JSObject _) implements JSObject {
+  external _Param get gain;
+  external void connect(JSObject destination);
+  external void disconnect();
+}
+
+extension type _Param(JSObject _) implements JSObject {
+  external set value(double value);
+  external void setValueAtTime(double value, double when);
+  external void linearRampToValueAtTime(double value, double when);
 }
