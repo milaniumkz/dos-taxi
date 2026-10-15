@@ -26,6 +26,7 @@ class RidePollCubit extends Cubit<RidePollState> {
     this.nextPage,
     this.onNewRequests,
     this.onNewItems,
+    this.alertInitialItems = false,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        super(const RidePollState());
@@ -36,6 +37,7 @@ class RidePollCubit extends Cubit<RidePollState> {
   nextPage;
   final void Function()? onNewRequests;
   final void Function(List<Map<String, dynamic>> items)? onNewItems;
+  final bool alertInitialItems;
   String _identity(Map row) => "${row['id']}:${row['version'] ?? 1}";
   final Set<String> _seenRequests = {};
   bool _feedInitialized = false;
@@ -87,7 +89,7 @@ class RidePollCubit extends Cubit<RidePollState> {
       result.fold(
         (f) => emit(RidePollState(data: state.data, error: f.message)),
         (data) {
-          final newItems = _feedInitialized
+          final newItems = (_feedInitialized || alertInitialItems)
               ? firstPage
                     .where((r) => !_seenRequests.contains(_identity(r as Map)))
                     .map((r) => Map<String, dynamic>.from(r as Map))

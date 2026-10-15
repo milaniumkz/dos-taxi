@@ -148,6 +148,11 @@ for role in passenger driver; do
   fi
 done
 
+# Firebase registers this worker at the origin root, outside the role web folders.
+if [[ -f "$incoming_dir/_web/passenger/firebase-messaging-sw.js" ]]; then
+  install -m 644 "$incoming_dir/_web/passenger/firebase-messaging-sw.js" "$target_dir/deploy/hosting-public/firebase-messaging-sw.js"
+fi
+
 cat > DEPLOYED_VERSION <<EOF_VERSION
 commit=$commit_sha
 deployed_at=$(date -u +%FT%TZ)

@@ -5,6 +5,7 @@ import 'dart:js_interop';
 class WebNotificationPresenter {
   static _AudioContext? _context;
   static bool _gestureArmed = false;
+  static DateTime? _pendingAlertUntil;
   static final Set<_Oscillator> _tones = {};
 
   static void armAudioOnNextGesture() {
@@ -27,7 +28,13 @@ class WebNotificationPresenter {
       if (context.state != 'running') {
         await context.resume().toDart.timeout(const Duration(seconds: 1));
       }
-      return context.state == 'running';
+      final ready = context.state == 'running';
+      final pending = _pendingAlertUntil;
+      if (ready) _pendingAlertUntil = null;
+      if (ready && pending != null && pending.isAfter(DateTime.now())) {
+        await playDriverOrderTone();
+      }
+      return ready;
     } catch (_) {
       return false;
     }
@@ -42,6 +49,7 @@ class WebNotificationPresenter {
   static Future<void> playDriverOrderTone() async {
     final context = _context;
     if (context == null || context.state != 'running') {
+      _pendingAlertUntil = DateTime.now().add(const Duration(seconds: 30));
       throw StateError('Driver audio requires a user gesture');
     }
     stopDriverOrderTone();

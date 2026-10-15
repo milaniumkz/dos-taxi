@@ -123,8 +123,10 @@ Push `ride_price_offer` содержит `orderId`, `offerId`, `version`, `drive
 
 ### Passenger offer alerts
 
-Passenger web polls invoke the same localized sound/notification path as foreground `ride_price_offer` push messages. `(orderId, offerId, version)` suppresses duplicate alerts from push and polling; revised prices produce a new alert. Initial history loading stays silent.
+Passenger web polls invoke the same localized sound/notification path as foreground `ride_price_offer` push messages. `(orderId, offerId, version)` suppresses duplicate alerts from push and polling; revised prices produce a new alert. The driver feed initially loads history silently. The passenger offers screen also alerts for pending proposals on its first load, so opening or restoring the screen does not lose the arrival sound.
 
 `POST /api/v1/notifications/devices` (Bearer JWT, 204) registers a device after notification permission is granted, without another OTP login. Body: `{"token":"<FCM token>","platform":"web"}`; supported platforms: `web`, `android`, `ios`. Identity and role always come from the JWT. The passenger offers screen has a bell control that requests permission, registers the token, and tests the sound. A granted permission is also registered automatically when reopening that screen. Push requires configured Firebase delivery and a browser/device token; website audio requires a user gesture. Background notification sound follows browser/OS settings.
 
 Production Ops provides `passenger-offer-diagnostics` (counts/configuration presence only) and an explicitly invoked `seed-passenger-offers` preview. The latter refuses unless exactly one non-test, searching, negotiated request exists; it uses five clearly marked test drivers, sends normal API proposals five seconds apart, keeps the normal 30-second expiry, and takes those test drivers offline after expiry. It never assigns a driver or starts a trip.
+
+Passenger offers use five compact cards per viewport; tapping a card opens its full vehicle details. A visible sound-test control unlocks browser audio. If an arrival is blocked before a user gesture, the presenter replays one pending alert on the next gesture within 30 seconds. Older pending sounds are discarded.

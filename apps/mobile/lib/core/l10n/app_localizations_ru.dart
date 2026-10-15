@@ -1553,4 +1553,8 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get rideOfferAlertsBlocked =>
       'Разрешите звук и уведомления для сайта в настройках браузера.';
+
+  @override
+  String get rideOfferSoundEnabled =>
+      'Звук включён. Новые предложения будут сопровождаться сигналом.';
 }

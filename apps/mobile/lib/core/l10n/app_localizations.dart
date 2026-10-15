@@ -2971,6 +2971,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Разрешите звук и уведомления для сайта в настройках браузера.'**
   String get rideOfferAlertsBlocked;
+
+  /// No description provided for @rideOfferSoundEnabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звук включён. Новые предложения будут сопровождаться сигналом.'**
+  String get rideOfferSoundEnabled;
 }
 
 class _AppLocalizationsDelegate
