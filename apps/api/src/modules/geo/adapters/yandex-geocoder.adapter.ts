@@ -1,6 +1,8 @@
 import { BadGatewayException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
+import { fetchWithProxy } from "../../../shared/http/fetch-with-proxy";
+
 import { GeoAddressSuggestion } from "../interfaces/geo.types";
 
 type YandexGeoObject = {
@@ -77,12 +79,41 @@ export class YandexGeocoderAdapter {
         ?.map((member) => member.GeoObject)
         .filter((item): item is YandexGeoObject => item != null)
         .map((item) => this.mapObject(item))
-        .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng))
+        .filter(
+          (item) => Number.isFinite(item.lat) && Number.isFinite(item.lng),
+        )
         .slice(0, 10) ?? []
     );
   }
 
-  private radiusToSpan(lat: number, radiusKm: number | undefined): {
+  async reverseGeocode(
+    lat: number,
+    lng: number,
+  ): Promise<GeoAddressSuggestion | null> {
+    const apiKey = this.getApiKey();
+    if (!apiKey) return null;
+    const url = new URL("/v1/", this.getBaseUrl());
+    url.searchParams.set("apikey", apiKey);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("lang", "ru_RU");
+    url.searchParams.set("results", "1");
+    url.searchParams.set("geocode", `${lng},${lat}`);
+    const payload = await this.requestJson<YandexGeocoderResponse>(url);
+    const item =
+      payload.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
+    if (!item) return null;
+    const result = this.mapObject(item);
+    return Number.isFinite(result.lat) &&
+      Number.isFinite(result.lng) &&
+      result.title.trim()
+      ? result
+      : null;
+  }
+
+  private radiusToSpan(
+    lat: number,
+    radiusKm: number | undefined,
+  ): {
     lat: number;
     lng: number;
   } {
@@ -132,7 +163,8 @@ export class YandexGeocoderAdapter {
   }
 
   private async requestJson<T>(url: URL): Promise<T> {
-    const response = await fetch(url, {
+    const response = await fetchWithProxy(url, {
+      signal: AbortSignal.timeout(6000),
       headers: {
         Accept: "application/json",
         "Accept-Language": "ru",

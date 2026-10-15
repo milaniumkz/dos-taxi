@@ -1,6 +1,6 @@
-import { BadGatewayException, Injectable } from "@nestjs/common";
+import { BadGatewayException, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { fetchWithProxy } from '../../../shared/http/fetch-with-proxy';
+import { fetchWithProxy } from "../../../shared/http/fetch-with-proxy";
 
 import { GeoAddressSuggestion } from "../interfaces/geo.types";
 
@@ -33,6 +33,7 @@ type NominatimSearchOptions = {
 
 @Injectable()
 export class NominatimAdapter {
+  private readonly logger = new Logger(NominatimAdapter.name);
   constructor(private readonly configService: ConfigService) {}
 
   async geocode(
@@ -113,25 +114,48 @@ export class NominatimAdapter {
   }
 
   private async requestJson<T>(url: URL): Promise<T> {
-    const response = await fetchWithProxy(url, {
-      headers: {
-        Accept: "application/json",
-        "Accept-Language": "ru",
-        "User-Agent": "DOSPlatform/1.0 (+https://dos.local)",
-      },
-    });
-
-    if (!response.ok) {
+    try {
+      const response = await fetchWithProxy(url, {
+        signal: AbortSignal.timeout(6000),
+        headers: {
+          Accept: "application/json",
+          "Accept-Language": "ru",
+          "User-Agent":
+            this.configService.get<string>("GEO_HTTP_USER_AGENT") ??
+            "DOS-Taxi/1.0 (+https://github.com/milaniumkz/dos-taxi)",
+        },
+      });
+      if (!response.ok) {
+        this.logger.warn(
+          `Nominatim ${url.pathname} returned HTTP ${response.status}`,
+        );
+        throw new BadGatewayException({
+          code: "GEO_PROVIDER_UNAVAILABLE",
+          message: "Address provider unavailable",
+        });
+      }
+      return (await response.json()) as T;
+    } catch (error) {
+      if (error instanceof BadGatewayException) throw error;
+      this.logger.warn("Nominatim transport or response failure");
       throw new BadGatewayException({
         code: "GEO_PROVIDER_UNAVAILABLE",
-        message: "Failed to fetch data from Nominatim",
+        message: "Address provider unavailable",
       });
     }
-
-    return (await response.json()) as T;
   }
 
   private mapItem(item: NominatimSearchItem): GeoAddressSuggestion {
+    if (
+      !item ||
+      !Number.isFinite(Number(item.lat)) ||
+      !Number.isFinite(Number(item.lon))
+    ) {
+      throw new BadGatewayException({
+        code: "GEO_PROVIDER_UNAVAILABLE",
+        message: "Invalid address provider response",
+      });
+    }
     const displayName = item.display_name ?? item.name ?? "";
     const address = item.address;
     const road =

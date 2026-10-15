@@ -40,6 +40,7 @@ describe("GeoService", () => {
       geocode: jest.fn(),
     } as unknown as jest.Mocked<NominatimAdapter>;
     yandexGeocoderAdapter = {
+      reverseGeocode: jest.fn().mockResolvedValue(null),
       autocomplete: jest.fn(),
     } as unknown as jest.Mocked<YandexGeocoderAdapter>;
     yandexGeocoderAdapter.autocomplete.mockResolvedValue([]);
@@ -69,6 +70,79 @@ describe("GeoService", () => {
 
     expect(result.title).toBe("Abay 10");
     expect(nominatimAdapter.reverseGeocode).not.toHaveBeenCalled();
+  });
+
+  it("preserves the exact pin even when the provider returns a different building", async () => {
+    nominatimAdapter.reverseGeocode.mockResolvedValue({
+      title: "Ауэзова 8",
+      subtitle: "Жетекши",
+      lat: 52.3230675,
+      lng: 77.1279019,
+    });
+    const result = await geoService.reverse(52.323063965, 77.12787443);
+    expect(result).toMatchObject({
+      title: "Ауэзова 8",
+      lat: 52.323063965,
+      lng: 77.12787443,
+    });
+    expect(yandexGeocoderAdapter.reverseGeocode).not.toHaveBeenCalled();
+  });
+  it("uses the configured secondary provider after a primary failure", async () => {
+    nominatimAdapter.reverseGeocode.mockRejectedValue(new Error("HTTP 403"));
+    yandexGeocoderAdapter.reverseGeocode.mockResolvedValue({
+      title: "Ауэзова 8",
+      subtitle: "Жетекши",
+      lat: 52.3231,
+      lng: 77.128,
+    });
+    expect(await geoService.reverse(52.323063965, 77.12787443)).toMatchObject({
+      title: "Ауэзова 8",
+      lat: 52.323063965,
+      lng: 77.12787443,
+    });
+  });
+  it("keeps a usable coordinate pin when both providers fail and caches it briefly", async () => {
+    nominatimAdapter.reverseGeocode.mockRejectedValue(new Error("timeout"));
+    yandexGeocoderAdapter.reverseGeocode.mockRejectedValue(
+      new Error("timeout"),
+    );
+    const result = await geoService.reverse(52.323063965, 77.12787443);
+    expect(result).toEqual({
+      title: "52.323064, 77.127874",
+      subtitle: "",
+      lat: 52.323063965,
+      lng: 77.12787443,
+    });
+    expect(redisStoreService.setJson).toHaveBeenCalledWith(
+      expect.stringContaining("geo:reverse:v2:"),
+      result,
+      30,
+    );
+  });
+  it("restores exact coordinates when sharing a cache cell", async () => {
+    redisStoreService.getJson.mockResolvedValue({
+      title: "Ауэзова 8",
+      subtitle: "",
+      lat: 52.32306,
+      lng: 77.12787,
+    });
+    expect(await geoService.reverse(52.323063965, 77.12787443)).toMatchObject({
+      lat: 52.323063965,
+      lng: 77.12787443,
+    });
+  });
+  it("coalesces identical concurrent provider lookups", async () => {
+    nominatimAdapter.reverseGeocode.mockResolvedValue({
+      title: "Ауэзова 8",
+      subtitle: "",
+      lat: 52.32306,
+      lng: 77.12787,
+    });
+    await Promise.all([
+      geoService.reverse(52.323063965, 77.12787443),
+      geoService.reverse(52.323063965, 77.12787443),
+    ]);
+    expect(nominatimAdapter.reverseGeocode).toHaveBeenCalledTimes(1);
   });
 
   it("builds autocomplete query with city context and caches the result", async () => {
@@ -138,14 +212,11 @@ describe("GeoService", () => {
       radiusKm: 20,
     });
 
-    expect(yandexGeocoderAdapter.autocomplete).toHaveBeenCalledWith(
-      "Абая 10",
-      {
-        lat: 52.2874,
-        lng: 76.9675,
-        radiusKm: 20,
-      },
-    );
+    expect(yandexGeocoderAdapter.autocomplete).toHaveBeenCalledWith("Абая 10", {
+      lat: 52.2874,
+      lng: 76.9675,
+      radiusKm: 20,
+    });
     expect(result).toEqual([
       {
         title: "улица Абая, 10",
