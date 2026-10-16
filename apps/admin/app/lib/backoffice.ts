@@ -88,6 +88,7 @@ export type AdminActivityAction =
 export type CitySnapshot = {
   ridePricingBasis?: "seat" | "salon";
   rideMinimumOrderKzt?: string;
+  rideExchangeRate?: string;
   rideManualPricePolicy?: {
     rubMinimum: string;
     kztMinimum: string;
@@ -363,6 +364,10 @@ export type ExecutorBalanceTopUpSnapshot = {
   executorName: string | null;
   executorPhone: string | null;
   amount: string;
+  paymentCurrency?: string | null;
+  creditedAmount?: string | null;
+  creditedCurrency?: string | null;
+  exchangeRate?: string | null;
   phone: string;
   status: "pending" | "invoiced" | "confirmed" | "rejected";
   invoiceProvider: string;
@@ -1478,6 +1483,7 @@ function normalizeUserSnapshot(raw: {
 function normalizeCitySnapshot(raw: {
   ridePricingBasis?: string;
   rideMinimumOrderKzt?: string | number;
+  rideExchangeRate?: string | number;
   rideManualPricePolicy?: {
     rubMinimum: string;
     kztMinimum: string;
@@ -1498,6 +1504,10 @@ function normalizeCitySnapshot(raw: {
       raw.rideMinimumOrderKzt === undefined
         ? undefined
         : String(raw.rideMinimumOrderKzt),
+    rideExchangeRate:
+      raw.rideExchangeRate === undefined
+        ? undefined
+        : String(raw.rideExchangeRate),
     rideManualPricePolicy: raw.rideManualPricePolicy ?? null,
     nameRu: raw.nameRu ?? "",
     nameKk: raw.nameKk ?? "",
@@ -2151,6 +2161,10 @@ function normalizeExecutorBalanceTopUpSnapshot(raw: {
     } | null;
   } | null;
   amount?: string | number | null;
+  paymentCurrency?: string | null;
+  creditedAmount?: string | null;
+  creditedCurrency?: string | null;
+  exchangeRate?: string | null;
   phone?: string | null;
   status?: string | null;
   invoiceProvider?: string | null;
@@ -2170,6 +2184,10 @@ function normalizeExecutorBalanceTopUpSnapshot(raw: {
     executorName: raw.executor?.user?.name ?? null,
     executorPhone: raw.executor?.user?.phone ?? null,
     amount: String(raw.amount ?? "0.00"),
+    paymentCurrency: raw.paymentCurrency ?? null,
+    creditedAmount: raw.creditedAmount ?? null,
+    creditedCurrency: raw.creditedCurrency ?? null,
+    exchangeRate: raw.exchangeRate ?? null,
     phone: raw.phone ?? "",
     status,
     invoiceProvider: raw.invoiceProvider ?? "kaspi",

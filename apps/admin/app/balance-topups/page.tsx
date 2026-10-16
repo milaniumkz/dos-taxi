@@ -1,3 +1,4 @@
+import { rideLabels } from "../lib/ride-i18n";
 import Link from "next/link";
 
 import { AppFrame } from "../components/app-frame";
@@ -269,6 +270,23 @@ function BalanceTopUpList({
                     <dt>{dictionary.forms.amount}</dt>
                     <dd>{formatNumber(topUp.amount, locale, 2)} ₸</dd>
                   </div>
+                  {topUp.creditedAmount && topUp.creditedCurrency && (
+                    <div>
+                      <dt>{rideLabels(locale).credited}</dt>
+                      <dd>
+                        {formatNumber(topUp.creditedAmount, locale, 2)}{" "}
+                        {topUp.creditedCurrency === "RUB" ? "₽" : "₸"}
+                      </dd>
+                    </div>
+                  )}
+                  {topUp.creditedCurrency === "RUB" && topUp.exchangeRate && (
+                    <div>
+                      <dt>{rideLabels(locale).creditedRate}</dt>
+                      <dd>
+                        1 ₽ = {formatNumber(topUp.exchangeRate, locale, 2)} ₸
+                      </dd>
+                    </div>
+                  )}
                   <div>
                     <dt>{dictionary.balanceTopUpsPage.requestedAtLabel}</dt>
                     <dd>{formatDate(topUp.createdAt, locale)}</dd>

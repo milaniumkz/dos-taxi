@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import { ExecutorEntity } from '../../executors/entities/executor.entity';
-import { ExecutorBalanceTopUpEntity } from '../../executors/entities/executor-balance-top-up.entity';
-import { KaspiQueryDto, KaspiResponseDto } from './kaspi-query.dto';
+import { Currency } from "@dos/shared-types";
+import { CityEntity } from "../../admin/entities/city.entity";
+import { balanceTopUpCredit } from "../../executors/balance-top-up-credit";
+import { Injectable } from "@nestjs/common";
+import { DataSource } from "typeorm";
+import { ExecutorEntity } from "../../executors/entities/executor.entity";
+import { ExecutorBalanceTopUpEntity } from "../../executors/entities/executor-balance-top-up.entity";
+import { KaspiQueryDto, KaspiResponseDto } from "./kaspi-query.dto";
 
 type Transaction = {
   id: string;
@@ -22,27 +25,27 @@ export class KaspiService {
       comment,
     });
     const phone = `+${query.account}`;
-    if (query.command === 'check') {
+    if (query.command === "check") {
       const executor = await this.dataSource
         .getRepository(ExecutorEntity)
-        .findOne({ where: { user: { phone } }, relations: ['user', 'city'] });
+        .findOne({ where: { user: { phone } }, relations: ["user", "city"] });
       return this.available(executor)
-        ? failure(0, 'OK')
-        : failure(1, 'Account not found or unavailable');
+        ? failure(0, "OK")
+        : failure(1, "Account not found or unavailable");
     }
     if (!this.validDate(query.txn_date) || Number(query.sum) <= 0)
-      return failure(5, 'Invalid payment date or amount');
+      return failure(5, "Invalid payment date or amount");
     const amount = Number(query.sum).toFixed(2);
     return this.dataSource.transaction(async (manager) => {
       await manager.query("SET LOCAL lock_timeout = '5s'");
       await manager.query("SET LOCAL statement_timeout = '10s'");
       // The same txn_id is serialized across all API processes.
       await manager.query(
-        'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
         [`kaspi:${query.txn_id}`],
       );
       const previous: Transaction[] = await manager.query(
-        'SELECT id::text, account, amount::text, txn_date FROM kaspi_transactions WHERE txn_id=$1',
+        "SELECT id::text, account, amount::text, txn_date FROM kaspi_transactions WHERE txn_id=$1",
         [query.txn_id],
       );
       const saved = previous[0];
@@ -52,42 +55,55 @@ export class KaspiService {
           Number(saved.amount).toFixed(2) !== amount ||
           saved.txn_date !== query.txn_date
         )
-          return failure(5, 'Transaction parameters conflict');
+          return failure(5, "Transaction parameters conflict");
         return {
           txn_id: query.txn_id,
           result: 0,
-          comment: 'OK',
+          comment: "OK",
           prv_txn_id: saved.id,
           sum: Number(saved.amount).toFixed(2),
         };
       }
       const executor = await manager
         .getRepository(ExecutorEntity)
-        .findOne({ where: { user: { phone } }, relations: ['user', 'city'] });
+        .findOne({ where: { user: { phone } }, relations: ["user", "city"] });
       if (!this.available(executor) || !executor)
-        return failure(1, 'Account not found or unavailable');
+        return failure(1, "Account not found or unavailable");
       // Lock balance before updating, coordinating with manual payouts/topups.
-      const locked = await manager
-        .getRepository(ExecutorEntity)
-        .findOne({
-          where: { id: executor.id },
-          lock: { mode: 'pessimistic_write' },
-        });
-      if (!locked) return failure(1, 'Account not found');
+      const locked = await manager.getRepository(ExecutorEntity).findOne({
+        where: { id: executor.id },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!locked) return failure(1, "Account not found");
+      const city = locked.cityId
+        ? await manager
+            .getRepository(CityEntity)
+            .findOne({
+              where: { id: locked.cityId },
+              lock: { mode: "pessimistic_read" },
+            })
+        : null;
+      if (!city) return failure(1, "Account not found");
+      const credit = balanceTopUpCredit(
+        amount,
+        city.currency,
+        city.rideExchangeRate,
+      );
       const topup = await manager
         .getRepository(ExecutorBalanceTopUpEntity)
         .save({
           executorId: executor.id,
           amount,
+          ...credit,
           phone,
-          status: 'confirmed',
-          invoiceProvider: 'kaspi',
+          status: "confirmed",
+          invoiceProvider: "kaspi",
           confirmedAt: new Date(),
           confirmedById: null,
           adminComment: `Kaspi txn_id=${query.txn_id}; txn_date=${query.txn_date}`,
         });
       const created: { id: string }[] = await manager.query(
-        'INSERT INTO kaspi_transactions(txn_id, executor_id, account, amount, txn_date, topup_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id::text',
+        "INSERT INTO kaspi_transactions(txn_id, executor_id, account, amount, txn_date, topup_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id::text",
         [
           query.txn_id,
           executor.id,
@@ -98,13 +114,13 @@ export class KaspiService {
         ],
       );
       await manager.query(
-        'UPDATE executors SET balance=balance+$1::numeric WHERE id=$2',
-        [amount, executor.id],
+        "UPDATE executors SET balance=balance+$1::numeric WHERE id=$2",
+        [credit.creditedAmount, executor.id],
       );
       return {
         txn_id: query.txn_id,
         result: 0,
-        comment: 'OK',
+        comment: "OK",
         prv_txn_id: created[0].id,
         sum: amount,
       };
@@ -114,10 +130,12 @@ export class KaspiService {
   private available(executor: ExecutorEntity | null): boolean {
     return Boolean(
       executor &&
-      executor.executorType === 'driver' &&
-      executor.verificationStatus === 'verified' &&
+      executor.executorType === "driver" &&
+      executor.verificationStatus === "verified" &&
       !executor.user?.isBlocked &&
-      executor.city?.currency === 'KZT',
+      [Currency.KZT, Currency.RUB].includes(
+        executor.city?.currency as Currency,
+      ),
     );
   }
   private validDate(value: string | undefined): boolean {

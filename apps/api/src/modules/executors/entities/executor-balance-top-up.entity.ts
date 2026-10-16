@@ -32,6 +32,39 @@ export class ExecutorBalanceTopUpEntity {
   @Column({ type: "decimal", precision: 12, scale: 2 })
   amount!: string;
 
+  @Column({
+    name: "payment_currency",
+    type: "varchar",
+    length: 3,
+    nullable: true,
+  })
+  paymentCurrency!: string | null;
+  @Column({
+    name: "credited_amount",
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  creditedAmount!: string | null;
+  @Column({
+    name: "credited_currency",
+    type: "varchar",
+    length: 3,
+    nullable: true,
+  })
+  creditedCurrency!: string | null;
+  @Column({
+    name: "exchange_rate",
+    type: "decimal",
+    precision: 12,
+    scale: 4,
+    nullable: true,
+  })
+  exchangeRate!: string | null;
+  @Column({ name: "fx_corrected_at", type: "timestamptz", nullable: true })
+  fxCorrectedAt!: Date | null;
+
   @Column({ type: "varchar", length: 32 })
   phone!: string;
 

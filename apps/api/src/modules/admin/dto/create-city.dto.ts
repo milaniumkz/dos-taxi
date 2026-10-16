@@ -62,6 +62,7 @@ export class CreateCityDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0.01)
+  @Max(1000000)
   rideExchangeRate?: string;
   @ApiPropertyOptional({ type: Number })
   @IsOptional()

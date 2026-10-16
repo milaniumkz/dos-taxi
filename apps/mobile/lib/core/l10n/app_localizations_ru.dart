@@ -825,7 +825,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get driverBalanceTopUpSubtitle =>
-      'Заявка уйдёт администратору для счёта Kaspi';
+      'Пополняйте в тенге. На рублёвый баланс сумма зачисляется по курсу города на момент подтверждения.';
 
   @override
   String get driverBalanceTopUpAmountLabel => 'Сумма пополнения';

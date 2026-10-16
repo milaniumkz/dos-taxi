@@ -231,6 +231,18 @@ export default async function CityDetailPage({
                     />
                     <small>{rides.minimumHint}</small>
                   </label>
+                  <label className="field">
+                    <span>{rides.exchangeRate}</span>
+                    <input
+                      name="rideExchangeRate"
+                      type="number"
+                      min="0.01"
+                      max="1000000"
+                      step="0.01"
+                      defaultValue={city.rideExchangeRate}
+                      required
+                    />
+                  </label>
                   {city.rideManualPricePolicy && (
                     <label className="field">
                       <span>{rides.minimumRub}</span>

@@ -178,6 +178,7 @@ export class ExecutorsService {
     const request = this.balanceTopUpsRepository.create({
       executorId: executor.id,
       amount: dto.amount.toFixed(2),
+      paymentCurrency: "KZT",
       phone,
       status: "pending",
       invoiceProvider: "kaspi",

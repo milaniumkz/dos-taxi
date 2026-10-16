@@ -3,7 +3,7 @@ import { IsNumber, IsString, Max, MaxLength, Min } from "class-validator";
 
 export class CreateBalanceTopUpDto {
   @ApiProperty({ example: 5000 })
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(100)
   @Max(1000000)
   amount!: number;
