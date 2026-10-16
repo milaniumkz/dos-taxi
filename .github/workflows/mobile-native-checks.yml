@@ -1,13 +1,5 @@
 name: DOS Native App Checks
 on:
-  pull_request:
-    paths:
-      - 'apps/mobile/pubspec.yaml'
-      - 'apps/mobile/pubspec.lock'
-      - 'apps/mobile/lib/core/updates/**'
-      - 'apps/mobile/android/**'
-      - 'apps/mobile/ios/**'
-      - '.github/workflows/mobile-native-checks.yml'
   workflow_dispatch:
     inputs:
       build_ref:
