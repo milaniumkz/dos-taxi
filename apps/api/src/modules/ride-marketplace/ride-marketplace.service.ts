@@ -33,6 +33,7 @@ import {
   RideFeedQueryDto,
   RideQuoteDto,
   SubmitRideOfferDto,
+  TakeRideRequestDto,
 } from "./dto/ride-request.dto";
 import { minorUnits, money, totalAmount } from "./ride-money";
 function canonicalPayload(value: unknown): unknown {
@@ -590,6 +591,137 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       currency: offered.order.currency,
       serverTime: new Date().toISOString(),
     };
+  }
+  async take(userId: string, orderId: string, dto: TakeRideRequestDto) {
+    let changed = false;
+    const order = await this.db.transaction(async (manager) => {
+      const repository = manager.getRepository(OrderEntity);
+      const order = await repository.findOne({
+        where: { id: orderId },
+        lock: { mode: "pessimistic_write" },
+      });
+      const profile = await manager
+        .getRepository(ExecutorEntity)
+        .findOneBy({ userId });
+      if (
+        order?.isNegotiated &&
+        profile &&
+        order.executorId === profile.id &&
+        driverBusyStatuses.some((status) => status === order.status)
+      )
+        return order;
+      if (
+        !order?.isNegotiated ||
+        order.status !== OrderStatus.SEARCHING ||
+        order.executorId
+      )
+        throw new ConflictException({
+          code: "RIDE_REQUEST_NOT_OPEN",
+          message: "RIDE_REQUEST_NOT_OPEN",
+        });
+      const driver = await this.driver(manager, userId, true);
+      if (
+        driver.cityId !== order.cityId ||
+        driver.passengerCapacity < order.passengerCount
+      )
+        throw new ForbiddenException({
+          code: "RIDE_DRIVER_NOT_ELIGIBLE",
+          message: "RIDE_DRIVER_NOT_ELIGIBLE",
+        });
+      if (order.needsChildSeat && !dto.hasChildSeat)
+        throw new BadRequestException({
+          code: "RIDE_CHILD_SEAT_REQUIRED",
+          message: "RIDE_CHILD_SEAT_REQUIRED",
+        });
+      if (
+        minorUnits(dto.totalPrice) !== minorUnits(order.estimatedPrice ?? "0")
+      )
+        throw new ConflictException({
+          code: "RIDE_OFFER_CHANGED",
+          message: "RIDE_OFFER_CHANGED",
+        });
+      if (
+        await repository.exists({
+          where: { executorId: driver.id, status: In(driverBusyStatuses) },
+        })
+      )
+        throw new ConflictException({
+          code: "EXECUTOR_ALREADY_BUSY",
+          message: "EXECUTOR_ALREADY_BUSY",
+        });
+      const offers = manager.getRepository(RidePriceOfferEntity);
+      const waiting = await offers
+        .createQueryBuilder("pending")
+        .innerJoin(
+          OrderEntity,
+          "waiting_order",
+          "waiting_order.id=pending.order_id",
+        )
+        .where(
+          "pending.executor_id=:driverId AND pending.order_id<>:orderId AND pending.status='pending' AND pending.expires_at>now() AND waiting_order.status='searching' AND waiting_order.executor_id IS NULL",
+          { driverId: driver.id, orderId },
+        )
+        .getExists();
+      if (waiting)
+        throw new ConflictException({
+          code: "RIDE_OFFER_PENDING",
+          message: "RIDE_OFFER_PENDING",
+        });
+      order.executorId = driver.id;
+      await repository.save(order);
+      await offers.update(
+        { orderId, status: "pending" },
+        { status: "superseded" },
+      );
+      const accepted = await this.orders.transition(
+        orderId,
+        OrderStatus.ACCEPTED,
+        userId,
+        { source: "driver_accepted_passenger_price" },
+        manager,
+      );
+      changed = true;
+      return accepted;
+    });
+    if (changed) await this.announce(order, OrderStatus.ACCEPTED);
+    return { takenOrderId: order.id, status: order.status };
+  }
+  async reject(
+    clientId: string,
+    orderId: string,
+    offerId: string,
+    dto: AcceptRideOfferDto,
+  ) {
+    await this.db.transaction(async (manager) => {
+      const order = await manager.getRepository(OrderEntity).findOne({
+        where: { id: orderId, clientId },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!order?.isNegotiated)
+        throw new NotFoundException({
+          code: "ORDER_NOT_FOUND",
+          message: "ORDER_NOT_FOUND",
+        });
+      const offers = manager.getRepository(RidePriceOfferEntity);
+      const offer = await offers.findOneBy({ id: offerId, orderId });
+      if (!offer || offer.version !== dto.version)
+        throw new ConflictException({
+          code: "RIDE_OFFER_CHANGED",
+          message: "RIDE_OFFER_CHANGED",
+        });
+      if (offer.status === "rejected") return;
+      if (
+        order.status !== OrderStatus.SEARCHING ||
+        offer.status !== "pending" ||
+        offer.expiresAt <= new Date()
+      )
+        throw new ConflictException({
+          code: "RIDE_OFFER_UNAVAILABLE",
+          message: "RIDE_OFFER_UNAVAILABLE",
+        });
+      await offers.update(offer.id, { status: "rejected" });
+    });
+    return { rejected: true };
   }
   async withdraw(userId: string, orderId: string) {
     const driver = await this.db

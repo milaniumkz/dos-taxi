@@ -27,5 +27,15 @@ abstract interface class RideRepository {
     int steps,
     bool childSeat,
   );
+  Future<Either<Failure, Map<String, dynamic>>> take(
+    String id,
+    String totalPrice,
+    bool childSeat,
+  );
+  Future<Either<Failure, Map<String, dynamic>>> reject(
+    String orderId,
+    String offerId,
+    int version,
+  );
   Future<Either<Failure, Map<String, dynamic>>> withdraw(String id);
 }

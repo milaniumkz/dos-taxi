@@ -90,7 +90,8 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                         children: [
                           _routeRow(
                             context,
-                            cubit.pickup.displayTitle,
+                            cubit.pickup?.displayTitle ??
+                                l.taxiAddressPickupLabel,
                             Icons.trip_origin,
                             () => _address(context, cubit, true),
                           ),
@@ -102,7 +103,8 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                           ),
                           _routeRow(
                             context,
-                            cubit.destination.displayTitle,
+                            cubit.destination?.displayTitle ??
+                                l.taxiAddressDestinationLabel,
                             Icons.place,
                             () => _address(context, cubit, false),
                           ),
@@ -124,7 +126,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                           child: Text(l.rideRetry),
                         ),
                     ],
-                    if (s.quote != null) _pricing(context, cubit, s),
+                    _pricing(context, cubit, s),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -225,7 +227,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                   ),
               ],
             ),
-          if (s.quote != null) _pricing(context, cubit, s),
+          _pricing(context, cubit, s),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -328,7 +330,11 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: s.quote == null || s.busy || !cubit.validManualPrice
+              onPressed:
+                  !cubit.routeReady ||
+                      s.quote == null ||
+                      s.busy ||
+                      !cubit.validManualPrice
                   ? null
                   : () => cubit.submit(
                       payment: payment,
@@ -349,6 +355,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     'cash': l.rideCash,
     'transfer_kaspi': l.rideKaspi,
     'transfer_halyk': l.rideHalyk,
+    'transfer_psb': l.ridePsb,
   };
 
   Widget _routeRow(
@@ -570,7 +577,11 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
       onChanged: cubit.changeManualPrice,
       decoration: InputDecoration(
         labelText: l.rideYourPrice,
-        suffixText: cubit.selectedCurrency == 'RUB' ? '₽' : '₸',
+        suffixText: cubit.state.quote == null
+            ? null
+            : cubit.selectedCurrency == 'RUB'
+            ? '₽'
+            : '₸',
         errorText: cubit.validManualPrice ? null : '${l.rideMinimum}: $minimum',
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -584,10 +595,12 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     RideRequestState state,
   ) {
     final l = AppLocalizations.of(context)!;
-    final q = state.quote!;
+    final q = state.quote ?? <String, dynamic>{};
     final showPassengers =
-        q['priceIsTotal'] == true || q['pricingBasis'] == 'seat';
-    final count = (q['passengerCount'] as num).toInt();
+        state.quote == null ||
+        q['priceIsTotal'] == true ||
+        q['pricingBasis'] == 'seat';
+    final count = cubit.passengers;
     final unit = cubit.usesManualPrice
         ? cubit.manualMinor
         : (double.parse(q['minimumUnitPrice'].toString()) * 100).round() +
@@ -618,14 +631,15 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    '${l.rideMinimum}: ${amount(cubit.minimumMinor)}',
-                    maxLines: 2,
-                    textAlign: TextAlign.right,
-                    style: Theme.of(context).textTheme.bodySmall,
+                if (state.quote != null)
+                  Flexible(
+                    child: Text(
+                      '${l.rideMinimum}: ${amount(cubit.minimumMinor)}',
+                      maxLines: 2,
+                      textAlign: TextAlign.right,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
-                ),
               ],
             ),
             if (widget.embedded)

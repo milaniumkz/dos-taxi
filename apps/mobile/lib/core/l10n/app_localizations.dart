@@ -596,6 +596,12 @@ abstract class AppLocalizations {
   /// **'Halyk.kz'**
   String get paymentMethodHalykTransfer;
 
+  /// No description provided for @paymentMethodPsbTransfer.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПСБ'**
+  String get paymentMethodPsbTransfer;
+
   /// No description provided for @paymentMethodTransferSubtitle.
   ///
   /// In ru, this message translates to:
@@ -2539,6 +2545,54 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Halyk.kz'**
   String get rideHalyk;
+
+  /// No description provided for @requiredUpdateTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновите приложение'**
+  String get requiredUpdateTitle;
+
+  /// No description provided for @requiredUpdateBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доступна новая версия. Чтобы продолжить пользоваться приложением, установите обновление из магазина.'**
+  String get requiredUpdateBody;
+
+  /// No description provided for @requiredUpdateAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить'**
+  String get requiredUpdateAction;
+
+  /// No description provided for @requiredUpdateRetry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить снова'**
+  String get requiredUpdateRetry;
+
+  /// No description provided for @requiredUpdateOpenError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть магазин. Попробуйте ещё раз.'**
+  String get requiredUpdateOpenError;
+
+  /// No description provided for @ridePsb.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПСБ'**
+  String get ridePsb;
+
+  /// No description provided for @rideTakeOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Взять заказ'**
+  String get rideTakeOrder;
+
+  /// No description provided for @rideRejectOffer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклонить'**
+  String get rideRejectOffer;
 
   /// No description provided for @rideSubmit.
   ///

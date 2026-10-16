@@ -37,6 +37,7 @@ export class RidePriceOfferEntity {
   @Column({ type: "varchar", length: 20, default: "pending" }) status!:
     | "pending"
     | "accepted"
+    | "rejected"
     | "withdrawn"
     | "superseded";
   @Column({ name: "expires_at", type: "timestamptz" }) expiresAt!: Date;

@@ -20,6 +20,7 @@ type AppSection =
   | "executors"
   | "balanceTopUps"
   | "payouts"
+  | "pushNotifications"
   | "settings"
   | "notes"
   | "activity";
@@ -43,6 +44,7 @@ const NAV_ITEMS: Array<{ key: AppSection; href: string }> = [
   { key: "executors", href: "/executors" },
   { key: "balanceTopUps", href: "/balance-topups" },
   { key: "payouts", href: "/payouts" },
+  { key: "pushNotifications", href: "/push-notifications" },
   { key: "settings", href: "/settings" },
   { key: "notes", href: "/notes" },
   { key: "activity", href: "/activity" },

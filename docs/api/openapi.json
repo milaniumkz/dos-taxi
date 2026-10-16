@@ -265,6 +265,92 @@
         ]
       }
     },
+    "/api/v1/ride-requests/{id}/take": {
+      "post": {
+        "operationId": "RideMarketplaceController_take",
+        "summary": "Take a request immediately at the displayed passenger price",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TakeRideRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assigned order ID and status"
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/{id}/offers/{offerId}/reject": {
+      "post": {
+        "operationId": "RideMarketplaceController_reject",
+        "summary": "Passenger declines an unchanged driver counteroffer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptRideOfferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proposal rejected"
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/ride-requests/{id}/offers/withdraw": {
       "post": {
         "operationId": "RideMarketplaceController_withdraw",
@@ -493,6 +579,54 @@
         },
         "tags": [
           "notifications"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/push-notifications": {
+      "get": {
+        "operationId": "AdminPushController_list",
+        "summary": "List push campaigns and reachable device counts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminPushController_send",
+        "summary": "Queue a push notification to passengers, drivers or both",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushCampaignDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
         ],
         "security": [
           {
@@ -4192,6 +4326,33 @@
         ]
       }
     },
+    "/api/v1/support/contacts": {
+      "get": {
+        "operationId": "SupportController_getContacts",
+        "summary": "Get current support contacts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportContactsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "support"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/support/messages": {
       "get": {
         "operationId": "SupportController_listMessages",
@@ -4249,6 +4410,68 @@
         },
         "tags": [
           "support"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/settings/support-contacts": {
+      "get": {
+        "operationId": "AdminSupportContactsController_get",
+        "summary": "Get support contacts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportContactsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminSupportContactsController_update",
+        "summary": "Update support contacts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportContactsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportContactsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
         ],
         "security": [
           {
@@ -4417,6 +4640,10 @@
       "RideQuoteDto": {
         "type": "object",
         "properties": {
+          "priceIsTotal": {
+            "type": "boolean",
+            "description": "Entered price covers the entire passenger group; omitted for legacy per-seat requests"
+          },
           "cityId": {
             "type": "string",
             "format": "uuid"
@@ -4469,6 +4696,9 @@
       "RideQuoteResponseDto": {
         "type": "object",
         "properties": {
+          "priceIsTotal": {
+            "type": "boolean"
+          },
           "termsKey": {
             "type": "string",
             "description": "Fingerprint to pass unchanged when submitting"
@@ -4536,6 +4766,7 @@
           }
         },
         "required": [
+          "priceIsTotal",
           "termsKey",
           "priceInputMode",
           "cityId",
@@ -4680,6 +4911,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -4789,6 +5021,10 @@
       "CreateRideRequestDto": {
         "type": "object",
         "properties": {
+          "priceIsTotal": {
+            "type": "boolean",
+            "description": "Entered price covers the entire passenger group; omitted for legacy per-seat requests"
+          },
           "cityId": {
             "type": "string",
             "format": "uuid"
@@ -4821,6 +5057,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -4832,7 +5069,7 @@
           },
           "unitPrice": {
             "type": "string",
-            "description": "Manual per-seat/salon amount; KZT except the configured Baikonur currency threshold",
+            "description": "Manual amount for the pricing basis, covering the whole group when priceIsTotal; KZT except the configured Baikonur currency threshold",
             "example": "90.00"
           },
           "pickupEntrance": {
@@ -5000,6 +5237,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -5153,6 +5391,21 @@
           "priceSteps"
         ]
       },
+      "TakeRideRequestDto": {
+        "type": "object",
+        "properties": {
+          "totalPrice": {
+            "type": "string",
+            "description": "Passenger total price displayed to the driver"
+          },
+          "hasChildSeat": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "totalPrice"
+        ]
+      },
       "AcceptRideOfferDto": {
         "type": "object",
         "properties": {
@@ -5269,6 +5522,35 @@
         "required": [
           "token",
           "platform"
+        ]
+      },
+      "PushCampaignDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable request UUID to prevent duplicate broadcasts"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "all",
+              "passenger",
+              "driver"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "audience",
+          "title",
+          "body"
         ]
       },
       "EstimateRoutePointDto": {
@@ -5471,6 +5753,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -5708,6 +5991,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -6150,6 +6434,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -6459,6 +6744,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -6614,6 +6900,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7146,6 +7433,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7355,6 +7643,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7524,6 +7813,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7811,6 +8101,33 @@
       "ExecutorDocumentEntity": {
         "type": "object",
         "properties": {}
+      },
+      "SupportContactsDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Support phone in international format, or empty to hide"
+          },
+          "whatsapp": {
+            "type": "string",
+            "description": "WhatsApp phone in international format, or empty to hide"
+          },
+          "email": {
+            "type": "string",
+            "description": "Support email, or empty to hide"
+          },
+          "telegram": {
+            "type": "string",
+            "description": "HTTPS t.me contact link, or empty to hide"
+          }
+        },
+        "required": [
+          "phone",
+          "whatsapp",
+          "email",
+          "telegram"
+        ]
       },
       "SupportMessageDto": {
         "type": "object",

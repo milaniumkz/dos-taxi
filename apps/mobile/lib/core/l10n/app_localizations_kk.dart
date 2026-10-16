@@ -282,6 +282,9 @@ class AppLocalizationsKk extends AppLocalizations {
   String get paymentMethodHalykTransfer => 'Halyk.kz';
 
   @override
+  String get paymentMethodPsbTransfer => 'ПСБ';
+
+  @override
   String get paymentMethodTransferSubtitle => 'Сапардан кейін аударыммен төлеу';
 
   @override
@@ -1313,6 +1316,32 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get rideHalyk => 'Halyk.kz';
+
+  @override
+  String get requiredUpdateTitle => 'Қолданбаны жаңартыңыз';
+
+  @override
+  String get requiredUpdateBody =>
+      'Жаңа нұсқа қолжетімді. Қолданбаны пайдалануды жалғастыру үшін дүкеннен жаңартуды орнатыңыз.';
+
+  @override
+  String get requiredUpdateAction => 'Жаңарту';
+
+  @override
+  String get requiredUpdateRetry => 'Қайта тексеру';
+
+  @override
+  String get requiredUpdateOpenError =>
+      'Дүкенді ашу мүмкін болмады. Қайталап көріңіз.';
+
+  @override
+  String get ridePsb => 'ПСБ';
+
+  @override
+  String get rideTakeOrder => 'Тапсырысты алу';
+
+  @override
+  String get rideRejectOffer => 'Бас тарту';
 
   @override
   String get rideSubmit => 'Өтінім беру';

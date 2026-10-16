@@ -1,0 +1,68 @@
+name: DOS Native App Checks
+on:
+  workflow_dispatch:
+    inputs:
+      build_ref:
+        description: "Commit or branch to compile"
+        required: true
+        default: main
+permissions:
+  contents: read
+concurrency:
+  group: dos-native-${{ inputs.build_ref || github.ref }}
+  cancel-in-progress: false
+jobs:
+  android:
+    name: Android passenger and driver
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.build_ref || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.1'
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+        working-directory: apps/mobile
+      - name: Compile passenger Android app
+        working-directory: apps/mobile
+        run: flutter build apk --debug --flavor passenger -t lib/main_passenger_prod.dart --no-pub
+      - name: Compile driver Android app
+        working-directory: apps/mobile
+        run: flutter build apk --debug --flavor driver -t lib/main_driver_prod.dart --no-pub
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-checks
+          path: apps/mobile/build/app/outputs/flutter-apk/*-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+  ios:
+    name: iOS passenger and driver (unsigned)
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.build_ref || github.sha }}
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.1'
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+        working-directory: apps/mobile
+      - name: Compile passenger iOS app without signing
+        working-directory: apps/mobile
+        run: flutter build ios --release --no-codesign --flavor passenger -t lib/main_passenger_prod.dart --no-pub
+      - name: Compile driver iOS app without signing
+        working-directory: apps/mobile
+        run: flutter build ios --release --no-codesign --flavor driver -t lib/main_driver_prod.dart --no-pub

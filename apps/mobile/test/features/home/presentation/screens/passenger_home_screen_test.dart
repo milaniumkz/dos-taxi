@@ -130,6 +130,7 @@ void main() {
       whenListen(home, const Stream<HomeState>.empty(), initialState: state);
       when(() => home.initialize()).thenAnswer((_) async {});
       serviceLocator.registerSingleton<HomeCubit>(home);
+      serviceLocator.registerSingleton<RideRepository>(_RideRepository());
       await tester.pumpWidget(
         MaterialApp(
           locale: Locale(locale),
@@ -145,7 +146,20 @@ void main() {
       );
       await tester.pump();
       final fields = find.byType(TextField);
-      expect(fields, findsNWidgets(2));
+      expect(fields, findsNWidgets(5));
+      final l = AppLocalizations.of(
+        tester.element(find.byType(PassengerHomePlaceholderScreen)),
+      )!;
+      expect(find.text(l.ridePassengers), findsOneWidget);
+      expect(find.text(l.ridePsb), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, l.rideSubmit),
+            )
+            .onPressed,
+        isNull,
+      );
       expect(tester.widget<TextField>(fields.first).readOnly, isFalse);
       await tester.enterText(fields.first, 'Адрес другого человека');
       verify(
@@ -233,7 +247,7 @@ void main() {
           find.byType(TextField).at(3),
           find.text(l.rideChildSeat),
           find.text(l.rideTogether),
-          find.text(l.rideHalyk),
+          find.text(l.ridePsb),
         ]) {
           await tester.ensureVisible(control);
           expect(control.hitTestable(), findsOneWidget);
@@ -257,7 +271,16 @@ void main() {
         await tester.pump();
         changes.add(state.copyWith(selectedAddress: null));
         await tester.pump();
-        expect(find.text(l.rideSubmit), findsNothing);
+        await tester.pump();
+        expect(find.text(l.rideSubmit), findsOneWidget);
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, l.rideSubmit),
+              )
+              .onPressed,
+          isNull,
+        );
         changes.add(state);
         await tester.pump();
         await tester.pump();
@@ -275,8 +298,8 @@ void main() {
               .text,
           'У ворот',
         );
-        await tester.ensureVisible(find.text(l.rideHalyk));
-        await tester.tap(find.text(l.rideHalyk));
+        await tester.ensureVisible(find.text(l.ridePsb));
+        await tester.tap(find.text(l.ridePsb));
         await tester.pump();
         await tester.ensureVisible(find.text(l.rideChildSeat));
         await tester.tap(find.text(l.rideChildSeat));
@@ -302,7 +325,7 @@ void main() {
         expect(submitted?['passengerCount'], 2);
         expect(submitted?['pickupEntrance'], '2');
         expect(submitted?['pickupComment'], 'У ворот');
-        expect(submitted?['paymentMethod'], 'transfer_halyk');
+        expect(submitted?['paymentMethod'], 'transfer_psb');
         expect(submitted?['needsChildSeat'], true);
         expect(submitted?['sharedRide'], true);
         expect(find.byType(PassengerHomePlaceholderScreen), findsOneWidget);

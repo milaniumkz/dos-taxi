@@ -41,6 +41,29 @@ Map<String, dynamic> quote({
 };
 void main() {
   test(
+    'keeps passenger count and price entered before the route without requesting a quote',
+    () async {
+      final repo = Repo();
+      final cubit = RideRequestCubit(repo, null, null, 'taxi');
+      await cubit.refreshQuote(4);
+      cubit.changeManualPrice('500');
+      expect(cubit.passengers, 4);
+      expect(cubit.manualPrice, '500');
+      expect(cubit.state.quote, isNull);
+      verifyNever(() => repo.quote(any()));
+      when(() => repo.quote(any())).thenAnswer(
+        (_) async => Right({...quote(count: 4), 'priceInputMode': 'manual'}),
+      );
+      cubit.pickup = pickup;
+      cubit.destination = destination;
+      await cubit.refreshQuote();
+      expect(cubit.passengers, 4);
+      expect(cubit.manualPrice, '500');
+      verify(() => repo.quote(any())).called(1);
+      await cubit.close();
+    },
+  );
+  test(
     'retries unchanged form using the same idempotency key and sends step counts, not client amounts',
     () async {
       final repo = Repo();
@@ -312,9 +335,9 @@ void main() {
           expect(find.textContaining('У ворот'), findsOneWidget);
           await tester.tap(find.byIcon(Icons.payments_outlined));
           await tester.pumpAndSettle();
-          await tester.tap(find.text(l.rideHalyk));
+          await tester.tap(find.text(l.ridePsb));
           await tester.pumpAndSettle();
-          expect(find.text(l.rideHalyk), findsOneWidget);
+          expect(find.text(l.ridePsb), findsOneWidget);
           expect(find.text(l.rideSubmit).hitTestable(), findsOneWidget);
           Map<String, dynamic>? submitted;
           when(() => repo.create(any(), any())).thenAnswer((call) async {
@@ -329,7 +352,7 @@ void main() {
           expect(submitted?['pickupComment'], 'У ворот');
           expect(submitted?['needsChildSeat'], true);
           expect(submitted?['sharedRide'], true);
-          expect(submitted?['paymentMethod'], 'transfer_halyk');
+          expect(submitted?['paymentMethod'], 'transfer_psb');
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
           await cubit.close();

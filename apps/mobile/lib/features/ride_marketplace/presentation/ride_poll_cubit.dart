@@ -139,6 +139,10 @@ class RidePollCubit extends Cubit<RidePollState> {
 
   Future<void> propose(String id, int steps, bool child) =>
       _action(id, () => repository.propose(id, steps, child), proposal: true);
+  Future<void> take(String id, String totalPrice, bool child) =>
+      _action(id, () => repository.take(id, totalPrice, child));
+  Future<void> reject(String order, String offer, int version) =>
+      _action(offer, () => repository.reject(order, offer, version));
   Future<void> withdraw(String id) =>
       _action(id, () => repository.withdraw(id));
   Future<void> _action(
@@ -159,6 +163,9 @@ class RidePollCubit extends Cubit<RidePollState> {
             ? {...response, 'orderId': id}
             : null;
         data['serverTime'] = response['serverTime'];
+        if (response['takenOrderId'] != null) {
+          data['takenOrderId'] = response['takenOrderId'];
+        }
         emit(RidePollState(data: _waitingData(data)));
       },
     );

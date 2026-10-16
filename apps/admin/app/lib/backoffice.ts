@@ -34,6 +34,7 @@ export type PaymentMethod =
   | "cash"
   | "transfer_kaspi"
   | "transfer_halyk"
+  | "transfer_psb"
   | "corporate"
   | "bonus";
 export type PaymentStatus =
@@ -1319,6 +1320,7 @@ function normalizePaymentMethod(
     case "cash":
     case "transfer_kaspi":
     case "transfer_halyk":
+    case "transfer_psb":
     case "corporate":
     case "bonus":
       return value;

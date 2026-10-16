@@ -1,3 +1,6 @@
+import { AdminPushController } from "./admin-push.controller";
+import { AdminPushService } from "./admin-push.service";
+import { PushCampaignEntity } from "./entities/push-campaign.entity";
 import { NotificationDevicesController } from "./notification-devices.controller";
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -13,13 +16,15 @@ import { NotificationsService } from "./notifications.service";
 @Module({
   imports: [
     TypeOrmModule.forFeature([
+      PushCampaignEntity,
       UserEntity,
       NotificationTemplateEntity,
       NotificationDeviceTokenEntity,
     ]),
   ],
-  controllers: [NotificationDevicesController],
+  controllers: [NotificationDevicesController, AdminPushController],
   providers: [
+    AdminPushService,
     NotificationTemplateRenderer,
     NotificationsQueueService,
     NotificationsService,

@@ -71,6 +71,11 @@ void main() {
           ),
         ).thenAnswer((_) async {});
         var count = 6;
+        final rejected = <String>{};
+        when(() => repo.reject('order', 'offer-0', 1)).thenAnswer((_) async {
+          rejected.add('offer-0');
+          return const Right({'rejected': true});
+        });
         when(() => repo.offers('order')).thenAnswer(
           (_) async => Right({
             'items': List.generate(
@@ -87,7 +92,7 @@ void main() {
                 'totalPrice': '${500 + i * 50}',
                 'hasChildSeat': false,
               },
-            ),
+            ).where((offer) => !rejected.contains(offer['id'])).toList(),
           }),
         );
         serviceLocator.registerSingleton<RideRepository>(repo);
@@ -131,6 +136,14 @@ void main() {
             body: any(named: 'body'),
           ),
         ).called(1);
+        final l = AppLocalizations.of(
+          tester.element(find.byType(RideOffersScreen)),
+        )!;
+        await tester.tap(find.text(l.rideRejectOffer).first);
+        await tester.pump();
+        await tester.pump();
+        verify(() => repo.reject('order', 'offer-0', 1)).called(1);
+        expect(find.text('Driver 1'), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },

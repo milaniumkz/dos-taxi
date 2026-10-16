@@ -29,9 +29,11 @@ class ExecutorRepo extends Mock implements ExecutorRepository {}
 class Notifications extends Mock implements AppNotificationService {}
 
 void main() {
-  for (final groupFare in [false, true]) {
+  for (final mode in [0, 1, 2]) {
+    final groupFare = mode != 0;
+    final direct = mode == 2;
     testWidgets(
-      'driver negotiates without multiplying a group fare ($groupFare)',
+      'driver negotiates without multiplying a group fare ($groupFare, direct=$direct)',
       (tester) async {
         tester.view.physicalSize = const Size(360, 640);
         tester.view.devicePixelRatio = 1;
@@ -122,6 +124,10 @@ void main() {
             'nextOffset': null,
           }),
         );
+        when(() => rides.take('request-1', '500.00', true)).thenAnswer(
+          (_) async =>
+              const Right({'takenOrderId': 'request-1', 'status': 'accepted'}),
+        );
         when(() => rides.propose('request-1', 1, true)).thenAnswer((_) async {
           request['myOffer'] = {
             'priceSteps': 1,
@@ -177,28 +183,49 @@ void main() {
           tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
           isNull,
         );
-        await tester.ensureVisible(find.byIcon(Icons.add));
-        await tester.tap(find.byIcon(Icons.add));
-        await tester.pump();
-        if (groupFare) {
-          expect(find.textContaining(RegExp(r'Итого:.*550')), findsOneWidget);
-          expect(find.textContaining(RegExp(r'Итого:.*2\s*200')), findsNothing);
-          expect(find.textContaining('4'), findsWidgets);
+        expect(find.text('Взять заказ'), findsOneWidget);
+        if (direct) {
+          await tester.ensureVisible(find.byType(Checkbox));
+          await tester.tap(find.byType(Checkbox));
+          await tester.pump();
+          await tester.ensureVisible(find.byType(FilledButton));
+          await tester.tap(find.byType(FilledButton));
+          await tester.pump();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 350));
+          verify(() => rides.take('request-1', '500.00', true)).called(1);
+          verifyNever(() => rides.propose(any(), any(), any()));
+          expect(find.text('Ожидаем ответа пассажира'), findsNothing);
+          verify(
+            () => incoming.synchronizeDashboardSession(profile),
+          ).called(greaterThanOrEqualTo(2));
+        } else {
+          await tester.ensureVisible(find.byIcon(Icons.add));
+          await tester.tap(find.byIcon(Icons.add));
+          await tester.pump();
+          if (groupFare) {
+            expect(find.textContaining(RegExp(r'Итого:.*550')), findsOneWidget);
+            expect(
+              find.textContaining(RegExp(r'Итого:.*2\s*200')),
+              findsNothing,
+            );
+            expect(find.textContaining('4'), findsWidgets);
+          }
+          await tester.ensureVisible(find.byType(Checkbox));
+          await tester.tap(find.byType(Checkbox));
+          await tester.pump();
+          await tester.ensureVisible(find.byType(FilledButton));
+          await tester.tap(find.byType(FilledButton));
+          await tester.pump();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 350));
+          verify(() => rides.propose('request-1', 1, true)).called(1);
+          expect(find.text('Ожидаем ответа пассажира'), findsOneWidget);
+          expect(
+            find.text('Предложение отправлено. Ждём выбора пассажира.'),
+            findsOneWidget,
+          );
         }
-        await tester.ensureVisible(find.byType(Checkbox));
-        await tester.tap(find.byType(Checkbox));
-        await tester.pump();
-        await tester.ensureVisible(find.byType(FilledButton));
-        await tester.tap(find.byType(FilledButton));
-        await tester.pump();
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 350));
-        verify(() => rides.propose('request-1', 1, true)).called(1);
-        expect(find.text('Ожидаем ответа пассажира'), findsOneWidget);
-        expect(
-          find.text('Предложение отправлено. Ждём выбора пассажира.'),
-          findsOneWidget,
-        );
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },
