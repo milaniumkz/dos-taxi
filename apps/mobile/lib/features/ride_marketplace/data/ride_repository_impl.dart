@@ -92,6 +92,27 @@ class RideRepositoryImpl implements RideRepository {
     }),
   );
   @override
+  Future<Either<Failure, Map<String, dynamic>>> take(
+    String id,
+    String totalPrice,
+    bool childSeat,
+  ) => _guard(
+    () => _post('/ride-requests/$id/take', {
+      'totalPrice': totalPrice,
+      'hasChildSeat': childSeat,
+    }),
+  );
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> reject(
+    String orderId,
+    String offerId,
+    int version,
+  ) => _guard(
+    () => _post('/ride-requests/$orderId/offers/$offerId/reject', {
+      'version': version,
+    }),
+  );
+  @override
   Future<Either<Failure, Map<String, dynamic>>> withdraw(String id) =>
       _guard(() => _post('/ride-requests/$id/offers/withdraw', {}));
 }

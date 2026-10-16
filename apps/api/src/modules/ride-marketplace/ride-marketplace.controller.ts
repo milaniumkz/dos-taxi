@@ -32,6 +32,7 @@ import {
   RideFeedQueryDto,
   RideQuoteDto,
   SubmitRideOfferDto,
+  TakeRideRequestDto,
 } from "./dto/ride-request.dto";
 import { RideMarketplaceService } from "./ride-marketplace.service";
 import {
@@ -126,6 +127,35 @@ export class RideMarketplaceController {
     @Body() dto: SubmitRideOfferDto,
   ) {
     return this.marketplace.submit(user.sub, id, dto);
+  }
+  @Post(":id/take")
+  @HttpCode(200)
+  @Roles(UserRole.EXECUTOR)
+  @ApiOperation({
+    summary: "Take a request immediately at the displayed passenger price",
+  })
+  @ApiOkResponse({ description: "Assigned order ID and status" })
+  take(
+    @CurrentUser() user: JwtPayload,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() dto: TakeRideRequestDto,
+  ) {
+    return this.marketplace.take(user.sub, id, dto);
+  }
+  @Post(":id/offers/:offerId/reject")
+  @HttpCode(200)
+  @Roles(UserRole.CLIENT)
+  @ApiOperation({
+    summary: "Passenger declines an unchanged driver counteroffer",
+  })
+  @ApiOkResponse({ description: "Proposal rejected" })
+  reject(
+    @CurrentUser() user: JwtPayload,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("offerId", new ParseUUIDPipe()) offerId: string,
+    @Body() dto: AcceptRideOfferDto,
+  ) {
+    return this.marketplace.reject(user.sub, id, offerId, dto);
   }
   @Post(":id/offers/withdraw")
   @HttpCode(200)

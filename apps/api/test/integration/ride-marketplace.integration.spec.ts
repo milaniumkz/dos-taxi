@@ -1,3 +1,4 @@
+import { DriverBonusesService } from "../../src/modules/executors/driver-bonuses.service";
 import { RideMarketplaceGuard } from "../../src/modules/ride-marketplace/ride-marketplace.guard";
 import requestHttp from "supertest";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
@@ -192,6 +193,184 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       await db.destroy();
     }
   });
+  it("takes the passenger price immediately, is retryable and prevents two assigned drivers", async () => {
+    const c = await user(),
+      d1 = await driver(),
+      d2 = await driver();
+    const { order } = await request(c.id, { passengerCount: 2 });
+    const offer = await market.submit(d2.userId, order.id, { priceSteps: 1 });
+    const results = await Promise.allSettled([
+      market.take(d1.userId, order.id, { totalPrice: order.estimatedPrice! }),
+      market.take(d2.userId, order.id, { totalPrice: order.estimatedPrice! }),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const saved = await db
+      .getRepository(OrderEntity)
+      .findOneByOrFail({ id: order.id });
+    expect(saved.status).toBe(OrderStatus.ACCEPTED);
+    expect(saved.estimatedPrice).toBe(order.estimatedPrice);
+    const winner = saved.executorId === d1.id ? d1 : d2;
+    await expect(
+      market.take(winner.userId, order.id, {
+        totalPrice: order.estimatedPrice!,
+      }),
+    ).resolves.toEqual({
+      takenOrderId: order.id,
+      status: OrderStatus.ACCEPTED,
+    });
+    expect(
+      (
+        await db
+          .getRepository(RidePriceOfferEntity)
+          .findOneByOrFail({ id: offer.id })
+      ).status,
+    ).toBe("superseded");
+    expect((await market.listOffers(c.id, order.id)).order.executorId).toBe(
+      winner.id,
+    );
+    await orders.cancelOrder(c.id, order.id);
+  });
+  it("validates displayed price, child seat, busy state and pending offers when taking", async () => {
+    const c = await user(),
+      c2 = await user(),
+      d = await driver();
+    const { order } = await request(c.id, { needsChildSeat: true });
+    const path = `/ride-requests/${order.id}/take`;
+    await requestHttp(app.getHttpServer())
+      .post(path)
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .send({ totalPrice: order.estimatedPrice!, hasChildSeat: true })
+      .expect(403);
+    await requestHttp(app.getHttpServer())
+      .post(path)
+      .set("Authorization", `Bearer ${token(d.userId, UserRole.EXECUTOR)}`)
+      .send({ totalPrice: order.estimatedPrice! })
+      .expect(400);
+    await expect(
+      market.take(d.userId, order.id, {
+        totalPrice: "1.00",
+        hasChildSeat: true,
+      }),
+    ).rejects.toThrow("RIDE_OFFER_CHANGED");
+    const other = await request(c2.id);
+    await market.submit(d.userId, other.order.id, { priceSteps: 1 });
+    await expect(
+      market.take(d.userId, order.id, {
+        totalPrice: order.estimatedPrice!,
+        hasChildSeat: true,
+      }),
+    ).rejects.toThrow("RIDE_OFFER_PENDING");
+    await market.withdraw(d.userId, other.order.id);
+    await requestHttp(app.getHttpServer())
+      .post(path)
+      .set("Authorization", `Bearer ${token(d.userId, UserRole.EXECUTOR)}`)
+      .send({ totalPrice: order.estimatedPrice!, hasChildSeat: true })
+      .expect(200);
+    await expect(
+      market.take(d.userId, other.order.id, {
+        totalPrice: other.order.estimatedPrice!,
+      }),
+    ).rejects.toThrow("EXECUTOR_ALREADY_BUSY");
+    await orders.cancelOrder(c.id, order.id);
+    await orders.cancelOrder(c2.id, other.order.id);
+  });
+  it("passenger can decline only their current counteroffer and cannot accept it afterwards", async () => {
+    const c = await user(),
+      outsider = await user(),
+      d = await driver();
+    const { order } = await request(c.id);
+    const offer = await market.submit(d.userId, order.id, { priceSteps: 1 });
+    await expect(
+      market.reject(outsider.id, order.id, offer.id, {
+        version: offer.version,
+      }),
+    ).rejects.toThrow("ORDER_NOT_FOUND");
+    await expect(
+      market.reject(c.id, order.id, offer.id, { version: offer.version + 1 }),
+    ).rejects.toThrow("RIDE_OFFER_CHANGED");
+    await requestHttp(app.getHttpServer())
+      .post(`/ride-requests/${order.id}/offers/${offer.id}/reject`)
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .send({ version: offer.version })
+      .expect(200);
+    await expect(
+      market.reject(c.id, order.id, offer.id, { version: offer.version }),
+    ).resolves.toEqual({ rejected: true });
+    expect((await market.listOffers(c.id, order.id)).items).toHaveLength(0);
+    await expect(
+      market.accept(c.id, order.id, offer.id, { version: offer.version }),
+    ).rejects.toThrow("RIDE_OFFER_UNAVAILABLE");
+    const revised = await market.submit(d.userId, order.id, { priceSteps: 2 });
+    expect(revised.version).toBe(offer.version + 1);
+    await market.accept(c.id, order.id, revised.id, {
+      version: revised.version,
+    });
+    await orders.cancelOrder(c.id, order.id);
+  });
+  it.each([true, false])(
+    "advertises 5000 KZT and converts the RUB wallet bonus only when enabled=%s",
+    async (enabled) => {
+      const rubCity = await db.getRepository(CityEntity).save({
+        nameRu: "Бонусный город",
+        nameKk: "Бонус қаласы",
+        countryCode: "KZ",
+        currency: Currency.RUB,
+        timezone: "Asia/Almaty",
+        isActive: true,
+        rideExchangeRate: "7.0000",
+      });
+      const c = await user(),
+        d = await driver(rubCity.id);
+      const setting = await db.getRepository(DriverBonusSettingEntity).save({
+        key: "default",
+        isEnabled: enabled,
+        ordersRequired: 1,
+        bonusAmount: "5000.00",
+      });
+      const progress = await new DriverBonusesService(
+        db.getRepository(ExecutorEntity),
+        db.getRepository(OrderEntity),
+        db.getRepository(DriverBonusSettingEntity),
+      ).getProgress(d.userId);
+      expect(progress).toMatchObject({
+        currency: Currency.KZT,
+        bonusAmount: 5000,
+        isEnabled: enabled,
+      });
+      const base = {
+        cityId: rubCity.id,
+        serviceType: ServiceType.TAXI,
+        routePoints: points,
+        priceIsTotal: true,
+        passengerCount: 2,
+      };
+      const quote = await market.quote(base);
+      const order = await market.create(
+        c.id,
+        {
+          ...base,
+          termsKey: quote.termsKey,
+          priceSteps: 0,
+          unitPrice: "500.00",
+          paymentMethod: PaymentMethod.CASH,
+        },
+        randomUUID(),
+      );
+      await market.take(d.userId, order.id, { totalPrice: "500.00" });
+      await orders.transition(order.id, OrderStatus.IN_PROGRESS, d.userId);
+      await orders.transition(order.id, OrderStatus.COMPLETED, d.userId);
+      const balance = (
+        await db.getRepository(ExecutorEntity).findOneByOrFail({ id: d.id })
+      ).balance;
+      expect(balance).toBe(enabled ? "1709.29" : "995.00");
+      const payouts = await db
+        .getRepository(DriverBonusPayoutEntity)
+        .findBy({ orderId: order.id });
+      expect(payouts).toHaveLength(enabled ? 1 : 0);
+      if (enabled) expect(payouts[0].amount).toBe("714.29");
+      await db.getRepository(DriverBonusSettingEntity).delete(setting.id);
+    },
+  );
   it.each([2, 4])(
     "keeps 500 as the entire fare for %i passengers through driver negotiation and completion",
     async (passengerCount) => {

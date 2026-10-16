@@ -1,3 +1,4 @@
+import { PushCampaignEntity } from "../modules/notifications/entities/push-campaign.entity";
 import { SupportContactsEntity } from "../modules/support/entities/support-contacts.entity";
 import { RidePriceOfferEntity } from "../modules/ride-marketplace/entities/ride-price-offer.entity";
 import { KaspiTransactionEntity } from "../modules/payments/kaspi/kaspi-transaction.entity";
@@ -41,6 +42,7 @@ export const databaseEntities = [
   DriverBonusSettingEntity,
   ExecutorDocumentEntity,
   ExecutorLocationEntity,
+  PushCampaignEntity,
   NotificationTemplateEntity,
   NotificationDeviceTokenEntity,
   OrderEntity,

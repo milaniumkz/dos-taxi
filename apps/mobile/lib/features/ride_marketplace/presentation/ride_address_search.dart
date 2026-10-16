@@ -6,7 +6,7 @@ import '../../taxi/domain/repositories/taxi_repository.dart';
 
 class RideAddressSearch extends SearchDelegate<AddressSuggestion?> {
   RideAddressSearch(this.bias, String label) : super(searchFieldLabel: label);
-  final AddressSuggestion bias;
+  final AddressSuggestion? bias;
   @override
   List<Widget> buildActions(BuildContext context) => [
     IconButton(
@@ -29,7 +29,7 @@ class RideAddressSearch extends SearchDelegate<AddressSuggestion?> {
     return FutureBuilder(
       future: serviceLocator<TaxiRepository>().searchAddresses(
         query: query,
-        locationBias: bias.location,
+        locationBias: bias?.location,
       ),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {

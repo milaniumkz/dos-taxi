@@ -41,6 +41,29 @@ Map<String, dynamic> quote({
 };
 void main() {
   test(
+    'keeps passenger count and price entered before the route without requesting a quote',
+    () async {
+      final repo = Repo();
+      final cubit = RideRequestCubit(repo, null, null, 'taxi');
+      await cubit.refreshQuote(4);
+      cubit.changeManualPrice('500');
+      expect(cubit.passengers, 4);
+      expect(cubit.manualPrice, '500');
+      expect(cubit.state.quote, isNull);
+      verifyNever(() => repo.quote(any()));
+      when(() => repo.quote(any())).thenAnswer(
+        (_) async => Right({...quote(count: 4), 'priceInputMode': 'manual'}),
+      );
+      cubit.pickup = pickup;
+      cubit.destination = destination;
+      await cubit.refreshQuote();
+      expect(cubit.passengers, 4);
+      expect(cubit.manualPrice, '500');
+      verify(() => repo.quote(any())).called(1);
+      await cubit.close();
+    },
+  );
+  test(
     'retries unchanged form using the same idempotency key and sends step counts, not client amounts',
     () async {
       final repo = Repo();

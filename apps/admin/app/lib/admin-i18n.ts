@@ -27,6 +27,7 @@ export type AdminDictionary = {
     cities: string;
     tariffs: string;
     reports: string;
+    pushNotifications: string;
     promoCodes: string;
     users: string;
     executors: string;
@@ -844,6 +845,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       cities: "Города",
       tariffs: "Тарифы",
       reports: "Отчёты",
+      pushNotifications: "Push-уведомления",
       promoCodes: "Промокоды",
       users: "Клиенты",
       executors: "Исполнители",
@@ -1858,6 +1860,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       cities: "Қалалар",
       tariffs: "Тарифтер",
       reports: "Есептер",
+      pushNotifications: "Push-хабарламалар",
       promoCodes: "Промокодтар",
       users: "Клиенттер",
       executors: "Орындаушылар",

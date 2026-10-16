@@ -104,6 +104,13 @@ export class SubmitRideOfferDto {
   priceSteps!: number;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() hasChildSeat?: boolean;
 }
+export class TakeRideRequestDto {
+  @ApiProperty({ description: "Passenger total price displayed to the driver" })
+  @IsString()
+  @Matches(/^\d{1,9}(\.\d{1,2})?$/)
+  totalPrice!: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() hasChildSeat?: boolean;
+}
 export class AcceptRideOfferDto {
   @ApiProperty({ description: "Offer version shown to passenger" })
   @IsInt()

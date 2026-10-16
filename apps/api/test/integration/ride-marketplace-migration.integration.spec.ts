@@ -1,3 +1,4 @@
+import { AddRejectedRideOffers1710000000041 } from "../../src/database/migrations/1710000000041-AddRejectedRideOffers";
 import { AddPsbPayment1710000000040 } from "../../src/database/migrations/1710000000040-AddPsbPayment";
 import { BaikonurManualPrice1710000000036 } from "../../src/database/migrations/1710000000036-BaikonurManualPrice";
 import { randomUUID } from "node:crypto";
@@ -25,6 +26,38 @@ describe("ride marketplace migration preserves existing cities and finances", ()
     if (db?.isInitialized) {
       await db.query(`DROP SCHEMA "${schema}" CASCADE`);
       await db.destroy();
+    }
+  });
+  it("permits passenger rejections while preserving previous offer statuses", async () => {
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    try {
+      await runner.query(
+        `CREATE TABLE ride_price_offers (status varchar(20) NOT NULL CHECK(status IN ('pending','accepted','withdrawn','superseded')))`,
+      );
+      await runner.query(
+        `INSERT INTO ride_price_offers VALUES ('accepted'),('withdrawn')`,
+      );
+      const migration = new AddRejectedRideOffers1710000000041();
+      await migration.up(runner);
+      await migration.up(runner);
+      await runner.query(`INSERT INTO ride_price_offers VALUES ('rejected')`);
+      await migration.down();
+      expect(
+        await runner.query(
+          `SELECT status FROM ride_price_offers ORDER BY status`,
+        ),
+      ).toEqual([
+        { status: "accepted" },
+        { status: "rejected" },
+        { status: "withdrawn" },
+      ]);
+      await expect(
+        runner.query(`INSERT INTO ride_price_offers VALUES ('invalid')`),
+      ).rejects.toThrow();
+    } finally {
+      await runner.query(`DROP TABLE ride_price_offers`);
+      await runner.release();
     }
   });
   it("adds PSB payments without changing existing payment methods", async () => {

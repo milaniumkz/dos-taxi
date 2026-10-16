@@ -130,6 +130,7 @@ void main() {
       whenListen(home, const Stream<HomeState>.empty(), initialState: state);
       when(() => home.initialize()).thenAnswer((_) async {});
       serviceLocator.registerSingleton<HomeCubit>(home);
+      serviceLocator.registerSingleton<RideRepository>(_RideRepository());
       await tester.pumpWidget(
         MaterialApp(
           locale: Locale(locale),
@@ -145,7 +146,20 @@ void main() {
       );
       await tester.pump();
       final fields = find.byType(TextField);
-      expect(fields, findsNWidgets(2));
+      expect(fields, findsNWidgets(5));
+      final l = AppLocalizations.of(
+        tester.element(find.byType(PassengerHomePlaceholderScreen)),
+      )!;
+      expect(find.text(l.ridePassengers), findsOneWidget);
+      expect(find.text(l.ridePsb), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, l.rideSubmit),
+            )
+            .onPressed,
+        isNull,
+      );
       expect(tester.widget<TextField>(fields.first).readOnly, isFalse);
       await tester.enterText(fields.first, 'Адрес другого человека');
       verify(
@@ -257,7 +271,16 @@ void main() {
         await tester.pump();
         changes.add(state.copyWith(selectedAddress: null));
         await tester.pump();
-        expect(find.text(l.rideSubmit), findsNothing);
+        await tester.pump();
+        expect(find.text(l.rideSubmit), findsOneWidget);
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, l.rideSubmit),
+              )
+              .onPressed,
+          isNull,
+        );
         changes.add(state);
         await tester.pump();
         await tester.pump();

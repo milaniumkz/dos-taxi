@@ -25,13 +25,16 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     this.serviceType,
   ) : super(const RideRequestState());
   final RideRepository repository;
-  AddressSuggestion pickup, destination;
+  AddressSuggestion? pickup, destination;
+  bool get routeReady => pickup != null && destination != null;
   final String serviceType;
   int passengers = 1, steps = 0;
   String? manualPrice;
   Map? get manualPolicy => state.quote?['manualPricePolicy'] as Map?;
   bool get usesManualPrice =>
-      manualPolicy != null || state.quote?['priceInputMode'] == 'manual';
+      state.quote == null ||
+      manualPolicy != null ||
+      state.quote?['priceInputMode'] == 'manual';
   int get manualMinor =>
       ((double.tryParse(manualPrice ?? '') ?? 0) * 100).round();
   String get selectedCurrency => manualPolicy != null
@@ -40,7 +43,7 @@ class RideRequestCubit extends Cubit<RideRequestState> {
                     .round()
             ? 'RUB'
             : 'KZT')
-      : state.quote!['currency'].toString();
+      : state.quote?['currency']?.toString() ?? 'KZT';
   int get minimumMinor => manualPolicy != null
       ? (double.parse(
                   manualPolicy![selectedCurrency == 'RUB'
@@ -50,9 +53,11 @@ class RideRequestCubit extends Cubit<RideRequestState> {
                 ) *
                 100)
             .round()
-      : (double.parse(state.quote!['minimumUnitPrice'].toString()) * 100)
+      : (double.parse((state.quote?['minimumUnitPrice'] ?? '0').toString()) *
+                100)
             .round();
   bool get validManualPrice =>
+      state.quote == null ||
       !usesManualPrice ||
       (RegExp(r'^\d{1,7}$').hasMatch(manualPrice ?? '') &&
           manualMinor >= minimumMinor);
@@ -69,7 +74,7 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     'serviceType': serviceType,
     'priceIsTotal': true,
     'passengerCount': passengers,
-    'routePoints': [pickup, destination]
+    'routePoints': [pickup!, destination!]
         .map(
           (a) => {
             'lat': a.location.latitude,
@@ -84,6 +89,10 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     final preservedSteps = count != null ? steps : 0;
     if (count != null) passengers = count;
     final revision = ++_revision;
+    if (!routeReady) {
+      emit(const RideRequestState());
+      return;
+    }
     emit(const RideRequestState(busy: true));
     final result = await repository.quote(_route);
     if (isClosed || revision != _revision) return;
@@ -125,7 +134,9 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     required bool childSeat,
     required bool shared,
   }) async {
-    if (state.busy || state.quote == null || !validManualPrice) return;
+    if (!routeReady || state.busy || state.quote == null || !validManualPrice) {
+      return;
+    }
     final q = state.quote!;
     final data = {
       ..._route,

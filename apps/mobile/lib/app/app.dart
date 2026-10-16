@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import '../core/updates/store_update_gate.dart';
+import '../core/updates/store_update_service.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -25,6 +28,7 @@ class DosApp extends StatefulWidget {
 }
 
 class _DosAppState extends State<DosApp> {
+  final StoreUpdateService _updates = StoreUpdateService();
   late final AuthCubit _authCubit;
   late final GoRouter _router;
   StreamSubscription<void>? _unauthorizedSubscription;
@@ -82,6 +86,17 @@ class _DosAppState extends State<DosApp> {
               themeMode: state.themeMode,
               locale: state.locale,
               routerConfig: _router,
+              builder: (context, child) =>
+                  !kIsWeb &&
+                      widget.config.flavor == AppFlavor.prod &&
+                      (defaultTargetPlatform == TargetPlatform.android ||
+                          defaultTargetPlatform == TargetPlatform.iOS)
+                  ? StoreUpdateGate(
+                      check: _updates.check,
+                      open: _updates.open,
+                      child: child ?? const SizedBox.shrink(),
+                    )
+                  : child ?? const SizedBox.shrink(),
               supportedLocales: const [Locale('ru'), Locale('kk')],
               localizationsDelegates: [
                 AppLocalizations.delegate,

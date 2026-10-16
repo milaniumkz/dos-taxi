@@ -157,9 +157,7 @@ class _PassengerHomePlaceholderScreenState
                               builder: (context, constraints) => ConstrainedBox(
                                 key: _orderPanelKey,
                                 constraints: BoxConstraints(
-                                  maxHeight: state.selectedAddress != null
-                                      ? constraints.maxHeight * 0.65
-                                      : constraints.maxHeight,
+                                  maxHeight: constraints.maxHeight * 0.65,
                                 ),
                                 child: SingleChildScrollView(
                                   child: Column(
@@ -478,53 +476,45 @@ class _HomeRideCheckout extends StatefulWidget {
 }
 
 class _HomeRideCheckoutState extends State<_HomeRideCheckout> {
-  RideRequestCubit? cubit;
-  bool get ready => widget.pickup != null && widget.destination != null;
+  late RideRequestCubit cubit;
   RideRequestCubit _create() => RideRequestCubit(
     serviceLocator<RideRepository>(),
-    widget.pickup!,
-    widget.destination!,
+    widget.pickup,
+    widget.destination,
     widget.serviceType,
   )..refreshQuote();
   @override
   void initState() {
     super.initState();
-    if (ready) cubit = _create();
+    cubit = _create();
   }
 
   @override
   void didUpdateWidget(covariant _HomeRideCheckout oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!ready) return;
-    if (cubit == null || cubit!.serviceType != widget.serviceType) {
+    if (cubit.serviceType != widget.serviceType) {
       final previous = cubit;
       cubit = _create();
-      if (previous != null) unawaited(previous.close());
+      unawaited(previous.close());
     } else if (oldWidget.pickup != widget.pickup ||
         oldWidget.destination != widget.destination) {
-      cubit!.pickup = widget.pickup!;
-      cubit!.destination = widget.destination!;
-      unawaited(cubit!.refreshQuote());
+      cubit.pickup = widget.pickup;
+      cubit.destination = widget.destination;
+      unawaited(cubit.refreshQuote());
     }
   }
 
   @override
   void dispose() {
-    if (cubit != null) unawaited(cubit!.close());
+    unawaited(cubit.close());
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => cubit == null
-      ? const SizedBox.shrink()
-      : Visibility(
-          visible: ready,
-          maintainState: true,
-          child: BlocProvider.value(
-            value: cubit!,
-            child: const RideRequestScreen(embedded: true),
-          ),
-        );
+  Widget build(BuildContext context) => BlocProvider.value(
+    value: cubit,
+    child: const RideRequestScreen(embedded: true),
+  );
 }
 
 class _ServiceTile extends StatelessWidget {

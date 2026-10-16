@@ -254,7 +254,8 @@ class _CompactRequestCard extends StatelessWidget {
         value: cubit,
         child: BlocConsumer<RidePollCubit, RidePollState>(
           listener: (_, state) {
-            if (state.data?['pendingOffer'] != null) {
+            if (state.data?['pendingOffer'] != null ||
+                state.data?['takenOrderId'] != null) {
               final route = ModalRoute.of(sheetContext);
               if (route != null && route.isActive) {
                 Navigator.of(sheetContext).removeRoute(route);
@@ -411,8 +412,14 @@ class _RequestDetailsState extends State<_RequestDetails> {
               onPressed:
                   widget.disabled || (r['needsChildSeat'] == true && !childSeat)
                   ? null
-                  : () => cubit.propose(r['id'] as String, steps, childSeat),
-              child: Text(l.ridePropose),
+                  : () => steps == 0
+                        ? cubit.take(
+                            r['id'] as String,
+                            r['totalPrice'].toString(),
+                            childSeat,
+                          )
+                        : cubit.propose(r['id'] as String, steps, childSeat),
+              child: Text(steps == 0 ? l.rideTakeOrder : l.ridePropose),
             ),
             if (pending)
               TextButton(

@@ -56,7 +56,7 @@ export class DriverBonusesService {
       isEnabled: enabled,
       ordersRequired: required,
       bonusAmount: Number.isFinite(amount) ? amount : 0,
-      currency: executor.city?.currency ?? Currency.KZT,
+      currency: Currency.KZT,
       totalCompletedOrders: total,
       completedInCycle: completed,
       remainingOrders: enabled ? Math.max(0, required - completed) : 0,

@@ -1,4 +1,5 @@
 "use server";
+import { pushLabels } from "./push-notifications-i18n";
 
 import { supportContactsLabels } from "./support-contacts-i18n";
 
@@ -823,4 +824,19 @@ export async function updateSupportContactsAction(formData: FormData): Promise<v
   }
   revalidateReturnPath(returnPath);
   redirectWithFlash(returnPath, "notice", supportContactsLabels(locale).saved);
+}
+
+export async function sendPushNotificationAction(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const returnPath = `/push-notifications?lang=${locale}`;
+  try {
+    await adminApiRequest("admin/push-notifications", {
+      method: "POST",
+      body: JSON.stringify({ id: getString(formData, "requestId"), audience: getString(formData, "audience"), title: getString(formData, "title"), body: getString(formData, "body") }),
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, "error", failureMessage(locale, error));
+  }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(returnPath, "notice", pushLabels(locale).saved);
 }
