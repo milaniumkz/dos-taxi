@@ -249,10 +249,8 @@ void main() {
         await tester.tap(find.byIcon(Icons.add).first);
         await tester.pump();
         await tester.pump();
-        expect(
-          tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
-          matches(RegExp(r'1\s*000')),
-        );
+        expect(find.byKey(const ValueKey('ride-total')), findsNothing);
+        expect(find.text(l.rideTotal), findsNothing);
         await tester.enterText(find.byType(TextField).at(2), '2');
         await tester.enterText(find.byType(TextField).at(3), 'У ворот');
         FocusManager.instance.primaryFocus?.unfocus();

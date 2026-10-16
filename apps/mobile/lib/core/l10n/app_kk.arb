@@ -656,5 +656,6 @@
   "rideExtrasDone": "Дайын",
   "supportContactsIntro": "Оператор осы жерде жауап береді. Қолдау қызметімен байланысуға да болады:",
   "supportContactsUnavailable": "Қолдау байланыстарын жүктеу мүмкін болмады",
-  "supportContactOpenFailed": "Байланыс тәсілін ашу мүмкін болмады"
+  "supportContactOpenFailed": "Байланыс тәсілін ашу мүмкін болмады",
+  "ridePerOrder": "Бүкіл тапсырыс бағасы"
 }

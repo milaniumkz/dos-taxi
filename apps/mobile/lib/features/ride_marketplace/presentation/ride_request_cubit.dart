@@ -67,6 +67,7 @@ class RideRequestCubit extends Cubit<RideRequestState> {
   Map<String, dynamic>? _submitted;
   Map<String, dynamic> get _route => {
     'serviceType': serviceType,
+    'priceIsTotal': true,
     'passengerCount': passengers,
     'routePoints': [pickup, destination]
         .map(

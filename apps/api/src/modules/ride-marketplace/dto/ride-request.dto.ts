@@ -27,6 +27,14 @@ export class RideRequestPointDto {
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(500) address!: string;
 }
 export class RideQuoteDto {
+  @ApiPropertyOptional({
+    description:
+      "Entered price covers the entire passenger group; omitted for legacy per-seat requests",
+  })
+  @IsOptional()
+  @IsBoolean()
+  priceIsTotal?: boolean;
+
   @ApiPropertyOptional({ format: "uuid" })
   @IsOptional()
   @IsUUID()
@@ -66,7 +74,7 @@ export class CreateRideRequestDto extends RideQuoteDto {
   priceSteps!: number;
   @ApiPropertyOptional({
     description:
-      "Manual per-seat/salon amount; KZT except the configured Baikonur currency threshold",
+      "Manual amount for the pricing basis, covering the whole group when priceIsTotal; KZT except the configured Baikonur currency threshold",
     example: "90.00",
   })
   @IsOptional()

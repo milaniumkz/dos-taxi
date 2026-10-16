@@ -367,7 +367,7 @@ class _RequestDetailsState extends State<_RequestDetails> {
               pickup: (points.first as Map)['address'].toString(),
               destination: (points.last as Map)['address'].toString(),
             ),
-            if (r['pricingBasis'] == 'seat')
+            if (r['pricingBasis'] == 'seat' || count > 1)
               Text('${l.ridePassengers}: $count'),
             if ((r['pickupEntrance']?.toString() ?? '').isNotEmpty)
               Text('${l.rideEntrance}: ${r['pickupEntrance']}'),
@@ -382,7 +382,7 @@ class _RequestDetailsState extends State<_RequestDetails> {
             RideStepper(
               label: r['pricingBasis'] == 'seat'
                   ? l.ridePerSeat
-                  : l.ridePerSalon,
+                  : l.ridePerOrder,
               value: amount(price),
               onMinus:
                   widget.disabled || price - step < minimum || steps <= -1000
@@ -393,7 +393,7 @@ class _RequestDetailsState extends State<_RequestDetails> {
                   : () => setState(() => steps++),
             ),
             Text(
-              '${l.rideTotal}: ${amount(price * count)}',
+              '${l.rideTotal}: ${amount(price * (r['pricingBasis'] == 'seat' ? count : 1))}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             if (r['needsChildSeat'] == true)

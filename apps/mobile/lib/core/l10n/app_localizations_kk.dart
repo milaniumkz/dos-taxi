@@ -1580,4 +1580,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get supportContactOpenFailed => 'Байланыс тәсілін ашу мүмкін болмады';
+
+  @override
+  String get ridePerOrder => 'Бүкіл тапсырыс бағасы';
 }

@@ -57,25 +57,6 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (s.quote != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Text(
-                                l.rideTotal,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const Spacer(),
-                              Text(
-                                _total(context, cubit, s),
-                                key: const ValueKey('ride-total'),
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(fontWeight: FontWeight.w800),
-                              ),
-                            ],
-                          ),
-                        ),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -344,44 +325,20 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
             ],
           ),
           const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l.rideTotal,
-                      style: Theme.of(context).textTheme.bodySmall,
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: s.quote == null || s.busy || !cubit.validManualPrice
+                  ? null
+                  : () => cubit.submit(
+                      payment: payment,
+                      entrance: entrance.text,
+                      comment: comment.text,
+                      childSeat: child,
+                      shared: shared,
                     ),
-                    Text(
-                      s.quote == null ? '—' : _total(context, cubit, s),
-                      key: const ValueKey('ride-total'),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: FilledButton(
-                  onPressed:
-                      s.quote == null || s.busy || !cubit.validManualPrice
-                      ? null
-                      : () => cubit.submit(
-                          payment: payment,
-                          entrance: entrance.text,
-                          comment: comment.text,
-                          childSeat: child,
-                          shared: shared,
-                        ),
-                  child: Text(l.rideSubmit),
-                ),
-              ),
-            ],
+              child: Text(l.rideSubmit),
+            ),
           ),
         ],
       ),
@@ -512,25 +469,6 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     if (mounted) setState(() {});
   }
 
-  String _total(
-    BuildContext context,
-    RideRequestCubit cubit,
-    RideRequestState state,
-  ) {
-    final q = state.quote!, count = (q['passengerCount'] as num).toInt();
-    final unit = cubit.usesManualPrice
-        ? cubit.manualMinor
-        : (double.parse(q['minimumUnitPrice'].toString()) * 100).round() +
-              cubit.steps *
-                  (double.parse(q['priceStep'].toString()) * 100).round();
-    return AppFormatters.formatCurrency(
-      context,
-      unit * count / 100,
-      currencyCode: cubit.selectedCurrency,
-      decimalDigits: cubit.selectedCurrency == 'RUB' ? 2 : 0,
-    );
-  }
-
   Future<void> _address(
     BuildContext context,
     RideRequestCubit cubit,
@@ -647,7 +585,8 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
   ) {
     final l = AppLocalizations.of(context)!;
     final q = state.quote!;
-    final seat = q['pricingBasis'] == 'seat';
+    final showPassengers =
+        q['priceIsTotal'] == true || q['pricingBasis'] == 'seat';
     final count = (q['passengerCount'] as num).toInt();
     final unit = cubit.usesManualPrice
         ? cubit.manualMinor
@@ -671,7 +610,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    seat ? l.ridePerSeat : l.ridePerSalon,
+                    l.ridePerOrder,
                     maxLines: 2,
                     style: widget.embedded
                         ? Theme.of(context).textTheme.bodySmall
@@ -681,7 +620,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    '${l.rideMinimum}: ${amount(cubit.minimumMinor * count)}',
+                    '${l.rideMinimum}: ${amount(cubit.minimumMinor)}',
                     maxLines: 2,
                     textAlign: TextAlign.right,
                     style: Theme.of(context).textTheme.bodySmall,
@@ -692,7 +631,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
             if (widget.embedded)
               Row(
                 children: [
-                  if (seat) ...[
+                  if (showPassengers) ...[
                     Expanded(
                       child: _inlineStepper(
                         context,
@@ -726,7 +665,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                 ],
               )
             else ...[
-              if (seat)
+              if (showPassengers)
                 RideStepper(
                   compact: true,
                   label: l.ridePassengers,
