@@ -43,6 +43,9 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     final cubit = context.read<RideRequestCubit>();
     return BlocConsumer<RideRequestCubit, RideRequestState>(
       listener: (context, s) {
+        if (!s.busy && !cubit.availablePaymentMethods.contains(payment)) {
+          setState(() => payment = 'cash');
+        }
         if (s.created != null) {
           context.go(ActiveOrderScreen.routePath, extra: s.created);
         }
@@ -361,7 +364,10 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     'cash': l.rideCash,
     'transfer_kaspi': l.rideKaspi,
     'transfer_halyk': l.rideHalyk,
-    'transfer_psb': l.ridePsb,
+    if (context.read<RideRequestCubit>().availablePaymentMethods.contains(
+      'transfer_psb',
+    ))
+      'transfer_psb': l.ridePsb,
   };
 
   Widget _routeRow(

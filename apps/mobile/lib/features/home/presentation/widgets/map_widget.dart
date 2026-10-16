@@ -64,8 +64,28 @@ class _MapWidgetState extends State<MapWidget> {
         return;
       }
       final zoom = recenterRequested ? 16.0 : _mapController.camera.zoom;
-      _mapController.move(widget.center, zoom);
+      _centerAboveForm(zoom);
     });
+  }
+
+  void _centerAboveForm(double zoom) {
+    final padding = widget.routePadding;
+    _mapController.move(
+      widget.center,
+      zoom,
+      offset: Offset(
+        (padding.left - padding.right) / 2,
+        (padding.top - padding.bottom) / 2,
+      ),
+    );
+  }
+
+  void _positionInitialMap() {
+    if (widget.routePoints.length >= 2) {
+      _fitRoute();
+    } else {
+      _centerAboveForm(15);
+    }
   }
 
   void _fitRoute() {
@@ -94,7 +114,7 @@ class _MapWidgetState extends State<MapWidget> {
           options: MapOptions(
             initialCenter: widget.center,
             initialZoom: 15,
-            onMapReady: _fitRoute,
+            onMapReady: _positionInitialMap,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),

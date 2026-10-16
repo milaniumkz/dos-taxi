@@ -1,4 +1,8 @@
 import {
+  availableOrderPaymentMethods,
+  assertOrderPaymentAllowed,
+} from "../payments/order-payment-policy";
+import {
   driverBonusDay,
   driverBonusTimezone,
 } from "../executors/driver-bonus-day";
@@ -111,9 +115,14 @@ export class OrdersService {
       declaredValue: dto.declaredValue,
       cashOnDelivery: dto.cashOnDelivery,
     });
-    if (!dto.promoCode?.trim()) return estimate;
+    if (!dto.promoCode?.trim())
+      return {
+        ...estimate,
+        availablePaymentMethods: availableOrderPaymentMethods(city),
+      };
     return {
       ...estimate,
+      availablePaymentMethods: availableOrderPaymentMethods(city),
       originalPrice: estimate.estimatedPrice,
       ...(await this.promoCodesService.preview(
         dto.promoCode,
@@ -151,6 +160,7 @@ export class OrdersService {
       (left, right) => left.sequenceIndex - right.sequenceIndex,
     );
     const city = await this.resolveCity(dto.cityId, routePoints);
+    assertOrderPaymentAllowed(city, dto.paymentMethod);
     if (serviceType === ServiceType.INTERCITY) {
       this.assertPickupInServiceZone(city, routePoints);
     } else {
@@ -252,6 +262,7 @@ export class OrdersService {
       (left, right) => left.sequenceIndex - right.sequenceIndex,
     );
     const city = await this.resolveCity(dto.cityId, routePoints);
+    assertOrderPaymentAllowed(city, dto.paymentMethod);
     this.assertPointsInServiceZone(city, routePoints);
 
     const routeMetrics =

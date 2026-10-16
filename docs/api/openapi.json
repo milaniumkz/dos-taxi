@@ -4696,6 +4696,21 @@
       "RideQuoteResponseDto": {
         "type": "object",
         "properties": {
+          "availablePaymentMethods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "card",
+                "cash",
+                "transfer_kaspi",
+                "transfer_halyk",
+                "transfer_psb",
+                "corporate",
+                "bonus"
+              ]
+            }
+          },
           "priceIsTotal": {
             "type": "boolean"
           },
@@ -4766,6 +4781,7 @@
           }
         },
         "required": [
+          "availablePaymentMethods",
           "priceIsTotal",
           "termsKey",
           "priceInputMode",
@@ -5645,6 +5661,21 @@
       "EstimateResultDto": {
         "type": "object",
         "properties": {
+          "availablePaymentMethods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "card",
+                "cash",
+                "transfer_kaspi",
+                "transfer_halyk",
+                "transfer_psb",
+                "corporate",
+                "bonus"
+              ]
+            }
+          },
           "discountAmount": {
             "type": "number"
           },

@@ -50,6 +50,14 @@ class DeliveryOrderState extends Equatable {
   final List<DeliveryEstimate> estimates;
   final DeliveryEstimate? selectedEstimate;
   final DeliveryPaymentMethod paymentMethod;
+  bool get psbAvailable =>
+      selectedEstimate?.availablePaymentMethods.contains('transfer_psb') ??
+      false;
+  DeliveryPaymentMethod get effectivePaymentMethod =>
+      paymentMethod == DeliveryPaymentMethod.psb && !psbAvailable
+      ? DeliveryPaymentMethod.cash
+      : paymentMethod;
+
   final String promoCode;
   final String appliedPromoCode;
   final bool isApplyingPromo;

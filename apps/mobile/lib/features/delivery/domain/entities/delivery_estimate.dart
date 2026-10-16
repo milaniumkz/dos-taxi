@@ -9,6 +9,7 @@ class DeliveryEstimate extends Equatable {
     required this.currency,
     required this.etaMinutes,
     this.discountAmount = 0,
+    this.availablePaymentMethods = const [],
   });
 
   final CourierVehicleType vehicleType;
@@ -16,11 +17,13 @@ class DeliveryEstimate extends Equatable {
   final String currency;
   final int etaMinutes;
   final double discountAmount;
+  final List<String> availablePaymentMethods;
   double get originalPrice => price + discountAmount;
 
   DeliveryEstimate withoutPromo() => DeliveryEstimate(
     vehicleType: vehicleType,
     price: originalPrice,
+    availablePaymentMethods: availablePaymentMethods,
     currency: currency,
     etaMinutes: etaMinutes,
   );
@@ -32,5 +35,6 @@ class DeliveryEstimate extends Equatable {
     currency,
     etaMinutes,
     discountAmount,
+    availablePaymentMethods,
   ];
 }

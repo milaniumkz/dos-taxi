@@ -125,7 +125,7 @@ class DeliveryConfirmScreen extends StatelessWidget {
                                     label: l10n.deliveryConfirmPaymentLabel,
                                     value: _paymentLabel(
                                       l10n,
-                                      state.paymentMethod,
+                                      state.effectivePaymentMethod,
                                     ),
                                   ),
                                   if (state.promoCode.isNotEmpty)

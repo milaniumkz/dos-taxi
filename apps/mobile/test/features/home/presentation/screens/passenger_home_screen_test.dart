@@ -151,7 +151,7 @@ void main() {
         tester.element(find.byType(PassengerHomePlaceholderScreen)),
       )!;
       expect(find.text(l.ridePassengers), findsOneWidget);
-      expect(find.text(l.ridePsb), findsOneWidget);
+      expect(find.text(l.rideHalyk), findsOneWidget);
       expect(
         tester
             .widget<FilledButton>(
@@ -197,7 +197,7 @@ void main() {
           submitted = call.positionalArguments[0] as Map<String, dynamic>;
           return const Left(Failure(code: 'NETWORK_ERROR', message: 'offline'));
         });
-        final state = HomeState(
+        var state = HomeState(
           selectedService: HomeServiceType.taxi,
           currentLocation: gps.location,
           mapCenter: pickup.location,
@@ -219,6 +219,7 @@ void main() {
           initialState: state.copyWith(
             selectedAddress: null,
             routePoints: const [],
+            mapCenter: gps.location,
           ),
         );
         when(() => home.initialize()).thenAnswer((_) async {});
@@ -247,7 +248,7 @@ void main() {
           find.byType(TextField).at(4),
           find.text(l.rideChildSeat),
           find.text(l.rideTogether),
-          find.text(l.ridePsb),
+          find.text(l.rideHalyk),
           find.text(l.rideSubmit),
         ]) {
           expect(control.hitTestable(), findsOneWidget);
@@ -268,6 +269,32 @@ void main() {
           isNull,
         );
         verifyNever(() => repo.quote(any()));
+        expect(find.text(l.ridePsb), findsNothing);
+        void expectGpsAboveForm() {
+          final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
+          final point = map.mapController!.camera.latLngToScreenPoint(
+            gps.location,
+          );
+          final form = tester.getRect(find.byType(SingleChildScrollView));
+          expect(point.x, inInclusiveRange(29, 331));
+          expect(point.y - 29, greaterThanOrEqualTo(0));
+          expect(point.y + 29, lessThan(form.top));
+        }
+
+        expectGpsAboveForm();
+        state = state.copyWith(recenterRequestId: 1);
+        changes.add(
+          state.copyWith(
+            selectedAddress: null,
+            routePoints: const [],
+            mapCenter: gps.location,
+            recenterRequestId: 1,
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+        expectGpsAboveForm();
+
         changes.add(state);
         await tester.pump();
         await tester.pump();
@@ -287,7 +314,7 @@ void main() {
           find.byType(TextField).at(3),
           find.text(l.rideChildSeat),
           find.text(l.rideTogether),
-          find.text(l.ridePsb),
+          find.text(l.rideHalyk),
         ]) {
           expect(control.hitTestable(), findsOneWidget);
         }
@@ -337,8 +364,8 @@ void main() {
               .text,
           'У ворот',
         );
-        await tester.ensureVisible(find.text(l.ridePsb));
-        await tester.tap(find.text(l.ridePsb));
+        await tester.ensureVisible(find.text(l.rideHalyk));
+        await tester.tap(find.text(l.rideHalyk));
         await tester.pump();
         await tester.ensureVisible(find.text(l.rideChildSeat));
         await tester.tap(find.text(l.rideChildSeat));
@@ -364,7 +391,7 @@ void main() {
         expect(submitted?['passengerCount'], 2);
         expect(submitted?['pickupEntrance'], '2');
         expect(submitted?['pickupComment'], 'У ворот');
-        expect(submitted?['paymentMethod'], 'transfer_psb');
+        expect(submitted?['paymentMethod'], 'transfer_halyk');
         expect(submitted?['needsChildSeat'], true);
         expect(submitted?['sharedRide'], true);
         expect(find.byType(PassengerHomePlaceholderScreen), findsOneWidget);

@@ -371,6 +371,78 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       await db.getRepository(DriverBonusSettingEntity).delete(setting.id);
     },
   );
+  it("permits PSB only in Baikonur and rejects it in other cities even with RUB wallets", async () => {
+    const client = await user();
+    const base = {
+      cityId: city.id,
+      serviceType: ServiceType.TAXI,
+      routePoints: points,
+      passengerCount: 2,
+      priceIsTotal: true,
+    };
+    const normal = await market.quote(base);
+    expect(normal.availablePaymentMethods).not.toContain(
+      PaymentMethod.TRANSFER_PSB,
+    );
+    await expect(
+      market.create(
+        client.id,
+        {
+          ...base,
+          termsKey: normal.termsKey,
+          priceSteps: 0,
+          unitPrice: "500.00",
+          paymentMethod: PaymentMethod.TRANSFER_PSB,
+        },
+        randomUUID(),
+      ),
+    ).rejects.toThrow("ПСБ доступен только в Байконуре.");
+    const another = await db
+      .getRepository(CityEntity)
+      .save({
+        nameRu: "Другой город",
+        nameKk: "Басқа қала",
+        countryCode: "KZ",
+        currency: Currency.RUB,
+        timezone: "Asia/Almaty",
+        isActive: true,
+      });
+    expect(
+      (await market.quote({ ...base, cityId: another.id }))
+        .availablePaymentMethods,
+    ).not.toContain(PaymentMethod.TRANSFER_PSB);
+    const baikonur = await db
+      .getRepository(CityEntity)
+      .save({
+        nameRu: "Байконур",
+        nameKk: "Байқоңыр",
+        countryCode: "KZ",
+        currency: Currency.RUB,
+        timezone: "Asia/Almaty",
+        isActive: true,
+      });
+    const allowed = await market.quote({ ...base, cityId: baikonur.id });
+    expect(allowed.availablePaymentMethods).toContain(
+      PaymentMethod.TRANSFER_PSB,
+    );
+    const created = await market.create(
+      client.id,
+      {
+        ...base,
+        cityId: baikonur.id,
+        termsKey: allowed.termsKey,
+        priceSteps: 0,
+        unitPrice: "500.00",
+        paymentMethod: PaymentMethod.TRANSFER_PSB,
+      },
+      randomUUID(),
+    );
+    expect(
+      (await db.getRepository(OrderEntity).findOneByOrFail({ id: created.id }))
+        .paymentMethod,
+    ).toBe(PaymentMethod.TRANSFER_PSB);
+    await orders.cancelOrder(client.id, created.id);
+  });
   it.each([2, 4])(
     "keeps 500 as the entire fare for %i passengers through driver negotiation and completion",
     async (passengerCount) => {
@@ -393,7 +465,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
           termsKey: quote.termsKey,
           priceSteps: 0,
           unitPrice: "500.00",
-          paymentMethod: PaymentMethod.TRANSFER_PSB,
+          paymentMethod: PaymentMethod.TRANSFER_HALYK,
         },
         randomUUID(),
       );
@@ -402,7 +474,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
         .getRepository(OrderEntity)
         .findOneByOrFail({ id: created.id });
       expect(saved.passengerCount).toBe(passengerCount);
-      expect(saved.paymentMethod).toBe(PaymentMethod.TRANSFER_PSB);
+      expect(saved.paymentMethod).toBe(PaymentMethod.TRANSFER_HALYK);
       expect(saved.ridePricingBasis).toBe("salon");
       const offer = await market.submit(d.userId, created.id, {
         priceSteps: 2,
