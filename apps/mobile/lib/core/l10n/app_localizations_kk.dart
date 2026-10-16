@@ -1282,6 +1282,12 @@ class AppLocalizationsKk extends AppLocalizations {
   String get rideRetry => 'Қайталау';
 
   @override
+  String get rideEntranceShort => 'Кіреберіс';
+
+  @override
+  String get rideCommentShort => 'Пікір';
+
+  @override
   String get rideEntrance => 'Кіреберіс (міндетті емес)';
 
   @override

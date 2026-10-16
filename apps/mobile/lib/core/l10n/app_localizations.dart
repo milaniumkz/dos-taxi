@@ -2474,6 +2474,18 @@ abstract class AppLocalizations {
   /// **'Повторить'**
   String get rideRetry;
 
+  /// No description provided for @rideEntranceShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подъезд'**
+  String get rideEntranceShort;
+
+  /// No description provided for @rideCommentShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий'**
+  String get rideCommentShort;
+
   /// No description provided for @rideEntrance.
   ///
   /// In ru, this message translates to:

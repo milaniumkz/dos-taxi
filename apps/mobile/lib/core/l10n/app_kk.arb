@@ -508,6 +508,8 @@
   },
   "rideRequestTitle": "Сапар өтінімі",
   "rideRetry": "Қайталау",
+  "rideEntranceShort": "Кіреберіс",
+  "rideCommentShort": "Пікір",
   "rideEntrance": "Кіреберіс (міндетті емес)",
   "rideComment": "Пікір (міндетті емес)",
   "rideChildSeat": "Балалар орындығы",

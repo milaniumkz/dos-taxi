@@ -1,4 +1,6 @@
 import '../../../ride_marketplace/presentation/ride_request_screen.dart';
+import '../../../ride_marketplace/presentation/ride_request_cubit.dart';
+import '../../../ride_marketplace/domain/ride_repository.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -121,30 +123,37 @@ class _PassengerHomePlaceholderScreenState
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: FloatingActionButton.small(
-                                      heroTag: 'passenger-location',
-                                      backgroundColor: AppColors.surface,
-                                      foregroundColor: AppColors.text,
-                                      onPressed:
-                                          state.isResolvingCurrentLocation
-                                          ? null
-                                          : cubit.recenterToCurrentPosition,
-                                      child: state.isResolvingCurrentLocation
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
+                                  if (state.selectedAddress == null ||
+                                      state.selectedService ==
+                                          HomeServiceType.delivery)
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: FloatingActionButton.small(
+                                        heroTag: 'passenger-location',
+                                        backgroundColor: AppColors.surface,
+                                        foregroundColor: AppColors.text,
+                                        onPressed:
+                                            state.isResolvingCurrentLocation
+                                            ? null
+                                            : cubit.recenterToCurrentPosition,
+                                        child: state.isResolvingCurrentLocation
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              )
+                                            : const Icon(
+                                                Icons.my_location_rounded,
                                               ),
-                                            )
-                                          : const Icon(
-                                              Icons.my_location_rounded,
-                                            ),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
+                                  if (state.selectedAddress == null ||
+                                      state.selectedService ==
+                                          HomeServiceType.delivery)
+                                    const SizedBox(height: AppSpacing.sm),
                                   _PassengerOrderPanel(
                                     state: state,
                                     pickupController: _pickupController,
@@ -235,26 +244,6 @@ class _PassengerHomePlaceholderScreenState
         context.push(DeliveryAddressScreen.routePath);
       }
       return;
-    }
-
-    if (state.selectedAddress == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.taxiErrorCompleteOrder),
-        ),
-      );
-      return;
-    }
-
-    if (context.mounted) {
-      context.push(
-        RideRequestScreen.routePath,
-        extra: RideRequestArgs(
-          currentAddress,
-          state.selectedAddress!,
-          state.selectedService.apiValue,
-        ),
-      );
     }
   }
 
@@ -393,27 +382,86 @@ class _PassengerOrderPanel extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: onOrder,
-              child: Text(
-                state.selectedService == HomeServiceType.delivery
-                    ? l10n.deliveryConfirmOrderAction
-                    : l10n.homeOrderAction,
+          if (state.selectedService != HomeServiceType.delivery)
+            _HomeRideCheckout(
+              pickup: state.effectivePickup,
+              destination: state.selectedAddress,
+              serviceType: state.selectedService.apiValue,
+            )
+          else if (state.selectedService == HomeServiceType.delivery)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onOrder,
+                child: Text(l10n.deliveryConfirmOrderAction),
               ),
             ),
-          ),
         ],
       ),
     );
   }
+}
+
+class _HomeRideCheckout extends StatefulWidget {
+  const _HomeRideCheckout({
+    required this.pickup,
+    required this.destination,
+    required this.serviceType,
+  });
+  final AddressSuggestion? pickup, destination;
+  final String serviceType;
+  @override
+  State<_HomeRideCheckout> createState() => _HomeRideCheckoutState();
+}
+
+class _HomeRideCheckoutState extends State<_HomeRideCheckout> {
+  RideRequestCubit? cubit;
+  bool get ready => widget.pickup != null && widget.destination != null;
+  RideRequestCubit _create() => RideRequestCubit(
+    serviceLocator<RideRepository>(),
+    widget.pickup!,
+    widget.destination!,
+    widget.serviceType,
+  )..refreshQuote();
+  @override
+  void initState() {
+    super.initState();
+    if (ready) cubit = _create();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomeRideCheckout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!ready) return;
+    if (cubit == null || cubit!.serviceType != widget.serviceType) {
+      final previous = cubit;
+      cubit = _create();
+      if (previous != null) unawaited(previous.close());
+    } else if (oldWidget.pickup != widget.pickup ||
+        oldWidget.destination != widget.destination) {
+      cubit!.pickup = widget.pickup!;
+      cubit!.destination = widget.destination!;
+      unawaited(cubit!.refreshQuote());
+    }
+  }
+
+  @override
+  void dispose() {
+    if (cubit != null) unawaited(cubit!.close());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => cubit == null
+      ? const SizedBox.shrink()
+      : Visibility(
+          visible: ready,
+          maintainState: true,
+          child: BlocProvider.value(
+            value: cubit!,
+            child: const RideRequestScreen(embedded: true),
+          ),
+        );
 }
 
 class _ServiceTile extends StatelessWidget {

@@ -16,7 +16,8 @@ class RideRequestArgs {
 }
 
 class RideRequestScreen extends StatefulWidget {
-  const RideRequestScreen({super.key});
+  const RideRequestScreen({super.key, this.embedded = false});
+  final bool embedded;
   static const routePath = '/ride-request';
   @override
   State<RideRequestScreen> createState() => _RideRequestScreenState();
@@ -43,160 +44,320 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
           context.go(ActiveOrderScreen.routePath, extra: s.created);
         }
       },
-      builder: (context, s) => Scaffold(
-        appBar: AppBar(title: Text(l.rideRequestTitle)),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (s.quote != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Text(
-                          l.rideTotal,
-                          style: Theme.of(context).textTheme.titleMedium,
+      builder: (context, s) => widget.embedded
+          ? _inline(context, cubit, s)
+          : Scaffold(
+              appBar: AppBar(title: Text(l.rideRequestTitle)),
+              bottomNavigationBar: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (s.quote != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Text(
+                                l.rideTotal,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const Spacer(),
+                              Text(
+                                _total(context, cubit, s),
+                                key: const ValueKey('ride-total'),
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
                         ),
-                        const Spacer(),
-                        Text(
-                          _total(context, cubit, s),
-                          key: const ValueKey('ride-total'),
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: s.quote == null || s.busy
+                              ? null
+                              : () => cubit.submit(
+                                  payment: payment,
+                                  entrance: entrance.text,
+                                  comment: comment.text,
+                                  childSeat: child,
+                                  shared: shared,
+                                ),
+                          child: Text(l.rideSubmit),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              body: AbsorbPointer(
+                absorbing: s.busy,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                  children: [
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          _routeRow(
+                            context,
+                            cubit.pickup.displayTitle,
+                            Icons.trip_origin,
+                            () => _address(context, cubit, true),
+                          ),
+                          Divider(
+                            height: 1,
+                            indent: 42,
+                            endIndent: 12,
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          _routeRow(
+                            context,
+                            cubit.destination.displayTitle,
+                            Icons.place,
+                            () => _address(context, cubit, false),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (s.busy) const LinearProgressIndicator(),
+                    if (s.error != null) ...[
+                      Text(
+                        s.error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                      if (s.quote == null)
+                        TextButton(
+                          onPressed: () => cubit.refreshQuote(),
+                          child: Text(l.rideRetry),
+                        ),
+                    ],
+                    if (s.quote != null) _pricing(context, cubit, s),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: entrance,
+                            maxLength: 100,
+                            decoration: InputDecoration(
+                              labelText: l.rideEntrance,
+                              counterText: '',
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _details(context),
+                            icon: const Icon(Icons.tune, size: 18),
+                            label: Text(l.rideExtras),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: s.quote == null || s.busy
-                        ? null
-                        : () => cubit.submit(
-                            payment: payment,
-                            entrance: entrance.text,
-                            comment: comment.text,
-                            childSeat: child,
-                            shared: shared,
-                          ),
-                    child: Text(l.rideSubmit),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        body: AbsorbPointer(
-          absorbing: s.busy,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-            children: [
-              Card(
-                margin: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    _routeRow(
-                      context,
-                      cubit.pickup.displayTitle,
-                      Icons.trip_origin,
-                      () => _address(context, cubit, true),
-                    ),
-                    Divider(
-                      height: 1,
-                      indent: 42,
-                      endIndent: 12,
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                    _routeRow(
-                      context,
-                      cubit.destination.displayTitle,
-                      Icons.place,
-                      () => _address(context, cubit, false),
+                    if (child || shared || comment.text.trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          [
+                            if (child) l.rideChildSeat,
+                            if (shared) l.rideTogether,
+                            if (comment.text.trim().isNotEmpty)
+                              comment.text.trim(),
+                          ].join(' · '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        leading: const Icon(Icons.payments_outlined),
+                        title: Text(
+                          l.ridePayment,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        subtitle: Text(
+                          _payments(l)[payment]!,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _payment(context),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              if (s.busy) const LinearProgressIndicator(),
-              if (s.error != null) ...[
-                Text(
-                  s.error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+    );
+  }
+
+  Widget _inline(
+    BuildContext context,
+    RideRequestCubit cubit,
+    RideRequestState s,
+  ) {
+    final l = AppLocalizations.of(context)!;
+    return AbsorbPointer(
+      absorbing: s.busy,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (s.busy) const LinearProgressIndicator(minHeight: 2),
+          if (s.error != null)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    s.error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
                 if (s.quote == null)
                   TextButton(
-                    onPressed: () => cubit.refreshQuote(),
+                    onPressed: cubit.refreshQuote,
                     child: Text(l.rideRetry),
                   ),
               ],
-              if (s.quote != null) _pricing(context, cubit, s),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: entrance,
-                      maxLength: 100,
-                      decoration: InputDecoration(
-                        labelText: l.rideEntrance,
-                        counterText: '',
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _details(context),
-                      icon: const Icon(Icons.tune, size: 18),
-                      label: Text(l.rideExtras),
-                    ),
-                  ),
-                ],
-              ),
-              if (child || shared || comment.text.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    [
-                      if (child) l.rideChildSeat,
-                      if (shared) l.rideTogether,
-                      if (comment.text.trim().isNotEmpty) comment.text.trim(),
-                    ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
+            ),
+          if (s.quote != null) _pricing(context, cubit, s),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: entrance,
+                  maxLength: 100,
+                  decoration: InputDecoration(
+                    labelText: l.rideEntranceShort,
+                    counterText: '',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(10),
                   ),
                 ),
-              const SizedBox(height: 8),
-              Card(
-                margin: EdgeInsets.zero,
-                child: ListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  leading: const Icon(Icons.payments_outlined),
-                  title: Text(
-                    l.ridePayment,
-                    style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: comment,
+                  maxLength: 1000,
+                  decoration: InputDecoration(
+                    labelText: l.rideCommentShort,
+                    counterText: '',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(10),
                   ),
-                  subtitle: Text(
-                    _payments(l)[payment]!,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _payment(context),
                 ),
               ),
             ],
           ),
-        ),
+          Wrap(
+            spacing: 6,
+            children: [
+              FilterChip(
+                label: Text(l.rideChildSeat),
+                selected: child,
+                onSelected: (v) => setState(() => child = v),
+                visualDensity: VisualDensity.compact,
+              ),
+              FilterChip(
+                label: Text(l.rideTogether),
+                selected: shared,
+                onSelected: (v) => setState(() => shared = v),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Icon(
+                Icons.payments_outlined,
+                size: 18,
+                semanticLabel: l.ridePayment,
+              ),
+              const SizedBox(width: 6),
+              for (final entry in _payments(l).entries)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: ChoiceChip(
+                      label: SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          entry.value,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      selected: payment == entry.key,
+                      showCheckmark: false,
+                      visualDensity: VisualDensity.compact,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+                      onSelected: (_) => setState(() => payment = entry.key),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.rideTotal,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      s.quote == null ? '—' : _total(context, cubit, s),
+                      key: const ValueKey('ride-total'),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: FilledButton(
+                  onPressed: s.quote == null || s.busy
+                      ? null
+                      : () => cubit.submit(
+                          payment: payment,
+                          entrance: entrance.text,
+                          comment: comment.text,
+                          childSeat: child,
+                          shared: shared,
+                        ),
+                  child: Text(l.rideSubmit),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -360,6 +521,62 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     }
   }
 
+  Widget _inlineStepper(
+    BuildContext context, {
+    required String label,
+    required String value,
+    VoidCallback? onMinus,
+    VoidCallback? onPlus,
+  }) {
+    final l = AppLocalizations.of(context)!;
+    Widget button(IconData icon, VoidCallback? action, String tooltip) =>
+        SizedBox(
+          width: 40,
+          height: 40,
+          child: IconButton.filledTonal(
+            onPressed: action,
+            tooltip: tooltip,
+            padding: EdgeInsets.zero,
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.text,
+              disabledForegroundColor: AppColors.muted,
+              disabledBackgroundColor: AppColors.surfaceAlt,
+            ),
+            icon: Icon(icon, size: 20),
+          ),
+        );
+    return Column(
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            button(Icons.remove, onMinus, l.rideDecrease),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ),
+            ),
+            button(Icons.add, onPlus, l.rideIncrease),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _pricing(
     BuildContext context,
     RideRequestCubit cubit,
@@ -391,7 +608,9 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                   child: Text(
                     seat ? l.ridePerSeat : l.ridePerSalon,
                     maxLines: 2,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: widget.embedded
+                        ? Theme.of(context).textTheme.bodySmall
+                        : Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -405,21 +624,61 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                 ),
               ],
             ),
-            if (seat)
+            if (widget.embedded)
+              Row(
+                children: [
+                  if (seat) ...[
+                    Expanded(
+                      child: _inlineStepper(
+                        context,
+                        label: l.ridePassengers,
+                        value: '$count',
+                        onMinus: count > 1
+                            ? () => cubit.refreshQuote(count - 1)
+                            : null,
+                        onPlus: count < 8
+                            ? () => cubit.refreshQuote(count + 1)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: _inlineStepper(
+                      context,
+                      label: l.rideYourPrice,
+                      value: amount(unit),
+                      onMinus: cubit.steps > 0
+                          ? () => cubit.changePrice(-1)
+                          : null,
+                      onPlus: cubit.steps < 1000
+                          ? () => cubit.changePrice(1)
+                          : null,
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              if (seat)
+                RideStepper(
+                  compact: true,
+                  label: l.ridePassengers,
+                  value: '$count',
+                  onMinus: count > 1
+                      ? () => cubit.refreshQuote(count - 1)
+                      : null,
+                  onPlus: count < 8
+                      ? () => cubit.refreshQuote(count + 1)
+                      : null,
+                ),
               RideStepper(
                 compact: true,
-                label: l.ridePassengers,
-                value: '$count',
-                onMinus: count > 1 ? () => cubit.refreshQuote(count - 1) : null,
-                onPlus: count < 8 ? () => cubit.refreshQuote(count + 1) : null,
+                label: l.rideYourPrice,
+                value: amount(unit),
+                onMinus: cubit.steps > 0 ? () => cubit.changePrice(-1) : null,
+                onPlus: cubit.steps < 1000 ? () => cubit.changePrice(1) : null,
               ),
-            RideStepper(
-              compact: true,
-              label: l.rideYourPrice,
-              value: amount(unit),
-              onMinus: cubit.steps > 0 ? () => cubit.changePrice(-1) : null,
-              onPlus: cubit.steps < 1000 ? () => cubit.changePrice(1) : null,
-            ),
+            ],
           ],
         ),
       ),
