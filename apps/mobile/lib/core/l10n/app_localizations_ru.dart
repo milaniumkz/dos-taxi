@@ -280,6 +280,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get paymentMethodHalykTransfer => 'Halyk.kz';
 
   @override
+  String get paymentMethodPsbTransfer => 'ПСБ';
+
+  @override
   String get paymentMethodTransferSubtitle => 'Оплата переводом после поездки';
 
   @override
@@ -1307,6 +1310,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get rideHalyk => 'Halyk.kz';
+
+  @override
+  String get ridePsb => 'ПСБ';
 
   @override
   String get rideSubmit => 'Подать заявку';

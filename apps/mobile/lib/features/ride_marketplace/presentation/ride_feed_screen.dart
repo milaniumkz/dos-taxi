@@ -377,6 +377,7 @@ class _RequestDetailsState extends State<_RequestDetails> {
             Text(switch (r['paymentMethod']) {
               'transfer_kaspi' => l.rideKaspi,
               'transfer_halyk' => l.rideHalyk,
+              'transfer_psb' => l.ridePsb,
               _ => l.rideCash,
             }),
             RideStepper(

@@ -125,6 +125,17 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
                           onTap: () =>
                               cubit.setPaymentMethod(TaxiPaymentMethod.halyk),
                         ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _PaymentRow(
+                          icon: Icons.account_balance_rounded,
+                          title: l10n.paymentMethodPsbTransfer,
+                          subtitle: l10n.paymentMethodTransferSubtitle,
+                          selected:
+                              state.paymentMethod == TaxiPaymentMethod.psb,
+                          brandColor: AppColors.primary,
+                          onTap: () =>
+                              cubit.setPaymentMethod(TaxiPaymentMethod.psb),
+                        ),
                         const SizedBox(height: AppSpacing.md),
                         PromoCodeField(
                           controller: _promoController,

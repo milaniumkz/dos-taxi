@@ -282,6 +282,9 @@ class AppLocalizationsKk extends AppLocalizations {
   String get paymentMethodHalykTransfer => 'Halyk.kz';
 
   @override
+  String get paymentMethodPsbTransfer => 'ПСБ';
+
+  @override
   String get paymentMethodTransferSubtitle => 'Сапардан кейін аударыммен төлеу';
 
   @override
@@ -1313,6 +1316,9 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get rideHalyk => 'Halyk.kz';
+
+  @override
+  String get ridePsb => 'ПСБ';
 
   @override
   String get rideSubmit => 'Өтінім беру';

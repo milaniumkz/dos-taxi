@@ -49,6 +49,7 @@ export enum PaymentMethod {
   CASH = 'cash',
   TRANSFER_KASPI = 'transfer_kaspi',
   TRANSFER_HALYK = 'transfer_halyk',
+  TRANSFER_PSB = 'transfer_psb',
   CORPORATE = 'corporate',
   BONUS = 'bonus',
 }

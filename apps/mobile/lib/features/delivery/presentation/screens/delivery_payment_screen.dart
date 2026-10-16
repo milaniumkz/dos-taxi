@@ -84,6 +84,16 @@ class _DeliveryPaymentScreenState extends State<DeliveryPaymentScreen> {
                             DeliveryPaymentMethod.halyk,
                           ),
                         ),
+                        const SizedBox(height: AppSpacing.sm),
+                        PaymentMethodCard(
+                          title: l10n.paymentMethodPsbTransfer,
+                          subtitle: l10n.paymentMethodTransferSubtitle,
+                          icon: Icons.account_balance_rounded,
+                          isSelected:
+                              state.paymentMethod == DeliveryPaymentMethod.psb,
+                          onTap: () =>
+                              cubit.setPaymentMethod(DeliveryPaymentMethod.psb),
+                        ),
                         const SizedBox(height: AppSpacing.md),
                         PromoCodeField(
                           controller: _promoController,
@@ -170,6 +180,8 @@ class _DeliveryPaymentScreenState extends State<DeliveryPaymentScreen> {
         return l10n.paymentMethodKaspiTransfer;
       case DeliveryPaymentMethod.halyk:
         return l10n.paymentMethodHalykTransfer;
+      case DeliveryPaymentMethod.psb:
+        return l10n.paymentMethodPsbTransfer;
     }
   }
 

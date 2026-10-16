@@ -214,7 +214,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
           termsKey: quote.termsKey,
           priceSteps: 0,
           unitPrice: "500.00",
-          paymentMethod: PaymentMethod.CASH,
+          paymentMethod: PaymentMethod.TRANSFER_PSB,
         },
         randomUUID(),
       );
@@ -223,6 +223,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
         .getRepository(OrderEntity)
         .findOneByOrFail({ id: created.id });
       expect(saved.passengerCount).toBe(passengerCount);
+      expect(saved.paymentMethod).toBe(PaymentMethod.TRANSFER_PSB);
       expect(saved.ridePricingBasis).toBe("salon");
       const offer = await market.submit(d.userId, created.id, {
         priceSteps: 2,

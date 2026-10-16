@@ -555,6 +555,7 @@ export function OrderCreationForm({
             <option value="cash">{labels.cash}</option>
             <option value="transfer_kaspi">Kaspi</option>
             <option value="transfer_halyk">Halyk</option>
+            <option value="transfer_psb">ПСБ</option>
           </select>
         </label>
         <p>{labels.prices}</p>

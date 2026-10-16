@@ -688,6 +688,8 @@ class _DriverActiveOrderCard extends StatelessWidget {
         return l10n.paymentMethodKaspiTransfer;
       case 'transfer_halyk':
         return l10n.paymentMethodHalykTransfer;
+      case 'transfer_psb':
+        return l10n.paymentMethodPsbTransfer;
       case 'cash':
         return l10n.taxiPaymentMethodCash;
       default:

@@ -349,6 +349,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     'cash': l.rideCash,
     'transfer_kaspi': l.rideKaspi,
     'transfer_halyk': l.rideHalyk,
+    'transfer_psb': l.ridePsb,
   };
 
   Widget _routeRow(

@@ -596,6 +596,12 @@ abstract class AppLocalizations {
   /// **'Halyk.kz'**
   String get paymentMethodHalykTransfer;
 
+  /// No description provided for @paymentMethodPsbTransfer.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПСБ'**
+  String get paymentMethodPsbTransfer;
+
   /// No description provided for @paymentMethodTransferSubtitle.
   ///
   /// In ru, this message translates to:
@@ -2539,6 +2545,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Halyk.kz'**
   String get rideHalyk;
+
+  /// No description provided for @ridePsb.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПСБ'**
+  String get ridePsb;
 
   /// No description provided for @rideSubmit.
   ///

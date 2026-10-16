@@ -233,7 +233,7 @@ void main() {
           find.byType(TextField).at(3),
           find.text(l.rideChildSeat),
           find.text(l.rideTogether),
-          find.text(l.rideHalyk),
+          find.text(l.ridePsb),
         ]) {
           await tester.ensureVisible(control);
           expect(control.hitTestable(), findsOneWidget);
@@ -275,8 +275,8 @@ void main() {
               .text,
           'У ворот',
         );
-        await tester.ensureVisible(find.text(l.rideHalyk));
-        await tester.tap(find.text(l.rideHalyk));
+        await tester.ensureVisible(find.text(l.ridePsb));
+        await tester.tap(find.text(l.ridePsb));
         await tester.pump();
         await tester.ensureVisible(find.text(l.rideChildSeat));
         await tester.tap(find.text(l.rideChildSeat));
@@ -302,7 +302,7 @@ void main() {
         expect(submitted?['passengerCount'], 2);
         expect(submitted?['pickupEntrance'], '2');
         expect(submitted?['pickupComment'], 'У ворот');
-        expect(submitted?['paymentMethod'], 'transfer_halyk');
+        expect(submitted?['paymentMethod'], 'transfer_psb');
         expect(submitted?['needsChildSeat'], true);
         expect(submitted?['sharedRide'], true);
         expect(find.byType(PassengerHomePlaceholderScreen), findsOneWidget);

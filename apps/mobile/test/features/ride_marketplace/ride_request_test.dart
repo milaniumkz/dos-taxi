@@ -312,9 +312,9 @@ void main() {
           expect(find.textContaining('У ворот'), findsOneWidget);
           await tester.tap(find.byIcon(Icons.payments_outlined));
           await tester.pumpAndSettle();
-          await tester.tap(find.text(l.rideHalyk));
+          await tester.tap(find.text(l.ridePsb));
           await tester.pumpAndSettle();
-          expect(find.text(l.rideHalyk), findsOneWidget);
+          expect(find.text(l.ridePsb), findsOneWidget);
           expect(find.text(l.rideSubmit).hitTestable(), findsOneWidget);
           Map<String, dynamic>? submitted;
           when(() => repo.create(any(), any())).thenAnswer((call) async {
@@ -329,7 +329,7 @@ void main() {
           expect(submitted?['pickupComment'], 'У ворот');
           expect(submitted?['needsChildSeat'], true);
           expect(submitted?['sharedRide'], true);
-          expect(submitted?['paymentMethod'], 'transfer_halyk');
+          expect(submitted?['paymentMethod'], 'transfer_psb');
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
           await cubit.close();
