@@ -1,5 +1,13 @@
 name: DOS Native App Checks
 on:
+  pull_request:
+    paths:
+      - 'apps/mobile/pubspec.yaml'
+      - 'apps/mobile/pubspec.lock'
+      - 'apps/mobile/lib/core/updates/**'
+      - 'apps/mobile/android/**'
+      - 'apps/mobile/ios/**'
+      - '.github/workflows/mobile-native-checks.yml'
   workflow_dispatch:
     inputs:
       build_ref:
@@ -9,7 +17,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: dos-native-${{ inputs.build_ref }}
+  group: dos-native-${{ inputs.build_ref || github.ref }}
   cancel-in-progress: false
 jobs:
   android:
@@ -19,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.build_ref }}
+          ref: ${{ inputs.build_ref || github.sha }}
           persist-credentials: false
       - uses: actions/setup-java@v4
         with:
@@ -51,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.build_ref }}
+          ref: ${{ inputs.build_ref || github.sha }}
           persist-credentials: false
       - uses: subosito/flutter-action@v2
         with:
