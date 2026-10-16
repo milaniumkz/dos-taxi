@@ -145,6 +145,27 @@ class _PassengerHomePlaceholderScreenState
                     onTap: cubit.selectRoutePointFromMap,
                   ),
                 ),
+                if (state.selectedAddress == null ||
+                    state.selectedService == HomeServiceType.delivery)
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + 12,
+                    right: 16,
+                    child: FloatingActionButton.small(
+                      heroTag: 'passenger-location',
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.text,
+                      onPressed: state.isResolvingCurrentLocation
+                          ? null
+                          : cubit.recenterToCurrentPosition,
+                      child: state.isResolvingCurrentLocation
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.my_location_rounded),
+                    ),
+                  ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
@@ -157,45 +178,12 @@ class _PassengerHomePlaceholderScreenState
                               builder: (context, constraints) => ConstrainedBox(
                                 key: _orderPanelKey,
                                 constraints: BoxConstraints(
-                                  maxHeight: constraints.maxHeight * 0.65,
+                                  maxHeight: constraints.maxHeight,
                                 ),
                                 child: SingleChildScrollView(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      if (state.selectedAddress == null ||
-                                          state.selectedService ==
-                                              HomeServiceType.delivery)
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: FloatingActionButton.small(
-                                            heroTag: 'passenger-location',
-                                            backgroundColor: AppColors.surface,
-                                            foregroundColor: AppColors.text,
-                                            onPressed:
-                                                state.isResolvingCurrentLocation
-                                                ? null
-                                                : cubit
-                                                      .recenterToCurrentPosition,
-                                            child:
-                                                state.isResolvingCurrentLocation
-                                                ? const SizedBox(
-                                                    width: 18,
-                                                    height: 18,
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                  )
-                                                : const Icon(
-                                                    Icons.my_location_rounded,
-                                                  ),
-                                          ),
-                                        ),
-                                      if (state.selectedAddress == null ||
-                                          state.selectedService ==
-                                              HomeServiceType.delivery)
-                                        const SizedBox(height: AppSpacing.sm),
                                       NotificationListener<
                                         SizeChangedLayoutNotification
                                       >(
@@ -370,7 +358,7 @@ class _PassengerOrderPanel extends StatelessWidget {
             !state.isResolvingMapAddress);
 
     return DosCard(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -404,7 +392,7 @@ class _PassengerOrderPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
@@ -442,7 +430,7 @@ class _PassengerOrderPanel extends StatelessWidget {
               onSelected: onDestinationSelected,
             ),
           ],
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: 4),
           if (state.selectedService != HomeServiceType.delivery)
             _HomeRideCheckout(
               pickup: state.effectivePickup,
@@ -590,6 +578,7 @@ class _DestinationSearchField extends StatelessWidget {
       ),
       child: AddressSearchBar(
         controller: controller,
+        compact: true,
         hintText: hintText,
         labelText: labelText,
         onTap: onTap,

@@ -213,7 +213,14 @@ void main() {
         );
         final changes = StreamController<HomeState>();
         addTearDown(changes.close);
-        whenListen(home, changes.stream, initialState: state);
+        whenListen(
+          home,
+          changes.stream,
+          initialState: state.copyWith(
+            selectedAddress: null,
+            routePoints: const [],
+          ),
+        );
         when(() => home.initialize()).thenAnswer((_) async {});
         serviceLocator.registerSingleton<HomeCubit>(home);
         serviceLocator.registerSingleton<RideRepository>(repo);
@@ -231,6 +238,39 @@ void main() {
         final l = AppLocalizations.of(
           tester.element(find.byType(PassengerHomePlaceholderScreen)),
         )!;
+        for (final control in [
+          find.text(l.ridePassengers),
+          find.byKey(const ValueKey('ride-manual-price')),
+          find.byType(TextField).at(0),
+          find.byType(TextField).at(1),
+          find.byType(TextField).at(3),
+          find.byType(TextField).at(4),
+          find.text(l.rideChildSeat),
+          find.text(l.rideTogether),
+          find.text(l.ridePsb),
+          find.text(l.rideSubmit),
+        ]) {
+          expect(control.hitTestable(), findsOneWidget);
+        }
+        expect(
+          tester
+              .state<ScrollableState>(find.byType(Scrollable).first)
+              .position
+              .maxScrollExtent,
+          0,
+        );
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, l.rideSubmit),
+              )
+              .onPressed,
+          isNull,
+        );
+        verifyNever(() => repo.quote(any()));
+        changes.add(state);
+        await tester.pump();
+        await tester.pump();
         final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
         final camera = map.mapController!.camera;
         final scrollViewport = tester.getRect(
@@ -249,7 +289,6 @@ void main() {
           find.text(l.rideTogether),
           find.text(l.ridePsb),
         ]) {
-          await tester.ensureVisible(control);
           expect(control.hitTestable(), findsOneWidget);
         }
         expect(
@@ -257,7 +296,7 @@ void main() {
               .state<ScrollableState>(find.byType(Scrollable).first)
               .position
               .maxScrollExtent,
-          greaterThan(0),
+          0,
         );
         await tester.ensureVisible(find.byIcon(Icons.add).first);
         await tester.tap(find.byIcon(Icons.add).first);
