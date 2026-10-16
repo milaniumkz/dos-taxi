@@ -98,7 +98,14 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       (Number(city.rideMinimumOrderKzt) * 100) / factor - 1e-8,
     );
     const rounding = city.currency === Currency.KZT ? 100 : 1;
-    const minimumUnitMinor = Math.ceil(minimumBaseMinor / rounding) * rounding;
+    const policy = city.rideManualPricePolicy ?? null;
+    const minimumUnitMinor = policy
+      ? minorUnits(
+          city.currency === Currency.RUB
+            ? policy.rubMinimum
+            : policy.kztMinimum,
+        )
+      : Math.ceil(minimumBaseMinor / rounding) * rounding;
     const minimumTotalMinor = minimumUnitMinor * count;
     const stepMinor = Math.max(
       rounding,
@@ -115,6 +122,7 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           minimumTotalMinor,
           minimumUnitMinor,
           stepMinor,
+          ...(policy ? [policy, rate] : []),
         ]),
       )
       .digest("hex");
@@ -122,6 +130,7 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       termsKey,
       cityId: city.id,
       cityName: city.nameRu,
+      manualPricePolicy: policy,
       currency: city.currency,
       pricingBasis: basis,
       passengerCount: count,
@@ -186,15 +195,51 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           code: "ORDER_ALREADY_ACTIVE",
           message: "ORDER_ALREADY_ACTIVE",
         });
-      const unit = money(
-        minorUnits(quote.minimumUnitPrice) +
-          minorUnits(quote.priceStep) * dto.priceSteps,
-      );
+      let currency = quote.currency;
+      let minimum = quote.minimumUnitPrice;
+      let step = quote.priceStep;
+      let fixed = quote.commissionFixed;
+      const policy = quote.manualPricePolicy;
+      let unit = money(minorUnits(minimum) + minorUnits(step) * dto.priceSteps);
+      if (dto.unitPrice !== undefined) {
+        if (!policy || dto.priceSteps !== 0)
+          throw new BadRequestException({
+            code: "RIDE_MANUAL_PRICE_NOT_ALLOWED",
+            message: "RIDE_MANUAL_PRICE_NOT_ALLOWED",
+          });
+        const amount = minorUnits(dto.unitPrice);
+        currency =
+          amount < minorUnits(policy.kztThreshold)
+            ? Currency.RUB
+            : Currency.KZT;
+        minimum =
+          currency === Currency.RUB ? policy.rubMinimum : policy.kztMinimum;
+        if (amount < minorUnits(minimum))
+          throw new BadRequestException({
+            code: "RIDE_PRICE_BELOW_MINIMUM",
+            message: "RIDE_PRICE_BELOW_MINIMUM",
+          });
+        unit = money(amount);
+        if (currency !== quote.currency) {
+          const factor =
+            currency === Currency.KZT
+              ? quote.exchangeRate
+              : 1 / quote.exchangeRate;
+          const rounding = currency === Currency.KZT ? 100 : 1;
+          step = money(
+            Math.max(
+              rounding,
+              Math.round((minorUnits(step) * factor) / rounding) * rounding,
+            ),
+          );
+          fixed = money(Math.round(minorUnits(fixed) * factor));
+        }
+      }
       const newOrder = await repository.save(
         repository.create({
           clientId,
           cityId: quote.cityId,
-          currency: quote.currency,
+          currency,
           serviceType: dto.serviceType,
           status: OrderStatus.DRAFT,
           paymentMethod: dto.paymentMethod,
@@ -207,10 +252,12 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           passengerCount: quote.passengerCount,
           ridePricingBasis: quote.pricingBasis,
           rideUnitPrice: unit,
-          rideMinimumUnitPrice: quote.minimumUnitPrice,
-          ridePriceStep: quote.priceStep,
+          rideMinimumUnitPrice: minimum,
+          ridePriceStep: step,
           rideCommissionPercent: quote.commissionPercent,
-          rideCommissionFixed: quote.commissionFixed,
+          rideCommissionFixed: fixed,
+          rideBalanceCurrency: policy ? quote.currency : null,
+          rideExchangeRate: policy ? String(quote.exchangeRate) : null,
           pickupEntrance: dto.pickupEntrance?.trim() || null,
           pickupComment: dto.pickupComment?.trim() || null,
           needsChildSeat: dto.needsChildSeat ?? false,

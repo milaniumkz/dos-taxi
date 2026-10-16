@@ -4444,6 +4444,28 @@
           "routePoints"
         ]
       },
+      "RideManualPricePolicyDto": {
+        "type": "object",
+        "properties": {
+          "rubMinimum": {
+            "type": "string",
+            "example": "90.00"
+          },
+          "kztMinimum": {
+            "type": "string",
+            "example": "500.00"
+          },
+          "kztThreshold": {
+            "type": "string",
+            "example": "500.00"
+          }
+        },
+        "required": [
+          "rubMinimum",
+          "kztMinimum",
+          "kztThreshold"
+        ]
+      },
       "RideQuoteResponseDto": {
         "type": "object",
         "properties": {
@@ -4457,6 +4479,14 @@
           },
           "cityName": {
             "type": "string"
+          },
+          "manualPricePolicy": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RideManualPricePolicyDto"
+              }
+            ]
           },
           "currency": {
             "type": "string",
@@ -4792,6 +4822,11 @@
             "type": "number",
             "description": "Number of positive price-button steps above the minimum",
             "default": 0
+          },
+          "unitPrice": {
+            "type": "string",
+            "description": "Manual per-seat/salon amount, only for cities with manualPricePolicy; currency inferred by server",
+            "example": "90.00"
           },
           "pickupEntrance": {
             "type": "string"

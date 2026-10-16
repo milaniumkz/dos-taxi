@@ -291,4 +291,102 @@ void main() {
       );
     }
   }
+  for (final locale in ['ru', 'kk']) {
+    testWidgets(
+      'Baikonur $locale manual price switches currency at 500 and blocks amounts below 90',
+      (tester) async {
+        final repo = Repo();
+        when(() => repo.quote(any())).thenAnswer((call) async {
+          final count =
+              (call.positionalArguments[0] as Map)['passengerCount'] as int;
+          return Right({
+            ...quote(count: count),
+            'currency': 'RUB',
+            'minimumUnitPrice': '90.00',
+            'minimumOrderPrice': (90 * count).toString(),
+            'manualPricePolicy': {
+              'rubMinimum': '90.00',
+              'kztMinimum': '500.00',
+              'kztThreshold': '500.00',
+            },
+          });
+        });
+        Map<String, dynamic>? submitted;
+        when(() => repo.create(any(), any())).thenAnswer((call) async {
+          submitted = call.positionalArguments[0] as Map<String, dynamic>;
+          return const Left(Failure(code: 'NETWORK_ERROR', message: 'offline'));
+        });
+        final cubit = RideRequestCubit(repo, pickup, destination, 'taxi');
+        await cubit.refreshQuote();
+        await tester.pumpWidget(
+          BlocProvider.value(
+            value: cubit,
+            child: MaterialApp(
+              theme: AppTheme.light(),
+              locale: Locale(locale),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: const Scaffold(
+                body: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: RideRequestScreen(embedded: true),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(
+          find.byIcon(Icons.add),
+          findsOneWidget,
+        ); // seats only; price has no +/-.
+        final input = find.byKey(const ValueKey('ride-manual-price'));
+        final l = AppLocalizations.of(
+          tester.element(find.byType(RideRequestScreen)),
+        )!;
+        for (final amount in ['89', '90', '499', '500', '1000']) {
+          await tester.enterText(input, amount);
+          await tester.pump();
+          expect(
+            cubit.selectedCurrency,
+            int.parse(amount) < 500 ? 'RUB' : 'KZT',
+          );
+          expect(
+            tester
+                    .widget<FilledButton>(
+                      find.widgetWithText(FilledButton, l.rideSubmit),
+                    )
+                    .onPressed !=
+                null,
+            int.parse(amount) >= 90,
+          );
+        }
+        await tester.enterText(input, '');
+        await tester.pump();
+        expect(cubit.validManualPrice, false);
+        await tester.enterText(input, '90');
+        await tester.pump();
+        await tester.tap(find.byIcon(Icons.add));
+        await tester.pump();
+        await tester.pump();
+        expect(cubit.manualPrice, '90');
+        expect(
+          tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
+          contains('180'),
+        );
+        await tester.tap(find.text(l.rideSubmit));
+        await tester.pump();
+        expect(submitted?['unitPrice'], '90.00');
+        expect(submitted?['priceSteps'], 0);
+        expect(submitted?['passengerCount'], 2);
+        expect(
+          submitted?.containsKey('currency'),
+          false,
+        ); // inferred on server.
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await cubit.close();
+      },
+    );
+  }
 }
