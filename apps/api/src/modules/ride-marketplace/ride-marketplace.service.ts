@@ -90,8 +90,11 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
         code: "RIDE_CURRENCY_UNSUPPORTED",
         message: "RIDE_CURRENCY_UNSUPPORTED",
       });
-    const basis = city.ridePricingBasis;
-    const count = basis === "seat" ? (dto.passengerCount ?? 1) : 1;
+    // Snapshot whole-group fares using the existing salon basis. Existing
+    // per-seat orders and older clients keep their original pricing semantics.
+    const basis = dto.priceIsTotal ? "salon" : city.ridePricingBasis;
+    const count =
+      dto.priceIsTotal || basis === "seat" ? (dto.passengerCount ?? 1) : 1;
     const rate = Number(city.rideExchangeRate);
     const policy = city.rideManualPricePolicy
       ? {
@@ -112,7 +115,7 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           currency === Currency.RUB ? policy.rubMinimum : policy.kztMinimum,
         )
       : Math.ceil(minimumBaseMinor / rounding) * rounding;
-    const minimumTotalMinor = minimumUnitMinor * count;
+    const minimumTotalMinor = minimumUnitMinor * (basis === "seat" ? count : 1);
     const stepMinor = Math.max(
       rounding,
       Math.round((Number(city.ridePriceStepKzt) * 100) / factor / rounding) *
@@ -141,6 +144,7 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       balanceCurrency: city.currency,
       currency,
       pricingBasis: basis,
+      priceIsTotal: dto.priceIsTotal ?? false,
       passengerCount: count,
       minimumOrderPrice: money(minimumTotalMinor),
       minimumUnitPrice: money(minimumUnitMinor),
@@ -261,7 +265,10 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           serviceType: dto.serviceType,
           status: OrderStatus.DRAFT,
           paymentMethod: dto.paymentMethod,
-          estimatedPrice: totalAmount(unit, quote.passengerCount),
+          estimatedPrice: totalAmount(
+            unit,
+            quote.pricingBasis === "seat" ? quote.passengerCount : 1,
+          ),
           discountAmount: "0.00",
           carClass: null,
           isNegotiated: true,
@@ -565,7 +572,10 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           executorId: driver.id,
           priceSteps: dto.priceSteps,
           unitPrice: money(price),
-          totalPrice: money(price * order.passengerCount),
+          totalPrice: money(
+            price *
+              (order.ridePricingBasis === "seat" ? order.passengerCount : 1),
+          ),
           hasChildSeat: Boolean(dto.hasChildSeat),
           status: "pending",
           version: (existing?.version ?? 0) + 1,

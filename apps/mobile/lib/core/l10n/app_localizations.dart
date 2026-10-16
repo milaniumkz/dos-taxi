@@ -3019,6 +3019,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось открыть способ связи'**
   String get supportContactOpenFailed;
+
+  /// No description provided for @ridePerOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена за весь заказ'**
+  String get ridePerOrder;
 }
 
 class _AppLocalizationsDelegate

@@ -192,6 +192,59 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       await db.destroy();
     }
   });
+  it.each([2, 4])(
+    "keeps 500 as the entire fare for %i passengers through driver negotiation and completion",
+    async (passengerCount) => {
+      const client = await user();
+      const d = await driver();
+      const base = {
+        cityId: city.id,
+        serviceType: ServiceType.TAXI,
+        routePoints: points,
+        passengerCount,
+        priceIsTotal: true,
+      };
+      const quote = await market.quote(base);
+      expect(quote.minimumOrderPrice).toBe("500.00");
+      expect(quote.passengerCount).toBe(passengerCount);
+      const created = await market.create(
+        client.id,
+        {
+          ...base,
+          termsKey: quote.termsKey,
+          priceSteps: 0,
+          unitPrice: "500.00",
+          paymentMethod: PaymentMethod.CASH,
+        },
+        randomUUID(),
+      );
+      expect(created.estimatedPrice).toBe("500.00");
+      const saved = await db
+        .getRepository(OrderEntity)
+        .findOneByOrFail({ id: created.id });
+      expect(saved.passengerCount).toBe(passengerCount);
+      expect(saved.ridePricingBasis).toBe("salon");
+      const offer = await market.submit(d.userId, created.id, {
+        priceSteps: 2,
+        hasChildSeat: false,
+      });
+      expect(offer.totalPrice).toBe("600.00");
+      const accepted = await market.accept(client.id, created.id, offer.id, {
+        version: offer.version,
+      });
+      expect(accepted.estimatedPrice).toBe("600.00");
+      await orders.transition(created.id, OrderStatus.IN_PROGRESS, d.userId);
+      await orders.transition(created.id, OrderStatus.COMPLETED, d.userId);
+      const completed = await db
+        .getRepository(OrderEntity)
+        .findOneByOrFail({ id: created.id });
+      expect(completed.finalPrice).toBe("600.00");
+      expect(
+        (await db.getRepository(ExecutorEntity).findOneByOrFail({ id: d.id }))
+          .balance,
+      ).toBe("958.00");
+    },
+  );
   it("quotes KZT outside configured Baikonur, regardless of wallet currency; salon hides quantity", async () => {
     const quote = await market.quote({
       cityId: city.id,

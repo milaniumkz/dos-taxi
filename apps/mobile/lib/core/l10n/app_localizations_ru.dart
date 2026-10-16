@@ -1580,4 +1580,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get supportContactOpenFailed => 'Не удалось открыть способ связи';
+
+  @override
+  String get ridePerOrder => 'Цена за весь заказ';
 }

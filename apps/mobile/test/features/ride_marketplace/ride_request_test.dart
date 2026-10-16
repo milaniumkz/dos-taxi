@@ -33,11 +33,10 @@ Map<String, dynamic> quote({
   'termsKey': 'fingerprint',
   'pricingBasis': basis,
   'currency': currency,
-  'passengerCount': basis == 'seat' ? count : 1,
+  'priceIsTotal': true,
+  'passengerCount': count,
   'minimumUnitPrice': currency == 'RUB' ? '71.43' : '500.00',
-  'minimumOrderPrice': currency == 'RUB'
-      ? (71.43 * (basis == 'seat' ? count : 1)).toStringAsFixed(2)
-      : (500 * (basis == 'seat' ? count : 1)).toStringAsFixed(2),
+  'minimumOrderPrice': currency == 'RUB' ? '71.43' : '500.00',
   'priceStep': currency == 'RUB' ? '7.14' : '50.00',
 };
 void main() {
@@ -69,6 +68,7 @@ void main() {
       expect(keys.toSet(), hasLength(1));
       expect(payloads.first['priceSteps'], 1);
       expect(payloads.first['passengerCount'], 2);
+      expect(payloads.first['priceIsTotal'], true);
       expect(payloads.first.containsKey('price'), isFalse);
       expect(payloads.first['paymentMethod'], 'transfer_kaspi');
       expect(payloads.first['pickupEntrance'], '');
@@ -81,7 +81,7 @@ void main() {
     },
   );
   test(
-    'changing seat count preserves the chosen per-seat price steps',
+    'changing passenger count preserves the chosen trip price steps',
     () async {
       final repo = Repo();
       when(() => repo.quote(any())).thenAnswer(
@@ -98,7 +98,7 @@ void main() {
       await cubit.refreshQuote(2);
       expect(cubit.steps, 2);
       expect(cubit.state.quote!['minimumUnitPrice'], '500.00');
-      expect(cubit.state.quote!['minimumOrderPrice'], '1000.00');
+      expect(cubit.state.quote!['minimumOrderPrice'], '500.00');
       await cubit.refreshQuote(3);
       expect(cubit.steps, 2);
       await cubit.close();
@@ -124,7 +124,66 @@ void main() {
     await cubit.close();
   });
   testWidgets(
-    'seat total grows 500, 1000, 1500 and quantity keeps the chosen unit price',
+    'four passengers offer 500 for the entire group without a total',
+    (tester) async {
+      final repo = Repo();
+      when(() => repo.quote(any())).thenAnswer((call) async {
+        final count =
+            (call.positionalArguments[0] as Map)['passengerCount'] as int;
+        return Right({
+          ...quote(count: count),
+          'priceInputMode': 'manual',
+          'priceIsTotal': true,
+          'pricingBasis': 'salon',
+          'passengerCount': count,
+          'minimumOrderPrice': '500.00',
+        });
+      });
+      Map<String, dynamic>? submitted;
+      when(() => repo.create(any(), any())).thenAnswer((call) async {
+        submitted = call.positionalArguments[0] as Map<String, dynamic>;
+        return const Left(Failure(code: 'NETWORK_ERROR', message: 'offline'));
+      });
+      final cubit = RideRequestCubit(repo, pickup, destination, 'taxi');
+      await cubit.refreshQuote();
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: cubit,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            locale: const Locale('ru'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const RideRequestScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byIcon(Icons.add));
+        await tester.pumpAndSettle();
+      }
+      final input = find.byKey(const ValueKey('ride-manual-price'));
+      await tester.enterText(input, '500');
+      await tester.pump();
+      final l = AppLocalizations.of(
+        tester.element(find.byType(RideRequestScreen)),
+      )!;
+      expect(find.text(l.rideTotal), findsNothing);
+      expect(find.text(l.ridePerSeat), findsNothing);
+      expect(find.text(l.ridePerOrder), findsOneWidget);
+      expect(tester.widget<TextField>(input).controller!.text, '500');
+      await tester.tap(find.text(l.rideSubmit));
+      await tester.pump();
+      expect(submitted?['passengerCount'], 4);
+      expect(submitted?['unitPrice'], '500.00');
+      expect(submitted?['priceIsTotal'], true);
+      await tester.pumpWidget(const SizedBox());
+      await cubit.close();
+    },
+  );
+  testWidgets(
+    'passenger count changes preserve the offered price without a total',
     (tester) async {
       final repo = Repo();
       when(() => repo.quote(any())).thenAnswer(
@@ -150,35 +209,25 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(
-        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
-        matches(RegExp(r'500')),
-      );
+      expect(find.byKey(const ValueKey('ride-total')), findsNothing);
+      expect(find.textContaining('500'), findsWidgets);
       await tester.tap(find.byIcon(Icons.add).first);
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
-        matches(RegExp(r'1\s*000')),
-      );
+      expect(find.byKey(const ValueKey('ride-total')), findsNothing);
+      expect(find.textContaining('500'), findsWidgets);
       await tester.tap(find.byIcon(Icons.add).first);
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
-        matches(RegExp(r'1\s*500')),
-      );
+      expect(find.byKey(const ValueKey('ride-total')), findsNothing);
+      expect(find.textContaining('500'), findsWidgets);
       await tester.tap(find.byIcon(Icons.add).last);
       await tester.pumpAndSettle();
-      expect(
-        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
-        matches(RegExp(r'1\s*650')),
-      );
+      expect(find.byKey(const ValueKey('ride-total')), findsNothing);
+      expect(find.textContaining('550'), findsWidgets);
       await tester.tap(find.byIcon(Icons.remove).first);
       await tester.pumpAndSettle();
       expect(cubit.steps, 1);
-      expect(
-        tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
-        matches(RegExp(r'1\s*100')),
-      );
+      expect(find.byKey(const ValueKey('ride-total')), findsNothing);
+      expect(find.textContaining('550'), findsWidgets);
       final buttons = tester
           .widgetList<IconButton>(find.byType(IconButton))
           .where((b) => b.style?.foregroundColor != null);
@@ -244,10 +293,7 @@ void main() {
             tester.widgetList<TextField>(find.byType(TextField)).length,
             inInclusiveRange(1, 2),
           );
-          expect(
-            find.byIcon(Icons.add),
-            findsNWidgets(basis == 'seat' ? 2 : 1),
-          );
+          expect(find.byIcon(Icons.add), findsNWidgets(2));
           expect(find.textContaining('71,43'), findsWidgets);
           await tester.tap(find.byIcon(Icons.add).last);
           await tester.pump();
@@ -303,7 +349,7 @@ void main() {
             ...quote(count: count),
             'currency': 'RUB',
             'minimumUnitPrice': '90.00',
-            'minimumOrderPrice': (90 * count).toString(),
+            'minimumOrderPrice': '90.00',
             'manualPricePolicy': {
               'rubMinimum': '90.00',
               'kztMinimum': '500.00',
@@ -370,10 +416,8 @@ void main() {
         await tester.pump();
         await tester.pump();
         expect(cubit.manualPrice, '90');
-        expect(
-          tester.widget<Text>(find.byKey(const ValueKey('ride-total'))).data,
-          contains('180'),
-        );
+        expect(find.byKey(const ValueKey('ride-total')), findsNothing);
+        expect(tester.widget<TextField>(input).controller!.text, '90');
         await tester.tap(find.text(l.rideSubmit));
         await tester.pump();
         expect(submitted?['unitPrice'], '90.00');
