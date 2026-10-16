@@ -416,6 +416,9 @@ export function OrderCreationForm({
   const [service, setService] = useState("taxi");
   const [vehicle, setVehicle] = useState("economy");
   const [state, action, pending] = useActionState(saveOrder, { error: "" });
+  const selectedCity = cities.find((item) => item.id === cityId);
+  const psbAvailable = selectedCity && [selectedCity.nameRu, selectedCity.nameKk]
+    .some((name) => ["байконур", "байқоңыр", "baikonur"].includes(name.trim().toLowerCase()));
   const available = tariffs.filter(
     (t) =>
       t.cityId === cityId &&
@@ -551,11 +554,11 @@ export function OrderCreationForm({
         <strong>{labels.summary}</strong>
         <label className="field">
           <span>{labels.payment}</span>
-          <select name="paymentMethod" defaultValue="cash" disabled={pending}>
+          <select key={cityId} name="paymentMethod" defaultValue="cash" disabled={pending}>
             <option value="cash">{labels.cash}</option>
             <option value="transfer_kaspi">Kaspi</option>
             <option value="transfer_halyk">Halyk</option>
-            <option value="transfer_psb">ПСБ</option>
+            {psbAvailable && <option value="transfer_psb">ПСБ</option>}
           </select>
         </label>
         <p>{labels.prices}</p>

@@ -8,6 +8,7 @@ class DeliveryEstimateModel extends DeliveryEstimate {
     required super.currency,
     required super.etaMinutes,
     super.discountAmount,
+    super.availablePaymentMethods,
   });
 
   factory DeliveryEstimateModel.fromEstimateResponse({
@@ -32,6 +33,9 @@ class DeliveryEstimateModel extends DeliveryEstimate {
       vehicleType: vehicleType,
       price: (rawPrice as num).toDouble(),
       currency: json['currency'] as String? ?? 'KZT',
+      availablePaymentMethods:
+          (json['availablePaymentMethods'] as List?)?.cast<String>() ??
+          const [],
       discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0,
       etaMinutes: rawEta is num
           ? rawEta > 60

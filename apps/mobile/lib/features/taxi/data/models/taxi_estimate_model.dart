@@ -7,6 +7,7 @@ class TaxiEstimateModel extends TaxiEstimate {
     required super.currency,
     required super.etaMinutes,
     super.discountAmount,
+    super.availablePaymentMethods,
   });
 
   factory TaxiEstimateModel.fromEstimateResponse({
@@ -31,6 +32,9 @@ class TaxiEstimateModel extends TaxiEstimate {
       carClass: carClass,
       price: (rawPrice as num).toDouble(),
       currency: json['currency'] as String? ?? 'KZT',
+      availablePaymentMethods:
+          (json['availablePaymentMethods'] as List?)?.cast<String>() ??
+          const [],
       discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0,
       etaMinutes: rawEta is num
           ? rawEta > 60

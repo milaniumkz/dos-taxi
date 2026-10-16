@@ -28,6 +28,8 @@ class RideRequestCubit extends Cubit<RideRequestState> {
   AddressSuggestion? pickup, destination;
   bool get routeReady => pickup != null && destination != null;
   final String serviceType;
+  static const _defaultPayments = ['cash', 'transfer_kaspi', 'transfer_halyk'];
+  List<String> availablePaymentMethods = _defaultPayments;
   int passengers = 1, steps = 0;
   String? manualPrice;
   Map? get manualPolicy => state.quote?['manualPricePolicy'] as Map?;
@@ -90,23 +92,33 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     if (count != null) passengers = count;
     final revision = ++_revision;
     if (!routeReady) {
+      availablePaymentMethods = _defaultPayments;
       emit(const RideRequestState());
       return;
     }
     emit(const RideRequestState(busy: true));
     final result = await repository.quote(_route);
     if (isClosed || revision != _revision) return;
-    result.fold((f) => emit(RideRequestState(error: f.message)), (q) {
-      steps = preservedSteps;
-      if (q['manualPricePolicy'] == null && q['priceInputMode'] != 'manual') {
-        manualPrice = null;
-      } else {
-        manualPrice ??= double.parse(
-          q['minimumUnitPrice'].toString(),
-        ).ceil().toString();
-      }
-      emit(RideRequestState(quote: q));
-    });
+    result.fold(
+      (f) {
+        availablePaymentMethods = _defaultPayments;
+        emit(RideRequestState(error: f.message));
+      },
+      (q) {
+        availablePaymentMethods =
+            (q['availablePaymentMethods'] as List?)?.cast<String>() ??
+            _defaultPayments;
+        steps = preservedSteps;
+        if (q['manualPricePolicy'] == null && q['priceInputMode'] != 'manual') {
+          manualPrice = null;
+        } else {
+          manualPrice ??= double.parse(
+            q['minimumUnitPrice'].toString(),
+          ).ceil().toString();
+        }
+        emit(RideRequestState(quote: q));
+      },
+    );
   }
 
   Future<void> changeAddress(
@@ -137,6 +149,7 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     if (!routeReady || state.busy || state.quote == null || !validManualPrice) {
       return;
     }
+    if (!availablePaymentMethods.contains(payment)) return;
     final q = state.quote!;
     final data = {
       ..._route,

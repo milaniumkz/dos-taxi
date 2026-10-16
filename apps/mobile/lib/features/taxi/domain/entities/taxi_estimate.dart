@@ -7,6 +7,7 @@ class TaxiEstimate extends Equatable {
     required this.currency,
     required this.etaMinutes,
     this.discountAmount = 0,
+    this.availablePaymentMethods = const [],
   });
 
   final String carClass;
@@ -14,11 +15,13 @@ class TaxiEstimate extends Equatable {
   final String currency;
   final int etaMinutes;
   final double discountAmount;
+  final List<String> availablePaymentMethods;
   double get originalPrice => price + discountAmount;
 
   TaxiEstimate withoutPromo() => TaxiEstimate(
     carClass: carClass,
     price: originalPrice,
+    availablePaymentMethods: availablePaymentMethods,
     currency: currency,
     etaMinutes: etaMinutes,
   );
@@ -30,5 +33,6 @@ class TaxiEstimate extends Equatable {
     currency,
     etaMinutes,
     discountAmount,
+    availablePaymentMethods,
   ];
 }

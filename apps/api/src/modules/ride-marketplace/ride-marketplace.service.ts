@@ -1,7 +1,9 @@
+import { availableOrderPaymentMethods } from "../payments/order-payment-policy";
 import { isUUID } from "class-validator";
 import { createHash } from "node:crypto";
 import {
   Currency,
+  PaymentMethod,
   ExecutorType,
   OrderStatus,
   ServiceType,
@@ -140,6 +142,7 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       termsKey,
       cityId: city.id,
       cityName: city.nameRu,
+      availablePaymentMethods: availableOrderPaymentMethods(city),
       manualPricePolicy: policy,
       priceInputMode: "manual" as const,
       balanceCurrency: city.currency,
@@ -202,6 +205,15 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
         return existing;
       }
       const quote = await this.quote(dto);
+      if (
+        dto.paymentMethod === PaymentMethod.TRANSFER_PSB &&
+        !quote.availablePaymentMethods.includes(dto.paymentMethod)
+      ) {
+        throw new BadRequestException({
+          code: "PAYMENT_METHOD_UNAVAILABLE",
+          message: "ПСБ доступен только в Байконуре.",
+        });
+      }
       if (dto.termsKey !== quote.termsKey)
         throw new ConflictException({
           code: "RIDE_PRICING_CHANGED",

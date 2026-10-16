@@ -29,7 +29,14 @@ Map<String, dynamic> quote({
   String basis = 'seat',
   String currency = 'KZT',
   int count = 1,
+  bool psbAvailable = false,
 }) => {
+  'availablePaymentMethods': [
+    'cash',
+    'transfer_kaspi',
+    'transfer_halyk',
+    if (psbAvailable) 'transfer_psb',
+  ],
   'termsKey': 'fingerprint',
   'pricingBasis': basis,
   'currency': currency,
@@ -40,6 +47,48 @@ Map<String, dynamic> quote({
   'priceStep': currency == 'RUB' ? '7.14' : '50.00',
 };
 void main() {
+  testWidgets(
+    'PSB is shown only when the resolved city permits it and resets when the city changes',
+    (tester) async {
+      final repo = Repo();
+      var psbAvailable = true;
+      when(
+        () => repo.quote(any()),
+      ).thenAnswer((_) async => Right(quote(psbAvailable: psbAvailable)));
+      final cubit = RideRequestCubit(repo, pickup, destination, 'taxi');
+      await cubit.refreshQuote();
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: cubit,
+          child: MaterialApp(
+            locale: const Locale('ru'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const Scaffold(body: RideRequestScreen(embedded: true)),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('ПСБ'), findsOneWidget);
+      await tester.tap(find.text('ПСБ'));
+      await tester.pump();
+      psbAvailable = false;
+      await cubit.refreshQuote();
+      await tester.pump();
+      expect(find.text('ПСБ'), findsNothing);
+      final l = AppLocalizations.of(
+        tester.element(find.byType(RideRequestScreen)),
+      )!;
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, l.rideCash))
+            .selected,
+        isTrue,
+      );
+      await tester.pumpWidget(const SizedBox());
+      await cubit.close();
+    },
+  );
   test(
     'keeps passenger count and price entered before the route without requesting a quote',
     () async {
@@ -284,7 +333,8 @@ void main() {
           addTearDown(tester.view.resetDevicePixelRatio);
           final repo = Repo();
           when(() => repo.quote(any())).thenAnswer(
-            (_) async => Right(quote(basis: basis, currency: 'RUB')),
+            (_) async =>
+                Right(quote(basis: basis, currency: 'RUB', psbAvailable: true)),
           );
           final cubit = RideRequestCubit(repo, pickup, destination, 'taxi');
           await cubit.refreshQuote();

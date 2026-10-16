@@ -363,7 +363,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
         pickup: pickup,
         destination: destination,
         carClass: selectedEstimate.carClass,
-        paymentMethod: state.paymentMethod.apiValue,
+        paymentMethod: state.effectivePaymentMethod.apiValue,
         distanceMeters: route.distanceMeters,
         durationSeconds: route.durationSeconds,
         serviceType: state.serviceType,

@@ -14,6 +14,8 @@ export class RideManualPricePolicyDto {
   @ApiProperty({ example: "500.00" }) kztThreshold!: string;
 }
 export class RideQuoteResponseDto {
+  @ApiProperty({ enum: PaymentMethod, isArray: true })
+  availablePaymentMethods!: PaymentMethod[];
   @ApiProperty() priceIsTotal!: boolean;
   @ApiProperty({ description: "Fingerprint to pass unchanged when submitting" })
   termsKey!: string;

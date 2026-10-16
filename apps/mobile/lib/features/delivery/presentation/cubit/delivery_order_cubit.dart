@@ -449,7 +449,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         contactPhone: state.contactPhone,
         distanceMeters: routeInfo.distanceMeters,
         durationSeconds: routeInfo.durationSeconds,
-        paymentMethod: state.paymentMethod.apiValue,
+        paymentMethod: state.effectivePaymentMethod.apiValue,
         promoCode: state.promoCode.isEmpty ? null : state.promoCode,
       ),
     );
