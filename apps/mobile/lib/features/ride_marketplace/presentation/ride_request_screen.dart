@@ -239,7 +239,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                     labelText: l.rideEntranceShort,
                     counterText: '',
                     isDense: true,
-                    contentPadding: const EdgeInsets.all(10),
+                    contentPadding: const EdgeInsets.all(8),
                   ),
                 ),
               ),
@@ -252,7 +252,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                     labelText: l.rideCommentShort,
                     counterText: '',
                     isDense: true,
-                    contentPadding: const EdgeInsets.all(10),
+                    contentPadding: const EdgeInsets.all(8),
                   ),
                 ),
               ),
@@ -271,6 +271,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                 ),
                 onSelected: (v) => setState(() => child = v),
                 visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               FilterChip(
                 label: Text(l.rideTogether),
@@ -282,6 +283,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                 ),
                 onSelected: (v) => setState(() => shared = v),
                 visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ],
           ),
@@ -319,6 +321,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                       ),
                       showCheckmark: false,
                       visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       labelPadding: const EdgeInsets.symmetric(horizontal: 2),
                       onSelected: (_) => setState(() => payment = entry.key),
                     ),
@@ -330,6 +333,9 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
+              style: FilledButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed:
                   !cubit.routeReady ||
                       s.quote == null ||
@@ -576,7 +582,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
       ],
       onChanged: cubit.changeManualPrice,
       decoration: InputDecoration(
-        labelText: l.rideYourPrice,
+        labelText: widget.embedded ? l.ridePerOrder : l.rideYourPrice,
         suffixText: cubit.state.quote == null
             ? null
             : cubit.selectedCurrency == 'RUB'
@@ -616,32 +622,36 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: widget.embedded ? 4 : 8,
+        ),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l.ridePerOrder,
-                    maxLines: 2,
-                    style: widget.embedded
-                        ? Theme.of(context).textTheme.bodySmall
-                        : Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (state.quote != null)
-                  Flexible(
+            if (!widget.embedded)
+              Row(
+                children: [
+                  Expanded(
                     child: Text(
-                      '${l.rideMinimum}: ${amount(cubit.minimumMinor)}',
+                      l.ridePerOrder,
                       maxLines: 2,
-                      textAlign: TextAlign.right,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: widget.embedded
+                          ? Theme.of(context).textTheme.bodySmall
+                          : Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  if (state.quote != null)
+                    Flexible(
+                      child: Text(
+                        '${l.rideMinimum}: ${amount(cubit.minimumMinor)}',
+                        maxLines: 2,
+                        textAlign: TextAlign.right,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                ],
+              ),
             if (widget.embedded)
               Row(
                 children: [
@@ -666,7 +676,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                         ? _manualPriceField(context, cubit)
                         : _inlineStepper(
                             context,
-                            label: l.rideYourPrice,
+                            label: l.ridePerOrder,
                             value: amount(unit),
                             onMinus: cubit.steps > 0
                                 ? () => cubit.changePrice(-1)
