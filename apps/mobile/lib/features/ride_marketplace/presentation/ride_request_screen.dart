@@ -275,12 +275,22 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
               FilterChip(
                 label: Text(l.rideChildSeat),
                 selected: child,
+                selectedColor: AppColors.primaryDark,
+                checkmarkColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: child ? Colors.white : AppColors.text,
+                ),
                 onSelected: (v) => setState(() => child = v),
                 visualDensity: VisualDensity.compact,
               ),
               FilterChip(
                 label: Text(l.rideTogether),
                 selected: shared,
+                selectedColor: AppColors.primaryDark,
+                checkmarkColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: shared ? Colors.white : AppColors.text,
+                ),
                 onSelected: (v) => setState(() => shared = v),
                 visualDensity: VisualDensity.compact,
               ),
@@ -309,6 +319,12 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                         ),
                       ),
                       selected: payment == entry.key,
+                      selectedColor: AppColors.primaryDark,
+                      labelStyle: TextStyle(
+                        color: payment == entry.key
+                            ? Colors.white
+                            : AppColors.text,
+                      ),
                       showCheckmark: false,
                       visualDensity: VisualDensity.compact,
                       labelPadding: const EdgeInsets.symmetric(horizontal: 2),
