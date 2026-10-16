@@ -102,8 +102,8 @@
   "taxiPaymentMethodCard": "Банковская карта",
   "taxiPaymentMethodCash": "Наличными",
   "taxiPaymentMethodBonus": "Бонусами",
-  "paymentMethodKaspiTransfer": "Перевод Kaspi",
-  "paymentMethodHalykTransfer": "Перевод Halyk",
+  "paymentMethodKaspiTransfer": "Kaspi.kz",
+  "paymentMethodHalykTransfer": "Halyk.kz",
   "paymentMethodTransferSubtitle": "Оплата переводом после поездки",
   "taxiPaymentPromoLabel": "Промокод",
   "taxiPaymentPromoHint": "Например, ALMATY10",
@@ -517,8 +517,8 @@
   "rideTogetherHint": "Водитель может подбирать пассажиров по пути",
   "ridePayment": "Способ оплаты",
   "rideCash": "Наличными",
-  "rideKaspi": "Перевод Kaspi",
-  "rideHalyk": "Перевод Halyk",
+  "rideKaspi": "Kaspi.kz",
+  "rideHalyk": "Halyk.kz",
   "rideSubmit": "Подать заявку",
   "ridePerSeat": "Цена за место",
   "ridePerSalon": "Цена за весь салон",
@@ -653,5 +653,8 @@
   },
   "rideOfferSoundEnabled": "Звук включён. Новые предложения будут сопровождаться сигналом.",
   "rideExtras": "Пожелания",
-  "rideExtrasDone": "Готово"
+  "rideExtrasDone": "Готово",
+  "supportContactsIntro": "Оператор ответит здесь. Также можно связаться с поддержкой:",
+  "supportContactsUnavailable": "Не удалось загрузить контакты поддержки",
+  "supportContactOpenFailed": "Не удалось открыть способ связи"
 }

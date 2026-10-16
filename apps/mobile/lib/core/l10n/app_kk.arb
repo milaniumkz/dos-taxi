@@ -102,8 +102,8 @@
   "taxiPaymentMethodCard": "Банк картасы",
   "taxiPaymentMethodCash": "Қолма-қол",
   "taxiPaymentMethodBonus": "Бонустармен",
-  "paymentMethodKaspiTransfer": "Kaspi аударымы",
-  "paymentMethodHalykTransfer": "Halyk аударымы",
+  "paymentMethodKaspiTransfer": "Kaspi.kz",
+  "paymentMethodHalykTransfer": "Halyk.kz",
   "paymentMethodTransferSubtitle": "Сапардан кейін аударыммен төлеу",
   "taxiPaymentPromoLabel": "Промокод",
   "taxiPaymentPromoHint": "Мысалы, ALMATY10",
@@ -517,8 +517,8 @@
   "rideTogetherHint": "Жүргізуші жолда жолаушыларды ала алады",
   "ridePayment": "Төлем тәсілі",
   "rideCash": "Қолма-қол",
-  "rideKaspi": "Kaspi аударымы",
-  "rideHalyk": "Halyk аударымы",
+  "rideKaspi": "Kaspi.kz",
+  "rideHalyk": "Halyk.kz",
   "rideSubmit": "Өтінім беру",
   "ridePerSeat": "Бір орын бағасы",
   "ridePerSalon": "Бүкіл салон бағасы",
@@ -653,5 +653,8 @@
   },
   "rideOfferSoundEnabled": "Дыбыс қосылды. Жаңа ұсыныстар келгенде белгі беріледі.",
   "rideExtras": "Қосымша тілектер",
-  "rideExtrasDone": "Дайын"
+  "rideExtrasDone": "Дайын",
+  "supportContactsIntro": "Оператор осы жерде жауап береді. Қолдау қызметімен байланысуға да болады:",
+  "supportContactsUnavailable": "Қолдау байланыстарын жүктеу мүмкін болмады",
+  "supportContactOpenFailed": "Байланыс тәсілін ашу мүмкін болмады"
 }

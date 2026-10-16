@@ -232,7 +232,7 @@ export function TariffCreationForm({
                   min="0"
                   max={key === "commissionPercent" ? 100 : 99999999.99}
                   step="0.01"
-                  defaultValue={template?.[key] ?? 0}
+                  defaultValue={template?.[key] ?? (key === "commissionPercent" ? 7 : 0)}
                   required
                 />
               </label>

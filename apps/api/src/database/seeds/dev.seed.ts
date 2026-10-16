@@ -104,7 +104,7 @@ async function seed(): Promise<void> {
         minimumPrice: tariff.minimumPrice.toFixed(2),
         freeWaitingSeconds: 180,
         paidWaitingPerMinute: tariff.paidWaitingPerMinute.toFixed(4),
-        commissionPercent: "10.00",
+        commissionPercent: "7.00",
         commissionFixed: "0.00",
         currency: Currency.KZT,
         validFrom,

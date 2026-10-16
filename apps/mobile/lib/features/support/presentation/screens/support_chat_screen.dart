@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/api/api_client.dart';
 import '../../../../core/di/service_locator.dart';
@@ -19,6 +20,9 @@ class SupportChatScreen extends StatefulWidget {
 class _SupportChatScreenState extends State<SupportChatScreen> {
   final _messageController = TextEditingController();
   final _messages = <_SupportChatMessage>[];
+  Map<String, String> _contacts = {};
+  bool _contactsLoading = true;
+  bool _contactsError = false;
   bool _isLoading = true;
   bool _isSending = false;
 
@@ -28,12 +32,64 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   void initState() {
     super.initState();
     _loadMessages();
+    _loadContacts();
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadContacts() async {
+    setState(() {
+      _contactsLoading = true;
+      _contactsError = false;
+    });
+    try {
+      final response = await _apiClient.guard(
+        () => _apiClient.dio.get<Map<String, dynamic>>('/support/contacts'),
+      );
+      final data = response.data ?? <String, dynamic>{};
+      if (!mounted) return;
+      setState(() {
+        _contacts = {
+          for (final key in ['phone', 'whatsapp', 'email', 'telegram'])
+            if (data[key] is String && (data[key] as String).isNotEmpty)
+              key: data[key] as String,
+        };
+        _contactsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _contactsLoading = false;
+        _contactsError = true;
+      });
+    }
+  }
+
+  Future<void> _openContact(String kind, String value) async {
+    final Uri? uri = switch (kind) {
+      'phone' => Uri(scheme: 'tel', path: value),
+      'whatsapp' => Uri.https('wa.me', value.replaceAll('+', '')),
+      'email' => Uri(scheme: 'mailto', path: value),
+      'telegram' => Uri.tryParse(value),
+      _ => null,
+    };
+    try {
+      if (uri != null &&
+          await launchUrl(uri, mode: LaunchMode.externalApplication))
+        return;
+    } catch (_) {
+      // Show the same message when the platform has no matching application.
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.supportContactOpenFailed),
+      ),
+    );
   }
 
   Future<void> _loadMessages() async {
@@ -135,10 +191,38 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: AppColors.primary),
               ),
-              child: Text(
-                'Оператор ответит здесь. Телефон поддержки: '
-                '${l10n.driverProfileSupportPhoneValue}',
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.supportContactsIntro),
+                  if (_contactsLoading) const LinearProgressIndicator(),
+                  if (_contactsError) ...[
+                    Text(l10n.supportContactsUnavailable),
+                    TextButton(
+                      onPressed: _loadContacts,
+                      child: Text(l10n.rideRetry),
+                    ),
+                  ],
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final entry in _contacts.entries)
+                        TextButton.icon(
+                          onPressed: () => _openContact(entry.key, entry.value),
+                          icon: Icon(switch (entry.key) {
+                            'phone' => Icons.phone_outlined,
+                            'email' => Icons.email_outlined,
+                            _ => Icons.chat_outlined,
+                          }),
+                          label: Text(switch (entry.key) {
+                            'whatsapp' => 'WhatsApp',
+                            'telegram' => 'Telegram',
+                            _ => entry.value,
+                          }),
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ),
             Expanded(

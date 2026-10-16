@@ -1,5 +1,7 @@
 "use server";
 
+import { supportContactsLabels } from "./support-contacts-i18n";
+
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -801,4 +803,24 @@ export async function updateErrorMessageAction(formData: FormData): Promise<void
   }
   revalidateReturnPath(returnPath);
   redirectWithFlash(returnPath, 'notice', getAdminDictionary(locale).settingsPage.errorMessagesSaved);
+}
+
+export async function updateSupportContactsAction(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const returnPath = `/settings?lang=${locale}`;
+  try {
+    await adminApiRequest("admin/settings/support-contacts", {
+      method: "PATCH",
+      body: JSON.stringify({
+        phone: getString(formData, "phone"),
+        whatsapp: getString(formData, "whatsapp"),
+        email: getString(formData, "email"),
+        telegram: getString(formData, "telegram"),
+      }),
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, "error", failureMessage(locale, error));
+  }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(returnPath, "notice", supportContactsLabels(locale).saved);
 }

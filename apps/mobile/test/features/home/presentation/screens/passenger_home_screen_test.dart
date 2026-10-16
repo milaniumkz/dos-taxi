@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dos_mobile/core/errors/failure.dart';
@@ -10,6 +12,7 @@ import 'package:dos_mobile/features/home/domain/entities/address_suggestion.dart
 import 'package:dos_mobile/features/home/presentation/cubit/home_cubit.dart';
 import 'package:dos_mobile/features/home/presentation/screens/passenger_home_placeholder_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,7 +22,72 @@ class _RideRepository extends Mock implements RideRepository {}
 
 class _HomeCubit extends MockCubit<HomeState> implements HomeCubit {}
 
+class _TileClient extends Mock implements HttpClient {}
+
+class _TileRequest extends Mock implements HttpClientRequest {}
+
+class _TileHeaders extends Mock implements HttpHeaders {}
+
+class _TileResponse extends Stream<List<int>> implements HttpClientResponse {
+  static final bytes = base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=',
+  );
+  @override
+  final headers = _TileHeaders();
+  @override
+  int get statusCode => HttpStatus.ok;
+  @override
+  int get contentLength => bytes.length;
+  @override
+  bool get isRedirect => false;
+  @override
+  bool get persistentConnection => false;
+  @override
+  String get reasonPhrase => 'OK';
+  @override
+  List<RedirectInfo> get redirects => const [];
+  @override
+  HttpClientResponseCompressionState get compressionState =>
+      HttpClientResponseCompressionState.notCompressed;
+  @override
+  StreamSubscription<List<int>> listen(
+    void Function(List<int>)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) => Stream<List<int>>.value(bytes).listen(
+    onData,
+    onError: onError,
+    onDone: onDone,
+    cancelOnError: cancelOnError,
+  );
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _MapHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    final client = _TileClient();
+    final request = _TileRequest();
+    when(() => client.openUrl(any(), any())).thenAnswer((_) async => request);
+    when(() => request.headers).thenReturn(_TileHeaders());
+    when(() => request.addStream(any())).thenAnswer((_) async {});
+    when(() => request.close()).thenAnswer((_) async => _TileResponse());
+    return client;
+  }
+}
+
 void main() {
+  setUpAll(() {
+    registerFallbackValue(Uri());
+    registerFallbackValue(const Stream<List<int>>.empty());
+  });
+  setUp(() {
+    final previous = HttpOverrides.current;
+    HttpOverrides.global = _MapHttpOverrides();
+    addTearDown(() => HttpOverrides.global = previous);
+  });
   final gps = AddressSuggestion(
     title: 'Моя геопозиция',
     subtitle: 'Алматы',
@@ -123,6 +191,11 @@ void main() {
           pickupAddress: pickup,
           useCustomPickup: true,
           selectedAddress: destination,
+          routePoints: [
+            pickup.location,
+            const LatLng(43.28, 76.96),
+            destination.location,
+          ],
         );
         final changes = StreamController<HomeState>();
         addTearDown(changes.close);
@@ -144,19 +217,35 @@ void main() {
         final l = AppLocalizations.of(
           tester.element(find.byType(PassengerHomePlaceholderScreen)),
         )!;
-        expect(find.text(l.rideSubmit).hitTestable(), findsOneWidget);
-        expect(find.text(l.ridePassengers).hitTestable(), findsOneWidget);
-        expect(find.byType(TextField).at(3).hitTestable(), findsOneWidget);
-        expect(find.text(l.rideChildSeat).hitTestable(), findsOneWidget);
-        expect(find.text(l.rideTogether).hitTestable(), findsOneWidget);
-        expect(find.text(l.rideHalyk).hitTestable(), findsOneWidget);
+        final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
+        final camera = map.mapController!.camera;
+        final scrollViewport = tester.getRect(
+          find.byType(SingleChildScrollView),
+        );
+        for (final point in state.routePoints) {
+          final projected = camera.latLngToScreenPoint(point);
+          expect(projected.x, inInclusiveRange(39, 321));
+          expect(projected.y, inInclusiveRange(31, scrollViewport.top - 23));
+        }
+        for (final control in [
+          find.text(l.rideSubmit),
+          find.text(l.ridePassengers),
+          find.byType(TextField).at(3),
+          find.text(l.rideChildSeat),
+          find.text(l.rideTogether),
+          find.text(l.rideHalyk),
+        ]) {
+          await tester.ensureVisible(control);
+          expect(control.hitTestable(), findsOneWidget);
+        }
         expect(
           tester
               .state<ScrollableState>(find.byType(Scrollable).first)
               .position
               .maxScrollExtent,
-          0,
+          greaterThan(0),
         );
+        await tester.ensureVisible(find.byIcon(Icons.add).first);
         await tester.tap(find.byIcon(Icons.add).first);
         await tester.pump();
         await tester.pump();
@@ -188,12 +277,16 @@ void main() {
               .text,
           'У ворот',
         );
+        await tester.ensureVisible(find.text(l.rideHalyk));
         await tester.tap(find.text(l.rideHalyk));
         await tester.pump();
+        await tester.ensureVisible(find.text(l.rideChildSeat));
         await tester.tap(find.text(l.rideChildSeat));
         await tester.pump();
+        await tester.ensureVisible(find.text(l.rideTogether));
         await tester.tap(find.text(l.rideTogether));
         await tester.pump();
+        await tester.ensureVisible(find.text(l.rideSubmit));
         await tester.tap(find.text(l.rideSubmit));
         await tester.pump();
         expect(submitted?['routePoints'], [

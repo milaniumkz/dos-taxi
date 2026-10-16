@@ -276,10 +276,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get taxiPaymentMethodBonus => 'Бонустармен';
 
   @override
-  String get paymentMethodKaspiTransfer => 'Kaspi аударымы';
+  String get paymentMethodKaspiTransfer => 'Kaspi.kz';
 
   @override
-  String get paymentMethodHalykTransfer => 'Halyk аударымы';
+  String get paymentMethodHalykTransfer => 'Halyk.kz';
 
   @override
   String get paymentMethodTransferSubtitle => 'Сапардан кейін аударыммен төлеу';
@@ -1309,10 +1309,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get rideCash => 'Қолма-қол';
 
   @override
-  String get rideKaspi => 'Kaspi аударымы';
+  String get rideKaspi => 'Kaspi.kz';
 
   @override
-  String get rideHalyk => 'Halyk аударымы';
+  String get rideHalyk => 'Halyk.kz';
 
   @override
   String get rideSubmit => 'Өтінім беру';
@@ -1569,4 +1569,15 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get rideExtrasDone => 'Дайын';
+
+  @override
+  String get supportContactsIntro =>
+      'Оператор осы жерде жауап береді. Қолдау қызметімен байланысуға да болады:';
+
+  @override
+  String get supportContactsUnavailable =>
+      'Қолдау байланыстарын жүктеу мүмкін болмады';
+
+  @override
+  String get supportContactOpenFailed => 'Байланыс тәсілін ашу мүмкін болмады';
 }
