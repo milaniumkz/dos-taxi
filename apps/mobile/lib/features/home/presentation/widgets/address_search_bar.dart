@@ -23,6 +23,11 @@ class AddressSearchBar extends StatelessWidget {
       onChanged: onChanged,
       onTap: onTap,
       decoration: InputDecoration(
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         hintText: hintText,
         labelText: labelText,
         prefixIcon: const Icon(Icons.search),

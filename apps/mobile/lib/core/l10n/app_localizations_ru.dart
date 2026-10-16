@@ -1276,6 +1276,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rideRetry => 'Повторить';
 
   @override
+  String get rideEntranceShort => 'Подъезд';
+
+  @override
+  String get rideCommentShort => 'Комментарий';
+
+  @override
   String get rideEntrance => 'Подъезд (необязательно)';
 
   @override

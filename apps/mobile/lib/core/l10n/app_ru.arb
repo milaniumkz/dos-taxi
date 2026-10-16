@@ -508,6 +508,8 @@
   },
   "rideRequestTitle": "Заявка на поездку",
   "rideRetry": "Повторить",
+  "rideEntranceShort": "Подъезд",
+  "rideCommentShort": "Комментарий",
   "rideEntrance": "Подъезд (необязательно)",
   "rideComment": "Комментарий (необязательно)",
   "rideChildSeat": "Детское кресло",
