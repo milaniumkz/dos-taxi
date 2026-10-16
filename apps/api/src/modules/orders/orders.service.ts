@@ -2,7 +2,12 @@ import {
   driverBonusDay,
   driverBonusTimezone,
 } from "../executors/driver-bonus-day";
-import { DeliveryStatus, OrderStatus, ServiceType } from "@dos/shared-types";
+import {
+  Currency,
+  DeliveryStatus,
+  OrderStatus,
+  ServiceType,
+} from "@dos/shared-types";
 import {
   BadRequestException,
   ConflictException,
@@ -910,10 +915,18 @@ export class OrdersService {
       return;
     }
 
+    const balanceCurrency = order.rideBalanceCurrency ?? commission.currency;
+    const rate = Number(order.rideExchangeRate ?? 1);
+    const balanceAmount =
+      balanceCurrency === commission.currency
+        ? commission.amount
+        : balanceCurrency === Currency.RUB
+          ? commission.amount / rate
+          : commission.amount * rate;
     await executors.decrement(
       { id: executor.id },
       "balance",
-      commission.amount.toFixed(2),
+      balanceAmount.toFixed(2),
     );
     const updated = await executors.findOne({
       where: { id: executor.id },
@@ -928,6 +941,9 @@ export class OrdersService {
         executorId: executor.id,
         tariffId: commission.tariffId,
         commissionAmount: commission.amount,
+        balanceAmount: Number(balanceAmount.toFixed(2)),
+        balanceCurrency,
+        exchangeRate: order.rideExchangeRate,
         commissionPercent: commission.percent,
         commissionFixed: commission.fixed,
         currency: commission.currency,

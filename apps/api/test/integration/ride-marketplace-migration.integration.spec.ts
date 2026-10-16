@@ -1,3 +1,4 @@
+import { BaikonurManualPrice1710000000036 } from "../../src/database/migrations/1710000000036-BaikonurManualPrice";
 import { randomUUID } from "node:crypto";
 import { DataSource } from "typeorm";
 import { RideMarketplace1710000000034 } from "../../src/database/migrations/1710000000034-RideMarketplace";
@@ -23,6 +24,50 @@ describe("ride marketplace migration preserves existing cities and finances", ()
     if (db?.isInitialized) {
       await db.query(`DROP SCHEMA "${schema}" CASCADE`);
       await db.destroy();
+    }
+  });
+  it("enables manual pricing only in Baikonur and preserves historical order amounts", async () => {
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      await runner.query(
+        `CREATE TABLE cities(id int PRIMARY KEY, name_ru text, name_kk text)`,
+      );
+      await runner.query(
+        `CREATE TABLE orders(id int, estimated_price numeric(12,2), currency text)`,
+      );
+      await runner.query(
+        `INSERT INTO cities VALUES (1,'Байконур','Байқоңыр'),(2,'Аральск','Арал'),(3,'Алматы','Алматы')`,
+      );
+      await runner.query(`INSERT INTO orders VALUES (1,71.43,'RUB')`);
+      await new BaikonurManualPrice1710000000036().up(runner);
+      const rows = await runner.query(
+        `SELECT id,ride_manual_price_policy AS policy FROM cities ORDER BY id`,
+      );
+      expect(rows[0].policy).toEqual({
+        rubMinimum: "90.00",
+        kztMinimum: "500.00",
+        kztThreshold: "500.00",
+      });
+      expect(rows.slice(1).map((r: { policy: unknown }) => r.policy)).toEqual([
+        null,
+        null,
+      ]);
+      expect(
+        await runner.query(`SELECT estimated_price,currency FROM orders`),
+      ).toEqual([{ estimated_price: "71.43", currency: "RUB" }]);
+      await runner.query(
+        `UPDATE orders SET ride_balance_currency='RUB',ride_exchange_rate=7`,
+      );
+      await new BaikonurManualPrice1710000000036().down(runner);
+      expect(
+        (await runner.query(`SELECT ride_exchange_rate FROM orders`))[0]
+          .ride_exchange_rate,
+      ).toBe("7.0000");
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
     }
   });
   it("sets every city minimum and rate, copies its commission, and keeps historical fares and balances", async () => {

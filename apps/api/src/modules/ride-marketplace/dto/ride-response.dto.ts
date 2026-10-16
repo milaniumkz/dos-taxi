@@ -8,11 +8,18 @@ export class RideCityResponseDto {
   @ApiProperty() nameKk!: string;
   @ApiProperty({ enum: Currency }) currency!: Currency;
 }
+export class RideManualPricePolicyDto {
+  @ApiProperty({ example: "90.00" }) rubMinimum!: string;
+  @ApiProperty({ example: "500.00" }) kztMinimum!: string;
+  @ApiProperty({ example: "500.00" }) kztThreshold!: string;
+}
 export class RideQuoteResponseDto {
   @ApiProperty({ description: "Fingerprint to pass unchanged when submitting" })
   termsKey!: string;
   @ApiProperty({ format: "uuid" }) cityId!: string;
   @ApiProperty() cityName!: string;
+  @ApiPropertyOptional({ type: RideManualPricePolicyDto, nullable: true })
+  manualPricePolicy?: RideManualPricePolicyDto | null;
   @ApiProperty({ enum: Currency }) currency!: Currency;
   @ApiProperty({ enum: ["seat", "salon"] }) pricingBasis!: string;
   @ApiProperty({ example: 2 }) passengerCount!: number;

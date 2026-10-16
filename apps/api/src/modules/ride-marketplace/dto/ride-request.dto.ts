@@ -64,6 +64,15 @@ export class CreateRideRequestDto extends RideQuoteDto {
   @Min(0)
   @Max(1000)
   priceSteps!: number;
+  @ApiPropertyOptional({
+    description:
+      "Manual per-seat/salon amount, only for cities with manualPricePolicy; currency inferred by server",
+    example: "90.00",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{1,7}(\.\d{1,2})?$/)
+  unitPrice?: string;
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

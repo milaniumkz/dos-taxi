@@ -1,5 +1,6 @@
 import 'ride_address_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -25,10 +26,12 @@ class RideRequestScreen extends StatefulWidget {
 
 class _RideRequestScreenState extends State<RideRequestScreen> {
   final entrance = TextEditingController(), comment = TextEditingController();
+  final manualPrice = TextEditingController();
   String payment = 'cash';
   bool child = false, shared = false;
   @override
   void dispose() {
+    manualPrice.dispose();
     entrance.dispose();
     comment.dispose();
     super.dispose();
@@ -76,7 +79,10 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: s.quote == null || s.busy
+                          onPressed:
+                              s.quote == null ||
+                                  s.busy ||
+                                  !cubit.validManualPrice
                               ? null
                               : () => cubit.submit(
                                   payment: payment,
@@ -359,7 +365,8 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
               Expanded(
                 flex: 2,
                 child: FilledButton(
-                  onPressed: s.quote == null || s.busy
+                  onPressed:
+                      s.quote == null || s.busy || !cubit.validManualPrice
                       ? null
                       : () => cubit.submit(
                           payment: payment,
@@ -508,14 +515,16 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     RideRequestState state,
   ) {
     final q = state.quote!, count = (q['passengerCount'] as num).toInt();
-    final unit =
-        (double.parse(q['minimumUnitPrice'].toString()) * 100).round() +
-        cubit.steps * (double.parse(q['priceStep'].toString()) * 100).round();
+    final unit = cubit.usesManualPrice
+        ? cubit.manualMinor
+        : (double.parse(q['minimumUnitPrice'].toString()) * 100).round() +
+              cubit.steps *
+                  (double.parse(q['priceStep'].toString()) * 100).round();
     return AppFormatters.formatCurrency(
       context,
       unit * count / 100,
-      currencyCode: q['currency'].toString(),
-      decimalDigits: q['currency'] == 'RUB' ? 2 : 0,
+      currencyCode: cubit.selectedCurrency,
+      decimalDigits: cubit.selectedCurrency == 'RUB' ? 2 : 0,
     );
   }
 
@@ -593,6 +602,41 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     );
   }
 
+  Widget _manualPriceField(BuildContext context, RideRequestCubit cubit) {
+    final l = AppLocalizations.of(context)!;
+    if (manualPrice.text != cubit.manualPrice) {
+      manualPrice.value = TextEditingValue(
+        text: cubit.manualPrice ?? '',
+        selection: TextSelection.collapsed(
+          offset: (cubit.manualPrice ?? '').length,
+        ),
+      );
+    }
+    final minimum = AppFormatters.formatCurrency(
+      context,
+      cubit.minimumMinor / 100,
+      currencyCode: cubit.selectedCurrency,
+      decimalDigits: 0,
+    );
+    return TextField(
+      key: const ValueKey('ride-manual-price'),
+      controller: manualPrice,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(7),
+      ],
+      onChanged: cubit.changeManualPrice,
+      decoration: InputDecoration(
+        labelText: l.rideYourPrice,
+        suffixText: cubit.selectedCurrency == 'RUB' ? '₽' : '₸',
+        errorText: cubit.validManualPrice ? null : '${l.rideMinimum}: $minimum',
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      ),
+    );
+  }
+
   Widget _pricing(
     BuildContext context,
     RideRequestCubit cubit,
@@ -602,10 +646,12 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
     final q = state.quote!;
     final seat = q['pricingBasis'] == 'seat';
     final count = (q['passengerCount'] as num).toInt();
-    final unit =
-        (double.parse(q['minimumUnitPrice'].toString()) * 100).round() +
-        cubit.steps * (double.parse(q['priceStep'].toString()) * 100).round();
-    final currency = q['currency'].toString();
+    final unit = cubit.usesManualPrice
+        ? cubit.manualMinor
+        : (double.parse(q['minimumUnitPrice'].toString()) * 100).round() +
+              cubit.steps *
+                  (double.parse(q['priceStep'].toString()) * 100).round();
+    final currency = cubit.selectedCurrency;
     String amount(int cents) => AppFormatters.formatCurrency(
       context,
       cents / 100,
@@ -632,7 +678,7 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    '${l.rideMinimum}: ${amount((double.parse(q['minimumOrderPrice'].toString()) * 100).round())}',
+                    '${l.rideMinimum}: ${amount(cubit.minimumMinor * count)}',
                     maxLines: 2,
                     textAlign: TextAlign.right,
                     style: Theme.of(context).textTheme.bodySmall,
@@ -660,17 +706,19 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                     const SizedBox(width: 12),
                   ],
                   Expanded(
-                    child: _inlineStepper(
-                      context,
-                      label: l.rideYourPrice,
-                      value: amount(unit),
-                      onMinus: cubit.steps > 0
-                          ? () => cubit.changePrice(-1)
-                          : null,
-                      onPlus: cubit.steps < 1000
-                          ? () => cubit.changePrice(1)
-                          : null,
-                    ),
+                    child: cubit.usesManualPrice
+                        ? _manualPriceField(context, cubit)
+                        : _inlineStepper(
+                            context,
+                            label: l.rideYourPrice,
+                            value: amount(unit),
+                            onMinus: cubit.steps > 0
+                                ? () => cubit.changePrice(-1)
+                                : null,
+                            onPlus: cubit.steps < 1000
+                                ? () => cubit.changePrice(1)
+                                : null,
+                          ),
                   ),
                 ],
               )
@@ -687,13 +735,18 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                       ? () => cubit.refreshQuote(count + 1)
                       : null,
                 ),
-              RideStepper(
-                compact: true,
-                label: l.rideYourPrice,
-                value: amount(unit),
-                onMinus: cubit.steps > 0 ? () => cubit.changePrice(-1) : null,
-                onPlus: cubit.steps < 1000 ? () => cubit.changePrice(1) : null,
-              ),
+              if (cubit.usesManualPrice)
+                _manualPriceField(context, cubit)
+              else
+                RideStepper(
+                  compact: true,
+                  label: l.rideYourPrice,
+                  value: amount(unit),
+                  onMinus: cubit.steps > 0 ? () => cubit.changePrice(-1) : null,
+                  onPlus: cubit.steps < 1000
+                      ? () => cubit.changePrice(1)
+                      : null,
+                ),
             ],
           ],
         ),

@@ -28,6 +28,39 @@ class RideRequestCubit extends Cubit<RideRequestState> {
   AddressSuggestion pickup, destination;
   final String serviceType;
   int passengers = 1, steps = 0;
+  String? manualPrice;
+  Map? get manualPolicy => state.quote?['manualPricePolicy'] as Map?;
+  bool get usesManualPrice => manualPolicy != null;
+  int get manualMinor =>
+      ((double.tryParse(manualPrice ?? '') ?? 0) * 100).round();
+  String get selectedCurrency => usesManualPrice
+      ? (manualMinor <
+                (double.parse(manualPolicy!['kztThreshold'].toString()) * 100)
+                    .round()
+            ? 'RUB'
+            : 'KZT')
+      : state.quote!['currency'].toString();
+  int get minimumMinor => usesManualPrice
+      ? (double.parse(
+                  manualPolicy![selectedCurrency == 'RUB'
+                          ? 'rubMinimum'
+                          : 'kztMinimum']
+                      .toString(),
+                ) *
+                100)
+            .round()
+      : (double.parse(state.quote!['minimumUnitPrice'].toString()) * 100)
+            .round();
+  bool get validManualPrice =>
+      !usesManualPrice ||
+      (RegExp(r'^\d{1,7}$').hasMatch(manualPrice ?? '') &&
+          manualMinor >= minimumMinor);
+  void changeManualPrice(String value) {
+    if (!usesManualPrice || state.busy) return;
+    manualPrice = value;
+    emit(RideRequestState(quote: state.quote));
+  }
+
   int _revision = 0;
   String? _key;
   Map<String, dynamic>? _submitted;
@@ -54,6 +87,13 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     if (isClosed || revision != _revision) return;
     result.fold((f) => emit(RideRequestState(error: f.message)), (q) {
       steps = preservedSteps;
+      if (q['manualPricePolicy'] == null) {
+        manualPrice = null;
+      } else {
+        manualPrice ??= double.parse(
+          q['minimumUnitPrice'].toString(),
+        ).toInt().toString();
+      }
       emit(RideRequestState(quote: q));
     });
   }
@@ -83,12 +123,13 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     required bool childSeat,
     required bool shared,
   }) async {
-    if (state.busy || state.quote == null) return;
+    if (state.busy || state.quote == null || !validManualPrice) return;
     final q = state.quote!;
     final data = {
       ..._route,
       'termsKey': q['termsKey'],
-      'priceSteps': steps,
+      'priceSteps': usesManualPrice ? 0 : steps,
+      if (usesManualPrice) 'unitPrice': (manualMinor / 100).toStringAsFixed(2),
       'paymentMethod': payment,
       'pickupEntrance': entrance.trim(),
       'pickupComment': comment.trim(),
