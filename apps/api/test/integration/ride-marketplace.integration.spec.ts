@@ -192,7 +192,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       await db.destroy();
     }
   });
-  it("quotes 500 KZT per seat and 7 KZT/RUB; salon hides quantity", async () => {
+  it("quotes KZT outside configured Baikonur, regardless of wallet currency; salon hides quantity", async () => {
     const quote = await market.quote({
       cityId: city.id,
       serviceType: ServiceType.TAXI,
@@ -226,7 +226,8 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       routePoints: points,
       passengerCount: 4,
     });
-    expect(rubQuote.minimumOrderPrice).toBe("71.43");
+    expect(rubQuote.minimumOrderPrice).toBe("500.00");
+    expect(rubQuote.currency).toBe(Currency.KZT);
     expect(rubQuote.passengerCount).toBe(1);
     expect(rubQuote.pricingBasis).toBe("salon");
     await db
@@ -238,10 +239,10 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       routePoints: points,
       passengerCount: 2,
     });
-    expect(rubSeats.minimumUnitPrice).toBe("71.43");
-    expect(rubSeats.minimumOrderPrice).toBe("142.86");
+    expect(rubSeats.minimumUnitPrice).toBe("500.00");
+    expect(rubSeats.minimumOrderPrice).toBe("1000.00");
   });
-  it("stores Baikonur manual amounts and currencies, rejects under-minimum and other-city overrides", async () => {
+  it("stores manual amounts, enforces city minima and limits RUB inference to Baikonur", async () => {
     const manualCity = await db.getRepository(CityEntity).save({
       nameRu: "Байконур",
       nameKk: "Байқоңыр",
@@ -347,21 +348,66 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
     }
     const normalBase = { ...base, cityId: city.id };
     const normalQuote = await market.quote(normalBase);
+    const normalOrder = await market.create(
+      c.id,
+      {
+        ...normalBase,
+        unitPrice: "1000",
+        priceSteps: 0,
+        termsKey: normalQuote.termsKey,
+        paymentMethod: PaymentMethod.CASH,
+      },
+      randomUUID(),
+    );
+    expect(normalOrder.currency).toBe(Currency.KZT);
+    await orders.cancelOrder(c.id, normalOrder.id);
+    await db
+      .getRepository(CityEntity)
+      .update(city.id, { rideMinimumOrderKzt: "800" });
+    const changedQuote = await market.quote(normalBase);
+    expect(changedQuote.minimumUnitPrice).toBe("800.00");
     await expect(
       market.create(
         c.id,
         {
           ...normalBase,
-          unitPrice: "1000",
+          unitPrice: "799",
+          priceSteps: 0,
+          termsKey: changedQuote.termsKey,
+          paymentMethod: PaymentMethod.CASH,
+        },
+        randomUUID(),
+      ),
+    ).rejects.toMatchObject({ response: { code: "RIDE_PRICE_BELOW_MINIMUM" } });
+    await expect(
+      market.create(
+        c.id,
+        {
+          ...normalBase,
+          unitPrice: "800",
           priceSteps: 0,
           termsKey: normalQuote.termsKey,
           paymentMethod: PaymentMethod.CASH,
         },
         randomUUID(),
       ),
-    ).rejects.toMatchObject({
-      response: { code: "RIDE_MANUAL_PRICE_NOT_ALLOWED" },
-    });
+    ).rejects.toMatchObject({ response: { code: "RIDE_PRICING_CHANGED" } });
+    const accepted = await market.create(
+      c.id,
+      {
+        ...normalBase,
+        unitPrice: "800",
+        priceSteps: 0,
+        termsKey: changedQuote.termsKey,
+        paymentMethod: PaymentMethod.CASH,
+      },
+      randomUUID(),
+    );
+    expect(accepted.currency).toBe(Currency.KZT);
+    await orders.cancelOrder(c.id, accepted.id);
+    await db
+      .getRepository(CityEntity)
+      .update(city.id, { rideMinimumOrderKzt: "500" });
   });
   it("retains approved legacy drivers and resolves their missing city from fresh presence", async () => {
     const d = await driver();

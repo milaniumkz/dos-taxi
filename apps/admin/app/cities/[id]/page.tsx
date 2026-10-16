@@ -219,6 +219,33 @@ export default async function CityDetailPage({
                     <small>{rides.hint}</small>
                   </label>
                   <label className="field">
+                    <span>{rides.minimumKzt}</span>
+                    <input
+                      name="rideMinimumOrderKzt"
+                      type="number"
+                      min="1"
+                      max="9999999"
+                      step="1"
+                      defaultValue={city.rideMinimumOrderKzt}
+                      required
+                    />
+                    <small>{rides.minimumHint}</small>
+                  </label>
+                  {city.rideManualPricePolicy && (
+                    <label className="field">
+                      <span>{rides.minimumRub}</span>
+                      <input
+                        name="rideMinimumOrderRub"
+                        type="number"
+                        min="1"
+                        max="499"
+                        step="1"
+                        defaultValue={city.rideManualPricePolicy.rubMinimum}
+                        required
+                      />
+                    </label>
+                  )}
+                  <label className="field">
                     <span>{dictionary.forms.nameRu}</span>
                     <input name="nameRu" defaultValue={city.nameRu} required />
                   </label>

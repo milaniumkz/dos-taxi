@@ -163,6 +163,18 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
                 <small>{rides.hint}</small>
               </label>
               <label className="field">
+                <span>{rides.minimumKzt}</span>
+                <input
+                  name="rideMinimumOrderKzt"
+                  type="number"
+                  min="1"
+                  max="9999999"
+                  step="1"
+                  required
+                />
+                <small>{rides.minimumHint}</small>
+              </label>
+              <label className="field">
                 <span>{dictionary.forms.nameRu}</span>
                 <input name="nameRu" required />
               </label>

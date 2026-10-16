@@ -87,6 +87,12 @@ export type AdminActivityAction =
 
 export type CitySnapshot = {
   ridePricingBasis?: "seat" | "salon";
+  rideMinimumOrderKzt?: string;
+  rideManualPricePolicy?: {
+    rubMinimum: string;
+    kztMinimum: string;
+    kztThreshold: string;
+  } | null;
   id: string;
   nameRu: string;
   nameKk: string;
@@ -1471,6 +1477,12 @@ function normalizeUserSnapshot(raw: {
 
 function normalizeCitySnapshot(raw: {
   ridePricingBasis?: string;
+  rideMinimumOrderKzt?: string | number;
+  rideManualPricePolicy?: {
+    rubMinimum: string;
+    kztMinimum: string;
+    kztThreshold: string;
+  } | null;
   id: string;
   nameRu?: string | null;
   nameKk?: string | null;
@@ -1482,6 +1494,11 @@ function normalizeCitySnapshot(raw: {
   return {
     id: raw.id,
     ridePricingBasis: raw.ridePricingBasis === "salon" ? "salon" : "seat",
+    rideMinimumOrderKzt:
+      raw.rideMinimumOrderKzt === undefined
+        ? undefined
+        : String(raw.rideMinimumOrderKzt),
+    rideManualPricePolicy: raw.rideManualPricePolicy ?? null,
     nameRu: raw.nameRu ?? "",
     nameKk: raw.nameKk ?? "",
     countryCode: raw.countryCode ?? "",
@@ -2185,9 +2202,7 @@ function normalizeExecutorPayoutSnapshot(raw: {
   paidAt?: string | Date | null;
 }): ExecutorPayoutSnapshot {
   const status =
-    raw.status === "paid" || raw.status === "rejected"
-      ? raw.status
-      : "pending";
+    raw.status === "paid" || raw.status === "rejected" ? raw.status : "pending";
   const method =
     raw.method === "halyk" || raw.method === "cash" ? raw.method : "kaspi";
   return {
@@ -3419,7 +3434,9 @@ export async function getExecutorsSnapshot(
 
     return items.map((item) => normalizeExecutorSnapshot(item));
   } catch {
-    throw new Error("Не удалось загрузить водителей из API. Повторите попытку позже.");
+    throw new Error(
+      "Не удалось загрузить водителей из API. Повторите попытку позже.",
+    );
   }
 }
 

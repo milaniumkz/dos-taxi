@@ -16,6 +16,7 @@ export class RideManualPricePolicyDto {
 export class RideQuoteResponseDto {
   @ApiProperty({ description: "Fingerprint to pass unchanged when submitting" })
   termsKey!: string;
+  @ApiProperty({ enum: ["manual"] }) priceInputMode!: "manual";
   @ApiProperty({ format: "uuid" }) cityId!: string;
   @ApiProperty() cityName!: string;
   @ApiPropertyOptional({ type: RideManualPricePolicyDto, nullable: true })

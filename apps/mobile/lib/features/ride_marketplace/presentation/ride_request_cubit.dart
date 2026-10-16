@@ -30,17 +30,18 @@ class RideRequestCubit extends Cubit<RideRequestState> {
   int passengers = 1, steps = 0;
   String? manualPrice;
   Map? get manualPolicy => state.quote?['manualPricePolicy'] as Map?;
-  bool get usesManualPrice => manualPolicy != null;
+  bool get usesManualPrice =>
+      manualPolicy != null || state.quote?['priceInputMode'] == 'manual';
   int get manualMinor =>
       ((double.tryParse(manualPrice ?? '') ?? 0) * 100).round();
-  String get selectedCurrency => usesManualPrice
+  String get selectedCurrency => manualPolicy != null
       ? (manualMinor <
                 (double.parse(manualPolicy!['kztThreshold'].toString()) * 100)
                     .round()
             ? 'RUB'
             : 'KZT')
       : state.quote!['currency'].toString();
-  int get minimumMinor => usesManualPrice
+  int get minimumMinor => manualPolicy != null
       ? (double.parse(
                   manualPolicy![selectedCurrency == 'RUB'
                           ? 'rubMinimum'
@@ -87,12 +88,12 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     if (isClosed || revision != _revision) return;
     result.fold((f) => emit(RideRequestState(error: f.message)), (q) {
       steps = preservedSteps;
-      if (q['manualPricePolicy'] == null) {
+      if (q['manualPricePolicy'] == null && q['priceInputMode'] != 'manual') {
         manualPrice = null;
       } else {
         manualPrice ??= double.parse(
           q['minimumUnitPrice'].toString(),
-        ).toInt().toString();
+        ).ceil().toString();
       }
       emit(RideRequestState(quote: q));
     });
