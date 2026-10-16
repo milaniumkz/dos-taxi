@@ -66,7 +66,7 @@ export class CreateRideRequestDto extends RideQuoteDto {
   priceSteps!: number;
   @ApiPropertyOptional({
     description:
-      "Manual per-seat/salon amount, only for cities with manualPricePolicy; currency inferred by server",
+      "Manual per-seat/salon amount; KZT except the configured Baikonur currency threshold",
     example: "90.00",
   })
   @IsOptional()

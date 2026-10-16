@@ -93,17 +93,23 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
     const basis = city.ridePricingBasis;
     const count = basis === "seat" ? (dto.passengerCount ?? 1) : 1;
     const rate = Number(city.rideExchangeRate);
-    const factor = city.currency === Currency.KZT ? 1 : rate;
+    const policy = city.rideManualPricePolicy
+      ? {
+          ...city.rideManualPricePolicy,
+          kztMinimum: money(
+            Math.ceil(minorUnits(city.rideMinimumOrderKzt) / 100) * 100,
+          ),
+        }
+      : null;
+    const currency = policy ? city.currency : Currency.KZT;
+    const factor = currency === Currency.KZT ? 1 : rate;
     const minimumBaseMinor = Math.ceil(
       (Number(city.rideMinimumOrderKzt) * 100) / factor - 1e-8,
     );
-    const rounding = city.currency === Currency.KZT ? 100 : 1;
-    const policy = city.rideManualPricePolicy ?? null;
+    const rounding = currency === Currency.KZT ? 100 : 1;
     const minimumUnitMinor = policy
       ? minorUnits(
-          city.currency === Currency.RUB
-            ? policy.rubMinimum
-            : policy.kztMinimum,
+          currency === Currency.RUB ? policy.rubMinimum : policy.kztMinimum,
         )
       : Math.ceil(minimumBaseMinor / rounding) * rounding;
     const minimumTotalMinor = minimumUnitMinor * count;
@@ -116,7 +122,7 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       .update(
         JSON.stringify([
           city.id,
-          city.currency,
+          currency,
           basis,
           count,
           minimumTotalMinor,
@@ -131,7 +137,9 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       cityId: city.id,
       cityName: city.nameRu,
       manualPricePolicy: policy,
-      currency: city.currency,
+      priceInputMode: "manual" as const,
+      balanceCurrency: city.currency,
+      currency,
       pricingBasis: basis,
       passengerCount: count,
       minimumOrderPrice: money(minimumTotalMinor),
@@ -139,7 +147,15 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       priceStep: money(stepMinor),
       exchangeRate: rate,
       commissionPercent: city.rideCommissionPercent,
-      commissionFixed: city.rideCommissionFixed,
+      commissionFixed:
+        city.currency !== currency
+          ? money(
+              Math.round(
+                minorUnits(city.rideCommissionFixed) *
+                  (currency === Currency.KZT ? rate : 1 / rate),
+              ),
+            )
+          : city.rideCommissionFixed,
     };
   }
   async create(
@@ -202,18 +218,20 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       const policy = quote.manualPricePolicy;
       let unit = money(minorUnits(minimum) + minorUnits(step) * dto.priceSteps);
       if (dto.unitPrice !== undefined) {
-        if (!policy || dto.priceSteps !== 0)
+        if (dto.priceSteps !== 0)
           throw new BadRequestException({
             code: "RIDE_MANUAL_PRICE_NOT_ALLOWED",
             message: "RIDE_MANUAL_PRICE_NOT_ALLOWED",
           });
         const amount = minorUnits(dto.unitPrice);
-        currency =
-          amount < minorUnits(policy.kztThreshold)
-            ? Currency.RUB
-            : Currency.KZT;
-        minimum =
-          currency === Currency.RUB ? policy.rubMinimum : policy.kztMinimum;
+        if (policy) {
+          currency =
+            amount < minorUnits(policy.kztThreshold)
+              ? Currency.RUB
+              : Currency.KZT;
+          minimum =
+            currency === Currency.RUB ? policy.rubMinimum : policy.kztMinimum;
+        }
         if (amount < minorUnits(minimum))
           throw new BadRequestException({
             code: "RIDE_PRICE_BELOW_MINIMUM",
@@ -256,8 +274,8 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           ridePriceStep: step,
           rideCommissionPercent: quote.commissionPercent,
           rideCommissionFixed: fixed,
-          rideBalanceCurrency: policy ? quote.currency : null,
-          rideExchangeRate: policy ? String(quote.exchangeRate) : null,
+          rideBalanceCurrency: quote.balanceCurrency,
+          rideExchangeRate: String(quote.exchangeRate),
           pickupEntrance: dto.pickupEntrance?.trim() || null,
           pickupComment: dto.pickupComment?.trim() || null,
           needsChildSeat: dto.needsChildSeat ?? false,

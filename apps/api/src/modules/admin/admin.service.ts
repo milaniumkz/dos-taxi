@@ -226,8 +226,22 @@ export class AdminService {
   ): Promise<CityEntity> {
     const city = await this.getCity(cityId);
 
+    const { rideMinimumOrderRub, ...fields } = dto;
+    if (rideMinimumOrderRub !== undefined && !city.rideManualPricePolicy)
+      throw new BadRequestException({
+        code: "CITY_RUB_MINIMUM_NOT_ALLOWED",
+        message: "CITY_RUB_MINIMUM_NOT_ALLOWED",
+      });
     const updated = this.citiesRepository.merge(city, {
-      ...dto,
+      ...fields,
+      ...(rideMinimumOrderRub !== undefined
+        ? {
+            rideManualPricePolicy: {
+              ...city.rideManualPricePolicy!,
+              rubMinimum: Number(rideMinimumOrderRub).toFixed(2),
+            },
+          }
+        : {}),
       countryCode: dto.countryCode?.toUpperCase() ?? city.countryCode,
       serviceZone:
         dto.serviceZone === undefined ? city.serviceZone : dto.serviceZone,

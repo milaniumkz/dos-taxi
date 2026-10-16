@@ -389,4 +389,45 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'normal city manual input stays KZT and follows updated admin minimum',
+    (tester) async {
+      final repo = Repo();
+      when(() => repo.quote(any())).thenAnswer(
+        (_) async => Right({
+          ...quote(),
+          'priceInputMode': 'manual',
+          'minimumUnitPrice': '800.00',
+          'minimumOrderPrice': '800.00',
+        }),
+      );
+      final cubit = RideRequestCubit(repo, pickup, destination, 'taxi');
+      await cubit.refreshQuote();
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: cubit,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            locale: const Locale('ru'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const Scaffold(body: RideRequestScreen(embedded: true)),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byIcon(Icons.add), findsOneWidget); // quantity only
+      final input = find.byKey(const ValueKey('ride-manual-price'));
+      expect(tester.widget<TextField>(input).controller!.text, '800');
+      for (final amount in ['90', '499', '799', '800', '900']) {
+        await tester.enterText(input, amount);
+        await tester.pump();
+        expect(cubit.selectedCurrency, 'KZT');
+        expect(cubit.validManualPrice, int.parse(amount) >= 800);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await cubit.close();
+    },
+  );
 }

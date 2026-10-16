@@ -4473,6 +4473,12 @@
             "type": "string",
             "description": "Fingerprint to pass unchanged when submitting"
           },
+          "priceInputMode": {
+            "type": "string",
+            "enum": [
+              "manual"
+            ]
+          },
           "cityId": {
             "type": "string",
             "format": "uuid"
@@ -4531,6 +4537,7 @@
         },
         "required": [
           "termsKey",
+          "priceInputMode",
           "cityId",
           "cityName",
           "currency",
@@ -4825,7 +4832,7 @@
           },
           "unitPrice": {
             "type": "string",
-            "description": "Manual per-seat/salon amount, only for cities with manualPricePolicy; currency inferred by server",
+            "description": "Manual per-seat/salon amount; KZT except the configured Baikonur currency threshold",
             "example": "90.00"
           },
           "pickupEntrance": {
@@ -6072,6 +6079,10 @@
           },
           "rideCommissionPercent": {
             "type": "number"
+          },
+          "rideMinimumOrderRub": {
+            "type": "number",
+            "description": "RUB minimum, only for Baikonur manual pricing"
           }
         }
       },

@@ -67,6 +67,51 @@ describe("tariff creation with service and registered admin subjects", () => {
       await db.destroy();
     }
   });
+  it("persists editable KZT minima and restricts the separate RUB minimum to Baikonur", async () => {
+    const actor = randomUUID();
+    const city = await admin.createCity(actor, {
+      nameRu: "Город минимума",
+      nameKk: "Қала",
+      countryCode: "KZ",
+      currency: Currency.KZT,
+      timezone: "Asia/Almaty",
+      rideMinimumOrderKzt: "600",
+    });
+    await admin.updateCity(city.id, { rideMinimumOrderKzt: "850" }, actor);
+    expect(
+      (await db.getRepository(CityEntity).findOneByOrFail({ id: city.id }))
+        .rideMinimumOrderKzt,
+    ).toBe("850.00");
+    await expect(
+      admin.updateCity(city.id, { rideMinimumOrderRub: "100" }, actor),
+    ).rejects.toMatchObject({
+      response: { code: "CITY_RUB_MINIMUM_NOT_ALLOWED" },
+    });
+    const rub = await db
+      .getRepository(CityEntity)
+      .save({
+        nameRu: "Байконур",
+        nameKk: "Байқоңыр",
+        countryCode: "KZ",
+        currency: Currency.RUB,
+        timezone: "Asia/Almaty",
+        rideManualPricePolicy: {
+          rubMinimum: "90.00",
+          kztMinimum: "500.00",
+          kztThreshold: "500.00",
+        },
+      });
+    await admin.updateCity(
+      rub.id,
+      { rideMinimumOrderRub: "100", rideMinimumOrderKzt: "900" },
+      actor,
+    );
+    const saved = await db
+      .getRepository(CityEntity)
+      .findOneByOrFail({ id: rub.id });
+    expect(saved.rideManualPricePolicy!.rubMinimum).toBe("100.00");
+    expect(saved.rideMinimumOrderKzt).toBe("900.00");
+  });
   it("creates city defaults and a manual tariff for a service identity, retaining audit and idempotency", async () => {
     const subject = randomUUID();
     const city = await admin.createCity(subject, {
@@ -182,16 +227,14 @@ describe("tariff creation with service and registered admin subjects", () => {
 
   it("offers only configured city classes, rejecting never-created and inactive classes even with cached economy prices", async () => {
     const subject = randomUUID();
-    const city = await db
-      .getRepository(CityEntity)
-      .save({
-        nameRu: "Арал проверка",
-        nameKk: "Арал",
-        countryCode: "KZ",
-        currency: Currency.KZT,
-        timezone: "Asia/Almaty",
-        isActive: true,
-      });
+    const city = await db.getRepository(CityEntity).save({
+      nameRu: "Арал проверка",
+      nameKk: "Арал",
+      countryCode: "KZ",
+      currency: Currency.KZT,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    });
     const dto = {
       cityId: city.id,
       serviceType: ServiceType.TAXI,

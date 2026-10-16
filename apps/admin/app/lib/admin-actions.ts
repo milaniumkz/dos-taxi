@@ -117,6 +117,8 @@ export async function createCityAction(formData: FormData) {
         currency: getString(formData, "currency"),
         timezone: getString(formData, "timezone"),
         ridePricingBasis: getString(formData, "ridePricingBasis") || undefined,
+        rideMinimumOrderKzt:
+          getString(formData, "rideMinimumOrderKzt") || undefined,
         isActive: getBoolean(formData, "isActive"),
       }),
     });
@@ -169,6 +171,10 @@ export async function updateCityAction(formData: FormData) {
         currency: getString(formData, "currency"),
         timezone: getString(formData, "timezone"),
         ridePricingBasis: getString(formData, "ridePricingBasis") || undefined,
+        rideMinimumOrderKzt:
+          getString(formData, "rideMinimumOrderKzt") || undefined,
+        rideMinimumOrderRub:
+          getString(formData, "rideMinimumOrderRub") || undefined,
         isActive: getBoolean(formData, "isActive"),
       }),
     });
