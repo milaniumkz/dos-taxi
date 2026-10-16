@@ -828,7 +828,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get driverBalanceTopUpSubtitle =>
-      'Өтінім Kaspi шоты үшін әкімшіге түседі';
+      'Теңгемен толықтырыңыз. Рубльдегі балансқа сома растау сәтіндегі қала бағамымен есептеледі.';
 
   @override
   String get driverBalanceTopUpAmountLabel => 'Толықтыру сомасы';

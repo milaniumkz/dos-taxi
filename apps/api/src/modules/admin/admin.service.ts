@@ -1,3 +1,4 @@
+import { balanceTopUpCredit } from "../executors/balance-top-up-credit";
 import {
   Currency,
   OrderStatus,
@@ -1480,15 +1481,7 @@ export class AdminService {
       });
     }
 
-    const nextAmount = dto.amount ?? Number(topUp.amount);
-    if (!Number.isFinite(nextAmount) || nextAmount <= 0) {
-      throw new BadRequestException({
-        code: "BALANCE_TOP_UP_AMOUNT_INVALID",
-        message: "Balance top-up amount is invalid",
-      });
-    }
-
-    const previousStatus = topUp.status;
+    let statusChanged = false;
     const resolvedActorId = await this.resolveAdminActorId(actorId);
     const saved = await this.dataSource.transaction(async (manager) => {
       const lockedTopUp = await manager.findOne(ExecutorBalanceTopUpEntity, {
@@ -1502,7 +1495,31 @@ export class AdminService {
         });
       }
 
-      if (dto.status === "confirmed" && lockedTopUp.status !== "confirmed") {
+      statusChanged = lockedTopUp.status !== dto.status;
+      const nextAmount = dto.amount ?? Number(lockedTopUp.amount);
+      if (!Number.isFinite(nextAmount) || nextAmount <= 0) {
+        throw new BadRequestException({
+          code: "BALANCE_TOP_UP_AMOUNT_INVALID",
+          message: "Balance top-up amount is invalid",
+        });
+      }
+
+      if (
+        (lockedTopUp.status === "confirmed" || lockedTopUp.confirmedAt) &&
+        (dto.status !== "confirmed" ||
+          (dto.amount !== undefined &&
+            Number(dto.amount) !== Number(lockedTopUp.amount)))
+      ) {
+        throw new BadRequestException({
+          code: "BALANCE_TOP_UP_ALREADY_CONFIRMED",
+          message: "BALANCE_TOP_UP_ALREADY_CONFIRMED",
+        });
+      }
+      if (
+        dto.status === "confirmed" &&
+        !lockedTopUp.confirmedAt &&
+        lockedTopUp.status !== "confirmed"
+      ) {
         const executor = await manager.findOne(ExecutorEntity, {
           where: { id: lockedTopUp.executorId },
           lock: { mode: "pessimistic_write" },
@@ -1514,8 +1531,27 @@ export class AdminService {
           });
         }
 
+        const city = executor.cityId
+          ? await manager.findOne(CityEntity, {
+              where: { id: executor.cityId },
+              lock: { mode: "pessimistic_read" },
+            })
+          : null;
+        if (!city)
+          throw new BadRequestException({
+            code: "BALANCE_TOP_UP_CITY_REQUIRED",
+            message: "BALANCE_TOP_UP_CITY_REQUIRED",
+          });
+        const credit = balanceTopUpCredit(
+          nextAmount,
+          city.currency,
+          city.rideExchangeRate,
+        );
+        Object.assign(lockedTopUp, credit);
         const currentBalance = Number(executor.balance ?? 0);
-        executor.balance = (currentBalance + nextAmount).toFixed(2);
+        executor.balance = (
+          currentBalance + Number(credit.creditedAmount)
+        ).toFixed(2);
         await manager.save(executor);
         lockedTopUp.confirmedAt = new Date();
         lockedTopUp.confirmedById = resolvedActorId;
@@ -1541,10 +1577,14 @@ export class AdminService {
         balanceTopUpId: updatedTopUp.id,
         balanceTopUpStatus: updatedTopUp.status,
         amount: updatedTopUp.amount,
+        paymentCurrency: updatedTopUp.paymentCurrency,
+        creditedAmount: updatedTopUp.creditedAmount,
+        creditedCurrency: updatedTopUp.creditedCurrency,
+        exchangeRate: updatedTopUp.exchangeRate,
       },
     );
 
-    if (updatedTopUp.status !== previousStatus) {
+    if (statusChanged) {
       await this.notifyExecutorBalanceTopUpStatus(updatedTopUp);
     }
 

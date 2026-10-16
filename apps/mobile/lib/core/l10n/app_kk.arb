@@ -329,7 +329,7 @@
   "driverDashboardStatusOffline": "Оффлайн",
   "driverDashboardBalanceLabel": "Баланс",
   "driverBalanceTopUpTitle": "Жеке шотты толықтыру",
-  "driverBalanceTopUpSubtitle": "Өтінім Kaspi шоты үшін әкімшіге түседі",
+  "driverBalanceTopUpSubtitle": "Теңгемен толықтырыңыз. Рубльдегі балансқа сома растау сәтіндегі қала бағамымен есептеледі.",
   "driverBalanceTopUpAmountLabel": "Толықтыру сомасы",
   "driverBalanceTopUpPhoneLabel": "Kaspi шоты үшін телефон",
   "driverBalanceTopUpSubmit": "Өтінім жіберу",

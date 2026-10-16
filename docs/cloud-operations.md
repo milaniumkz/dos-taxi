@@ -134,3 +134,7 @@ Use `DOS Production Ops` with `https-status` to inspect nginx listeners and publ
 The `dos-ip-https-renew.timer` systemd unit runs every 12 hours. Renewal uses a pinned Certbot image, then checks and reloads nginx. The initial setup verifies renewal using ACME staging. Inspect it on the VPS with `systemctl status dos-ip-https-renew.timer` and `journalctl -u dos-ip-https-renew.service`. The setup and renewals share the production deployment lock.
 
 After IP HTTPS is enabled, the promotion script preserves the runtime `nginx/templates/default.conf.template`. Certificates, renewal scripts and the activation marker remain under `nginx/certbot`, which deployments already preserve. Change this runtime TLS configuration through a checked production operation, and keep certificate/key files out of Git.
+
+## Исправление одного ранее ошибочно зачисленного пополнения
+
+`correct-topup-fx` запускается только через DOS Production Ops после проверки записи `booking-diagnostics`. Передаются точные `topup_id`, `topup_executor_id`, `topup_amount` (KZT, два знака) и `topup_exchange_rate`. Операция проверяет подтверждённое legacy-пополнение без валютного снимка, рублёвый баланс Байконура и совпадение текущего курса с проверенным. В одной транзакции с блокировками добавляет к текущему балансу только разницу между правильной и ошибочной суммами, сохраняет исходный платёж, валютный снимок, метку исправления и audit metadata с run ID. Повтор не списывает разницу второй раз. Другие счета и операции не затрагиваются.

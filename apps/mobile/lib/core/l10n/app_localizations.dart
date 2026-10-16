@@ -1625,7 +1625,7 @@ abstract class AppLocalizations {
   /// No description provided for @driverBalanceTopUpSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Заявка уйдёт администратору для счёта Kaspi'**
+  /// **'Пополняйте в тенге. На рублёвый баланс сумма зачисляется по курсу города на момент подтверждения.'**
   String get driverBalanceTopUpSubtitle;
 
   /// No description provided for @driverBalanceTopUpAmountLabel.

@@ -19,10 +19,27 @@ on:
           - passenger-offer-diagnostics
           - seed-passenger-offers
           - booking-diagnostics
+          - correct-topup-fx
           - https-status
           - https-ip
       preview_order_id:
         description: "Exact inspected passenger request UUID; required only for seed-passenger-offers"
+        required: false
+        default: ""
+      topup_id:
+        description: "Exact inspected legacy topup UUID, only correct-topup-fx"
+        required: false
+        default: ""
+      topup_executor_id:
+        description: "Exact inspected executor UUID"
+        required: false
+        default: ""
+      topup_amount:
+        description: "Inspected original KZT amount, two decimal places"
+        required: false
+        default: ""
+      topup_exchange_rate:
+        description: "Inspected KZT per RUB rate; must match current city setting"
         required: false
         default: ""
       rollback_backup:
@@ -68,10 +85,14 @@ jobs:
           OPERATION: ${{ inputs.operation }}
           PREVIEW_ORDER_ID: ${{ inputs.preview_order_id }}
           ROLLBACK_BACKUP: ${{ inputs.rollback_backup }}
+          TOPUP_FX_ID: ${{ inputs.topup_id }}
+          TOPUP_FX_EXECUTOR: ${{ inputs.topup_executor_id }}
+          TOPUP_FX_AMOUNT: ${{ inputs.topup_amount }}
+          TOPUP_FX_RATE: ${{ inputs.topup_exchange_rate }}
         run: |
           set -euo pipefail
           case "$OPERATION" in
-            health|logs|restart|rollback|https-status|https-ip|booking-diagnostics|seed-jetekshi-rides|refresh-jetekshi-rides|clear-jetekshi-rides|passenger-offer-diagnostics|seed-passenger-offers|sync-push-worker) ;;
+            health|logs|restart|rollback|https-status|https-ip|booking-diagnostics|correct-topup-fx|seed-jetekshi-rides|refresh-jetekshi-rides|clear-jetekshi-rides|passenger-offer-diagnostics|seed-passenger-offers|sync-push-worker) ;;
             *) echo "Unsupported operation"; exit 1 ;;
           esac
           if [[ "$OPERATION" == https-* ]]; then
@@ -99,7 +120,7 @@ jobs:
           command = shlex.join(["install", "-m", "644", staging, destination])
           subprocess.run(["ssh", "-p", port, host, command], check=True)
           PYWORKER
-          elif [[ "$OPERATION" == booking-diagnostics || "$OPERATION" == seed-jetekshi-rides || "$OPERATION" == refresh-jetekshi-rides || "$OPERATION" == clear-jetekshi-rides || "$OPERATION" == passenger-offer-diagnostics || "$OPERATION" == seed-passenger-offers ]]; then
+          elif [[ "$OPERATION" == booking-diagnostics || "$OPERATION" == correct-topup-fx || "$OPERATION" == seed-jetekshi-rides || "$OPERATION" == refresh-jetekshi-rides || "$OPERATION" == clear-jetekshi-rides || "$OPERATION" == passenger-offer-diagnostics || "$OPERATION" == seed-passenger-offers ]]; then
             python3 - <<'PYBOOK'
           import os, shlex, subprocess
           host = f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}'
@@ -107,6 +128,8 @@ jobs:
           script_name = "seed-jetekshi-rides.cjs" if os.environ["OPERATION"] in ("seed-jetekshi-rides", "refresh-jetekshi-rides", "clear-jetekshi-rides") else "booking-diagnostics.cjs"
           if os.environ["OPERATION"] in ("passenger-offer-diagnostics", "seed-passenger-offers"):
               script_name = "passenger-offer-preview.cjs"
+          if os.environ["OPERATION"] == "correct-topup-fx":
+              script_name = "correct-topup-fx.cjs"
           script = f'/tmp/dos-booking-{os.environ["GITHUB_SHA"]}.cjs'
           subprocess.run(["scp", "-P", port, "deploy/vps/scripts/" + script_name, f"{host}:{script}"], check=True)
           preview_env = " -e REFRESH_JETEKSHI_PREVIEW=1 -e PREVIEW_RUN_ID=" + shlex.quote(os.environ["GITHUB_RUN_ID"]) if os.environ["OPERATION"] == "refresh-jetekshi-rides" else ""
@@ -118,6 +141,14 @@ jobs:
               if not re.fullmatch(r"[0-9a-fA-F-]{36}", order_id):
                   raise ValueError("Exact inspected request UUID required")
               preview_env = " -e SEED_PASSENGER_OFFERS=1 -e PREVIEW_ORDER_ID=" + shlex.quote(order_id)
+          if os.environ["OPERATION"] == "correct-topup-fx":
+              import re
+              patterns = {"TOPUP_FX_ID": r"[0-9a-fA-F-]{36}", "TOPUP_FX_EXECUTOR": r"[0-9a-fA-F-]{36}", "TOPUP_FX_AMOUNT": r"[0-9]{1,10}\.[0-9]{2}", "TOPUP_FX_RATE": r"[0-9]+(?:\.[0-9]{1,4})?"}
+              for key, pattern in patterns.items():
+                  if not re.fullmatch(pattern, os.environ.get(key, "")):
+                      raise ValueError("Exact inspected topup correction inputs required")
+              preview_env = "".join(" -e " + key + "=" + shlex.quote(os.environ[key]) for key in patterns)
+              preview_env += " -e TOPUP_FX_RUN_ID=" + shlex.quote(os.environ["GITHUB_RUN_ID"])
           command = "cd " + shlex.quote(os.environ["VPS_PATH"] + "/deploy/vps") + " && docker compose --env-file .env -f docker-compose.yml exec -T" + preview_env + " api node < " + shlex.quote(script)
           subprocess.run(["ssh", "-p", port, host, command], check=True)
           PYBOOK

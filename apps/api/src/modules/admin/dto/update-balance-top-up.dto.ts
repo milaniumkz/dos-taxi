@@ -16,7 +16,7 @@ export class UpdateBalanceTopUpDto {
 
   @ApiPropertyOptional({ example: 5000 })
   @IsOptional()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(100)
   @Max(1000000)
   amount?: number;

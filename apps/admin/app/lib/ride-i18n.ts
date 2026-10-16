@@ -5,6 +5,9 @@ export function rideLabels(locale: AdminLocale) {
         basis: "Өтінім бағасы",
         seat: "Бір орынға",
         salon: "Бүкіл салонға",
+        exchangeRate: "Бағам: 1 ₽ үшін теңге",
+        credited: "Балансқа есептелді",
+        creditedRate: "Есептеу бағамы",
         minimumKzt: "Ең төменгі баға, ₸",
         minimumRub: "Байқоңыр: ең төменгі баға, ₽",
         minimumHint:
@@ -15,6 +18,9 @@ export function rideLabels(locale: AdminLocale) {
         basis: "Цена заявки",
         seat: "За место",
         salon: "За весь салон",
+        exchangeRate: "Курс: тенге за 1 ₽",
+        credited: "Зачислено на баланс",
+        creditedRate: "Курс зачисления",
         minimumKzt: "Минимальная цена, ₸",
         minimumRub: "Байконур: минимальная цена, ₽",
         minimumHint:

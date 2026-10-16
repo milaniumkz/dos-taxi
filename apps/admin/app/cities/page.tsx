@@ -163,6 +163,16 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
                 <small>{rides.hint}</small>
               </label>
               <label className="field">
+                <span>{rides.exchangeRate}</span>
+                <input
+                  name="rideExchangeRate"
+                  type="number"
+                  min="0.01"
+                  max="1000000"
+                  step="0.01"
+                />
+              </label>
+              <label className="field">
                 <span>{rides.minimumKzt}</span>
                 <input
                   name="rideMinimumOrderKzt"

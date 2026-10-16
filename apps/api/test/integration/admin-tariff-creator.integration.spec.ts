@@ -1,10 +1,14 @@
+import { createRequire } from "node:module";
+import { balanceTopUpCredit } from "../../src/modules/executors/balance-top-up-credit";
+import { ExecutorEntity } from "../../src/modules/executors/entities/executor.entity";
+import { ExecutorBalanceTopUpEntity } from "../../src/modules/executors/entities/executor-balance-top-up.entity";
 import { ConfigService } from "@nestjs/config";
 import { PricingService } from "../../src/modules/pricing/pricing.service";
 import { CurrencyService } from "../../src/modules/pricing/currency.service";
 import { RedisStoreService } from "../../src/shared/cache/redis-store.service";
 import { TariffDeletion1710000000033 } from "../../src/database/migrations/1710000000033-TariffDeletion";
 import { randomUUID } from "node:crypto";
-import { Currency, ServiceType } from "@dos/shared-types";
+import { Currency, ServiceType, ExecutorType } from "@dos/shared-types";
 import { Test } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { DataSource, IsNull } from "typeorm";
@@ -56,7 +60,13 @@ describe("tariff creation with service and registered admin subjects", () => {
           PaymentsService,
           DispatchService,
           NotificationsService,
-        ].map((service) => ({ provide: service, useValue: {} })),
+        ].map((service) => ({
+          provide: service,
+          useValue:
+            service === NotificationsService
+              ? { send: jest.fn(async () => {}) }
+              : {},
+        })),
       ],
     }).compile();
     admin = module.get(AdminService);
@@ -66,6 +76,201 @@ describe("tariff creation with service and registered admin subjects", () => {
       await db.query(`DROP SCHEMA "${schema}" CASCADE`);
       await db.destroy();
     }
+  });
+  it("converts KZT topups once using the confirmation rate and keeps confirmed amounts immutable", async () => {
+    const actor = randomUUID();
+    for (const currency of [Currency.KZT, Currency.RUB]) {
+      const city = await admin.createCity(actor, {
+        nameRu: "Курс " + currency,
+        nameKk: "Бағам",
+        countryCode: "KZ",
+        currency,
+        timezone: "Asia/Almaty",
+        rideExchangeRate: "7",
+      });
+      const user = await db.getRepository(UserEntity).save({
+        phone: currency === Currency.RUB ? "+77900000001" : "+77900000002",
+      });
+      const driver = await db.getRepository(ExecutorEntity).save({
+        userId: user.id,
+        cityId: city.id,
+        executorType: ExecutorType.DRIVER,
+        balance: "0",
+      });
+      const topup = await db.getRepository(ExecutorBalanceTopUpEntity).save({
+        executorId: driver.id,
+        amount: "1000.00",
+        phone: user.phone,
+        status: "pending",
+        paymentCurrency: "KZT",
+      });
+      await Promise.all([
+        admin.updateExecutorBalanceTopUp(
+          topup.id,
+          { status: "confirmed" },
+          actor,
+        ),
+        admin.updateExecutorBalanceTopUp(
+          topup.id,
+          { status: "confirmed" },
+          actor,
+        ),
+      ]);
+      const credited = currency === Currency.RUB ? "142.86" : "1000.00";
+      expect(
+        (
+          await db
+            .getRepository(ExecutorEntity)
+            .findOneByOrFail({ id: driver.id })
+        ).balance,
+      ).toBe(credited);
+      const saved = await db
+        .getRepository(ExecutorBalanceTopUpEntity)
+        .findOneByOrFail({ id: topup.id });
+      expect(saved.amount).toBe("1000.00");
+      expect(saved.creditedAmount).toBe(credited);
+      expect(saved.creditedCurrency).toBe(currency);
+      await admin.updateCity(city.id, { rideExchangeRate: "8" }, actor);
+      await admin.updateExecutorBalanceTopUp(
+        topup.id,
+        { status: "confirmed" },
+        actor,
+      );
+      expect(
+        (
+          await db
+            .getRepository(ExecutorEntity)
+            .findOneByOrFail({ id: driver.id })
+        ).balance,
+      ).toBe(credited);
+      await expect(
+        admin.updateExecutorBalanceTopUp(
+          topup.id,
+          { status: "invoiced" },
+          actor,
+        ),
+      ).rejects.toMatchObject({
+        response: { code: "BALANCE_TOP_UP_ALREADY_CONFIRMED" },
+      });
+      await expect(
+        admin.updateExecutorBalanceTopUp(
+          topup.id,
+          { status: "confirmed", amount: 2000 },
+          actor,
+        ),
+      ).rejects.toMatchObject({
+        response: { code: "BALANCE_TOP_UP_ALREADY_CONFIRMED" },
+      });
+      const next = await db.getRepository(ExecutorBalanceTopUpEntity).save({
+        executorId: driver.id,
+        amount: "1000.00",
+        phone: user.phone,
+        status: "pending",
+      });
+      const confirmed = await admin.updateExecutorBalanceTopUp(
+        next.id,
+        { status: "confirmed" },
+        actor,
+      );
+      expect(confirmed.creditedAmount).toBe(
+        currency === Currency.RUB ? "125.00" : "1000.00",
+      );
+      expect(saved.exchangeRate).toBe(
+        currency === Currency.RUB ? "7.0000" : "1.0000",
+      );
+    }
+  });
+  it("corrects one inspected legacy FX overcredit by delta and refuses a repeated debit", async () => {
+    const city = await db.getRepository(CityEntity).save({
+      nameRu: "Байконур",
+      nameKk: "Байқоңыр",
+      countryCode: "KZ",
+      currency: Currency.RUB,
+      timezone: "Asia/Almaty",
+      rideExchangeRate: "7",
+      rideManualPricePolicy: {
+        rubMinimum: "90.00",
+        kztMinimum: "500.00",
+        kztThreshold: "500.00",
+      },
+    });
+    const user = await db
+      .getRepository(UserEntity)
+      .save({ phone: "+77900000003" });
+    const driver = await db.getRepository(ExecutorEntity).save({
+      userId: user.id,
+      cityId: city.id,
+      executorType: ExecutorType.DRIVER,
+      balance: "995.00",
+    });
+    const topup = await db.getRepository(ExecutorBalanceTopUpEntity).save({
+      executorId: driver.id,
+      amount: "1000.00",
+      phone: user.phone,
+      status: "confirmed",
+      confirmedAt: new Date(),
+    });
+    const { correctTopupFx } =
+      createRequire(__filename)("../../../../deploy/vps/scripts/correct-topup-fx.cjs") as {
+        correctTopupFx: (
+          db: unknown,
+          expected: Record<string, string>,
+          convert: typeof balanceTopUpCredit,
+        ) => Promise<Record<string, unknown>>;
+      };
+    const runner = db.createQueryRunner();
+    await runner.connect();
+    const client = {
+      query: async (sql: string, values?: unknown[]) => ({
+        rows: (await runner.query(sql, values, true)).records,
+      }),
+    };
+    const expected = {
+      topupId: topup.id,
+      executorId: driver.id,
+      amount: "1000.00",
+      rate: "7",
+    };
+    try {
+      await expect(
+        correctTopupFx(
+          client,
+          { ...expected, amount: "2000.00" },
+          balanceTopUpCredit,
+        ),
+      ).rejects.toThrow();
+      const result = await correctTopupFx(client, expected, balanceTopUpCredit);
+      expect(result).toMatchObject({
+        delta: "-857.14",
+        balance: "137.86",
+        creditedAmount: "142.86",
+      });
+      expect(
+        (await correctTopupFx(client, expected, balanceTopUpCredit))
+          .alreadyCorrected,
+      ).toBe(true);
+    } finally {
+      await runner.release();
+    }
+    expect(
+      (
+        await db
+          .getRepository(ExecutorEntity)
+          .findOneByOrFail({ id: driver.id })
+      ).balance,
+    ).toBe("137.86");
+    expect(
+      (
+        await db
+          .getRepository(ExecutorBalanceTopUpEntity)
+          .findOneByOrFail({ id: topup.id })
+      ).amount,
+    ).toBe("1000.00");
+    expect(
+      await db
+        .getRepository(AdminActivityLogEntity)
+        .countBy({ entityId: driver.id }),
+    ).toBe(1);
   });
   it("persists editable KZT minima and restricts the separate RUB minimum to Baikonur", async () => {
     const actor = randomUUID();
@@ -87,20 +292,18 @@ describe("tariff creation with service and registered admin subjects", () => {
     ).rejects.toMatchObject({
       response: { code: "CITY_RUB_MINIMUM_NOT_ALLOWED" },
     });
-    const rub = await db
-      .getRepository(CityEntity)
-      .save({
-        nameRu: "Байконур",
-        nameKk: "Байқоңыр",
-        countryCode: "KZ",
-        currency: Currency.RUB,
-        timezone: "Asia/Almaty",
-        rideManualPricePolicy: {
-          rubMinimum: "90.00",
-          kztMinimum: "500.00",
-          kztThreshold: "500.00",
-        },
-      });
+    const rub = await db.getRepository(CityEntity).save({
+      nameRu: "Байконур",
+      nameKk: "Байқоңыр",
+      countryCode: "KZ",
+      currency: Currency.RUB,
+      timezone: "Asia/Almaty",
+      rideManualPricePolicy: {
+        rubMinimum: "90.00",
+        kztMinimum: "500.00",
+        kztThreshold: "500.00",
+      },
+    });
     await admin.updateCity(
       rub.id,
       { rideMinimumOrderRub: "100", rideMinimumOrderKzt: "900" },

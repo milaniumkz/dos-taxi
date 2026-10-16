@@ -329,7 +329,7 @@
   "driverDashboardStatusOffline": "Оффлайн",
   "driverDashboardBalanceLabel": "Баланс",
   "driverBalanceTopUpTitle": "Пополнить личный счёт",
-  "driverBalanceTopUpSubtitle": "Заявка уйдёт администратору для счёта Kaspi",
+  "driverBalanceTopUpSubtitle": "Пополняйте в тенге. На рублёвый баланс сумма зачисляется по курсу города на момент подтверждения.",
   "driverBalanceTopUpAmountLabel": "Сумма пополнения",
   "driverBalanceTopUpPhoneLabel": "Телефон для счёта Kaspi",
   "driverBalanceTopUpSubmit": "Отправить заявку",
