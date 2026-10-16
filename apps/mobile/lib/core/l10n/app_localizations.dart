@@ -587,13 +587,13 @@ abstract class AppLocalizations {
   /// No description provided for @paymentMethodKaspiTransfer.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Kaspi'**
+  /// **'Kaspi.kz'**
   String get paymentMethodKaspiTransfer;
 
   /// No description provided for @paymentMethodHalykTransfer.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Halyk'**
+  /// **'Halyk.kz'**
   String get paymentMethodHalykTransfer;
 
   /// No description provided for @paymentMethodTransferSubtitle.
@@ -2531,13 +2531,13 @@ abstract class AppLocalizations {
   /// No description provided for @rideKaspi.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Kaspi'**
+  /// **'Kaspi.kz'**
   String get rideKaspi;
 
   /// No description provided for @rideHalyk.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Halyk'**
+  /// **'Halyk.kz'**
   String get rideHalyk;
 
   /// No description provided for @rideSubmit.
@@ -3001,6 +3001,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Готово'**
   String get rideExtrasDone;
+
+  /// No description provided for @supportContactsIntro.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оператор ответит здесь. Также можно связаться с поддержкой:'**
+  String get supportContactsIntro;
+
+  /// No description provided for @supportContactsUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить контакты поддержки'**
+  String get supportContactsUnavailable;
+
+  /// No description provided for @supportContactOpenFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть способ связи'**
+  String get supportContactOpenFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -13,6 +14,7 @@ class MapWidget extends StatefulWidget {
     required this.currentLocation,
     required this.nearbyExecutors,
     this.routePoints = const [],
+    this.routePadding = const EdgeInsets.all(40),
     this.selectedLocation,
     this.pickupLocation,
     this.onTap,
@@ -25,6 +27,7 @@ class MapWidget extends StatefulWidget {
   final LatLng currentLocation;
   final List<NearbyExecutor> nearbyExecutors;
   final List<LatLng> routePoints;
+  final EdgeInsets routePadding;
   final LatLng? selectedLocation;
   final LatLng? pickupLocation;
   final ValueChanged<LatLng>? onTap;
@@ -43,7 +46,12 @@ class _MapWidgetState extends State<MapWidget> {
     final centerChanged = !_isSamePoint(oldWidget.center, widget.center);
     final recenterRequested =
         oldWidget.recenterRequestId != widget.recenterRequestId;
-    if (!centerChanged && !recenterRequested) {
+    final routeChanged = !listEquals(oldWidget.routePoints, widget.routePoints);
+    final paddingChanged = oldWidget.routePadding != widget.routePadding;
+    if (!centerChanged &&
+        !recenterRequested &&
+        !routeChanged &&
+        !paddingChanged) {
       return;
     }
 
@@ -51,9 +59,30 @@ class _MapWidgetState extends State<MapWidget> {
       if (!mounted) {
         return;
       }
+      if (!recenterRequested && widget.routePoints.length >= 2) {
+        _fitRoute();
+        return;
+      }
       final zoom = recenterRequested ? 16.0 : _mapController.camera.zoom;
       _mapController.move(widget.center, zoom);
     });
+  }
+
+  void _fitRoute() {
+    if (!mounted || widget.routePoints.length < 2) return;
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints(widget.routePoints),
+        padding: widget.routePadding,
+        maxZoom: 16,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
   @override
@@ -65,6 +94,7 @@ class _MapWidgetState extends State<MapWidget> {
           options: MapOptions(
             initialCenter: widget.center,
             initialZoom: 15,
+            onMapReady: _fitRoute,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),

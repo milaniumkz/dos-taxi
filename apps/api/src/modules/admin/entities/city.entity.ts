@@ -76,7 +76,7 @@ export class CityEntity {
     type: "decimal",
     precision: 12,
     scale: 2,
-    default: 10,
+    default: 7,
   })
   rideCommissionPercent!: string;
 

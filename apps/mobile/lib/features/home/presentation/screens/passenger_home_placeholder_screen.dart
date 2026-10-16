@@ -36,6 +36,37 @@ class PassengerHomePlaceholderScreen extends StatefulWidget {
 
 class _PassengerHomePlaceholderScreenState
     extends State<PassengerHomePlaceholderScreen> {
+  final GlobalKey _mapKey = GlobalKey();
+  final GlobalKey _orderPanelKey = GlobalKey();
+  EdgeInsets _routePadding = const EdgeInsets.all(40);
+  bool _mapLayoutScheduled = false;
+
+  void _scheduleMapLayout() {
+    if (_mapLayoutScheduled) return;
+    _mapLayoutScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapLayoutScheduled = false;
+      if (!mounted) return;
+      final map = _mapKey.currentContext?.findRenderObject();
+      final panel = _orderPanelKey.currentContext?.findRenderObject();
+      if (map is! RenderBox ||
+          panel is! RenderBox ||
+          !map.hasSize ||
+          !panel.hasSize) {
+        return;
+      }
+      final panelTop = map.globalToLocal(panel.localToGlobal(Offset.zero)).dy;
+      final top = MediaQuery.paddingOf(context).top + 32;
+      final bottom = (map.size.height - panelTop + 24)
+          .clamp(0.0, (map.size.height - top - 100).clamp(0.0, double.infinity))
+          .toDouble();
+      final padding = EdgeInsets.fromLTRB(40, top, 40, bottom);
+      if (_routePadding != padding) {
+        setState(() => _routePadding = padding);
+      }
+    });
+  }
+
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
 
@@ -49,6 +80,7 @@ class _PassengerHomePlaceholderScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    _scheduleMapLayout();
     return BlocProvider<HomeCubit>(
       create: (_) => serviceLocator<HomeCubit>()..initialize(),
       child: BlocConsumer<HomeCubit, HomeState>(
@@ -98,6 +130,8 @@ class _PassengerHomePlaceholderScreenState
               children: [
                 Positioned.fill(
                   child: MapWidget(
+                    key: _mapKey,
+                    routePadding: _routePadding,
                     center: state.mapCenter,
                     recenterRequestId: state.recenterRequestId,
                     currentLocation: state.currentLocation,
@@ -119,64 +153,93 @@ class _PassengerHomePlaceholderScreenState
                         Expanded(
                           child: Align(
                             alignment: Alignment.bottomCenter,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (state.selectedAddress == null ||
-                                      state.selectedService ==
-                                          HomeServiceType.delivery)
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: FloatingActionButton.small(
-                                        heroTag: 'passenger-location',
-                                        backgroundColor: AppColors.surface,
-                                        foregroundColor: AppColors.text,
-                                        onPressed:
-                                            state.isResolvingCurrentLocation
-                                            ? null
-                                            : cubit.recenterToCurrentPosition,
-                                        child: state.isResolvingCurrentLocation
-                                            ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Icon(
-                                                Icons.my_location_rounded,
-                                              ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) => ConstrainedBox(
+                                key: _orderPanelKey,
+                                constraints: BoxConstraints(
+                                  maxHeight: state.selectedAddress != null
+                                      ? constraints.maxHeight * 0.65
+                                      : constraints.maxHeight,
+                                ),
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (state.selectedAddress == null ||
+                                          state.selectedService ==
+                                              HomeServiceType.delivery)
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: FloatingActionButton.small(
+                                            heroTag: 'passenger-location',
+                                            backgroundColor: AppColors.surface,
+                                            foregroundColor: AppColors.text,
+                                            onPressed:
+                                                state.isResolvingCurrentLocation
+                                                ? null
+                                                : cubit
+                                                      .recenterToCurrentPosition,
+                                            child:
+                                                state.isResolvingCurrentLocation
+                                                ? const SizedBox(
+                                                    width: 18,
+                                                    height: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.my_location_rounded,
+                                                  ),
+                                          ),
+                                        ),
+                                      if (state.selectedAddress == null ||
+                                          state.selectedService ==
+                                              HomeServiceType.delivery)
+                                        const SizedBox(height: AppSpacing.sm),
+                                      NotificationListener<
+                                        SizeChangedLayoutNotification
+                                      >(
+                                        onNotification: (_) {
+                                          _scheduleMapLayout();
+                                          return false;
+                                        },
+                                        child: SizeChangedLayoutNotifier(
+                                          child: _PassengerOrderPanel(
+                                            state: state,
+                                            pickupController: _pickupController,
+                                            destinationController:
+                                                _destinationController,
+                                            onPickupChanged:
+                                                cubit.onPickupQueryChanged,
+                                            onPickupSelected:
+                                                cubit.selectPickup,
+                                            onPickupFocused:
+                                                cubit.activatePickupSearch,
+                                            onDestinationFocused:
+                                                cubit.activateDestinationSearch,
+                                            onUseCurrentPickup: () {
+                                              _pickupController.text =
+                                                  state
+                                                      .currentAddress
+                                                      ?.displayTitle ??
+                                                  '';
+                                              cubit.useCurrentPickup();
+                                            },
+                                            onServiceChanged: cubit.setService,
+                                            onDestinationChanged:
+                                                cubit.onSearchQueryChanged,
+                                            onDestinationSelected:
+                                                cubit.selectAddress,
+                                            onOrder: () =>
+                                                _startOrder(context, state),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  if (state.selectedAddress == null ||
-                                      state.selectedService ==
-                                          HomeServiceType.delivery)
-                                    const SizedBox(height: AppSpacing.sm),
-                                  _PassengerOrderPanel(
-                                    state: state,
-                                    pickupController: _pickupController,
-                                    destinationController:
-                                        _destinationController,
-                                    onPickupChanged: cubit.onPickupQueryChanged,
-                                    onPickupSelected: cubit.selectPickup,
-                                    onPickupFocused: cubit.activatePickupSearch,
-                                    onDestinationFocused:
-                                        cubit.activateDestinationSearch,
-                                    onUseCurrentPickup: () {
-                                      _pickupController.text =
-                                          state.currentAddress?.displayTitle ??
-                                          '';
-                                      cubit.useCurrentPickup();
-                                    },
-                                    onServiceChanged: cubit.setService,
-                                    onDestinationChanged:
-                                        cubit.onSearchQueryChanged,
-                                    onDestinationSelected: cubit.selectAddress,
-                                    onOrder: () => _startOrder(context, state),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ),

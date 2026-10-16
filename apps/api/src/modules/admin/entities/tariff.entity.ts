@@ -81,7 +81,7 @@ export class TariffEntity {
     type: "decimal",
     precision: 5,
     scale: 2,
-    default: 10,
+    default: 7,
   })
   commissionPercent!: string;
 

@@ -305,7 +305,7 @@ export class AdminService {
           minimumPrice: tariff.minimumPrice.toFixed(2),
           freeWaitingSeconds: 180,
           paidWaitingPerMinute: tariff.paidWaitingPerMinute.toFixed(4),
-          commissionPercent: "10.00",
+          commissionPercent: "7.00",
           commissionFixed: "0.00",
           currency: city.currency ?? Currency.KZT,
           validFrom,
@@ -362,7 +362,7 @@ export class AdminService {
     const validTo = dto.validTo ? new Date(dto.validTo) : null;
     if (validTo && validTo <= validFrom)
       throw new BadRequestException("TARIFF_DATE_RANGE_INVALID");
-    if ((dto.commissionPercent ?? 10) > 100)
+    if ((dto.commissionPercent ?? 7) > 100)
       throw new BadRequestException("TARIFF_COMMISSION_INVALID");
     return this.dataSource.transaction(async (manager) => {
       if (key)
@@ -429,7 +429,7 @@ export class AdminService {
           minimumPrice: dto.minimumPrice.toFixed(2),
           freeWaitingSeconds: dto.freeWaitingSeconds ?? 180,
           paidWaitingPerMinute: (dto.paidWaitingPerMinute ?? 0).toFixed(4),
-          commissionPercent: (dto.commissionPercent ?? 10).toFixed(2),
+          commissionPercent: (dto.commissionPercent ?? 7).toFixed(2),
           commissionFixed: (dto.commissionFixed ?? 0).toFixed(2),
           validFrom,
           validTo,

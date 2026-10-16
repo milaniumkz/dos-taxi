@@ -317,16 +317,19 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                     child: ChoiceChip(
                       label: SizedBox(
                         width: double.infinity,
-                        child: Text(
-                          entry.value,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            entry.value,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                          ),
                         ),
                       ),
                       selected: payment == entry.key,
                       selectedColor: AppColors.primaryDark,
                       labelStyle: TextStyle(
+                        fontSize: entry.key == 'cash' ? 12 : null,
                         color: payment == entry.key
                             ? Colors.white
                             : AppColors.text,

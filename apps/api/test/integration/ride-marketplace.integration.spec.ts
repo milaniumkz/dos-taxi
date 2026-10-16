@@ -307,7 +307,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
         const settled = await db
           .getRepository(ExecutorEntity)
           .findOneByOrFail({ id: d.id });
-        expect(Number(settled.balance)).toBe(985.71); // 100 KZT commission / snapshotted 7.
+        expect(Number(settled.balance)).toBe(990); // 7% of 1000 KZT / snapshotted rate 7.
         await db
           .getRepository(CityEntity)
           .update(manualCity.id, { rideExchangeRate: "7" });
@@ -638,7 +638,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       .getRepository(ExecutorEntity)
       .findOneByOrFail({ id: selectedDriver.id });
     expect(Number(balance.balance)).toBe(
-      1100 - Number(selected.estimatedPrice) * 0.1,
+      1100 - Number(selected.estimatedPrice) * 0.07,
     );
     expect(
       await db
