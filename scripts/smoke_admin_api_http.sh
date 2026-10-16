@@ -196,9 +196,9 @@ extract_json_field() {
     }
     if (value === null) {
       process.stdout.write("__NULL__");
-      return;
+    } else {
+      process.stdout.write(String(value));
     }
-    process.stdout.write(String(value));
   ' "$payload" "$field" || fail "Unable to extract ${field} from payload: ${payload}"
 }
 
