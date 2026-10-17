@@ -26,8 +26,12 @@ class RetryInterceptor extends Interceptor {
     }
 
     err.requestOptions.extra['retry_attempt'] = currentAttempt + 1;
-    final response = await _dio.fetch<dynamic>(err.requestOptions);
-    handler.resolve(response);
+    try {
+      final response = await _dio.fetch<dynamic>(err.requestOptions);
+      handler.resolve(response);
+    } on DioException catch (retryError) {
+      handler.next(retryError);
+    }
   }
 
   bool _shouldRetry(DioException err) {
