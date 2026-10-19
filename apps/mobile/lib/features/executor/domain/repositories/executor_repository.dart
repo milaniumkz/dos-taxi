@@ -17,6 +17,9 @@ abstract class ExecutorRepository {
 
   Future<Either<Failure, ExecutorProfile>> submitOnboarding({
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
     required String executorType,
     String? vehicleType,
     String? vehicleMake,
@@ -41,6 +44,9 @@ abstract class ExecutorRepository {
   Future<Either<Failure, ExecutorProfile>> updateDriverProfile({
     required ExecutorProfile profile,
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
   });
 
   Future<Either<Failure, ExecutorProfile>> updateOnlineStatus({

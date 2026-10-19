@@ -29,9 +29,27 @@ export class KaspiService {
       const executor = await this.dataSource
         .getRepository(ExecutorEntity)
         .findOne({ where: { user: { phone } }, relations: ["user", "city"] });
-      return this.available(executor)
-        ? failure(0, "OK")
-        : failure(1, "Account not found or unavailable");
+      if (!this.available(executor) || !executor) {
+        return failure(1, "Account not found or unavailable");
+      }
+      return {
+        ...failure(0, "OK"),
+        fields: {
+          field1: {
+            "@name": "last_name",
+            "#text": executor.user.lastName!.trim(),
+          },
+          field2: {
+            "@name": "first_name",
+            "#text": executor.user.firstName!.trim(),
+          },
+          field3: {
+            "@name": "middle_name",
+            "#text": executor.user.middleName?.trim() ?? "",
+          },
+          field4: { "@name": "phone", "#text": executor.user.phone },
+        },
+      };
     }
     if (!this.validDate(query.txn_date) || Number(query.sum) <= 0)
       return failure(5, "Invalid payment date or amount");
@@ -76,12 +94,10 @@ export class KaspiService {
       });
       if (!locked) return failure(1, "Account not found");
       const city = locked.cityId
-        ? await manager
-            .getRepository(CityEntity)
-            .findOne({
-              where: { id: locked.cityId },
-              lock: { mode: "pessimistic_read" },
-            })
+        ? await manager.getRepository(CityEntity).findOne({
+            where: { id: locked.cityId },
+            lock: { mode: "pessimistic_read" },
+          })
         : null;
       if (!city) return failure(1, "Account not found");
       const credit = balanceTopUpCredit(
@@ -133,6 +149,8 @@ export class KaspiService {
       executor.executorType === "driver" &&
       executor.verificationStatus === "verified" &&
       !executor.user?.isBlocked &&
+      executor.user?.lastName?.trim() &&
+      executor.user?.firstName?.trim() &&
       [Currency.KZT, Currency.RUB].includes(
         executor.city?.currency as Currency,
       ),

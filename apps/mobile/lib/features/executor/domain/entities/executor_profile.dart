@@ -5,6 +5,9 @@ class ExecutorProfile extends Equatable {
     required this.id,
     required this.phone,
     required this.name,
+    this.lastName = '',
+    this.firstName = '',
+    this.middleName = '',
     required this.executorType,
     required this.vehicleType,
     required this.carClass,
@@ -29,6 +32,9 @@ class ExecutorProfile extends Equatable {
   final String id;
   final String phone;
   final String name;
+  final String lastName;
+  final String firstName;
+  final String middleName;
   final String executorType;
   final String? vehicleType;
   final String? carClass;
@@ -52,6 +58,9 @@ class ExecutorProfile extends Equatable {
     String? id,
     String? phone,
     String? name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
     String? executorType,
     Object? vehicleType = _unset,
     Object? carClass = _unset,
@@ -76,6 +85,9 @@ class ExecutorProfile extends Equatable {
       id: id ?? this.id,
       phone: phone ?? this.phone,
       name: name ?? this.name,
+      lastName: lastName ?? this.lastName,
+      firstName: firstName ?? this.firstName,
+      middleName: middleName ?? this.middleName,
       executorType: executorType ?? this.executorType,
       vehicleType: vehicleType == _unset
           ? this.vehicleType
@@ -113,6 +125,9 @@ class ExecutorProfile extends Equatable {
     id,
     phone,
     name,
+    lastName,
+    firstName,
+    middleName,
     executorType,
     vehicleType,
     carClass,

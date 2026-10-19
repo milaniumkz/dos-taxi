@@ -8018,9 +8018,51 @@
           "duplicated"
         ]
       },
+      "KaspiDriverFieldsDto": {
+        "type": "object",
+        "properties": {
+          "field1": {
+            "type": "object",
+            "example": {
+              "@name": "last_name",
+              "#text": "Иванов"
+            }
+          },
+          "field2": {
+            "type": "object",
+            "example": {
+              "@name": "first_name",
+              "#text": "Иван"
+            }
+          },
+          "field3": {
+            "type": "object",
+            "example": {
+              "@name": "middle_name",
+              "#text": "Иванович"
+            }
+          },
+          "field4": {
+            "type": "object",
+            "example": {
+              "@name": "phone",
+              "#text": "+77010000000"
+            }
+          }
+        },
+        "required": [
+          "field1",
+          "field2",
+          "field3",
+          "field4"
+        ]
+      },
       "KaspiResponseDto": {
         "type": "object",
         "properties": {
+          "fields": {
+            "$ref": "#/components/schemas/KaspiDriverFieldsDto"
+          },
           "txn_id": {
             "type": "string"
           },
@@ -8106,7 +8148,23 @@
       },
       "UpdateExecutorProfileDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "lastName": {
+            "type": "string",
+            "description": "Driver surname",
+            "maxLength": 100
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Driver given name",
+            "maxLength": 100
+          },
+          "middleName": {
+            "type": "string",
+            "description": "Driver patronymic; empty if absent",
+            "maxLength": 100
+          }
+        }
       },
       "UpdateExecutorStatusDto": {
         "type": "object",
