@@ -31,6 +31,50 @@
         ]
       }
     },
+    "/api/v1/ride-requests/current-city": {
+      "get": {
+        "operationId": "RideMarketplaceController_currentCity",
+        "summary": "Detect active service city from the current GPS location",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RideCityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/ride-requests/quote": {
       "post": {
         "operationId": "RideMarketplaceController_quote",
@@ -757,6 +801,42 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrdersHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/executor-location": {
+      "get": {
+        "operationId": "OrdersController_getExecutorLocation",
+        "summary": "Get current assigned driver position for the owning passenger's active order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fresh position, or null when unavailable or the order is no longer active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorTrackingDto"
                 }
               }
             }
@@ -5873,6 +5953,31 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "ExecutorTrackingDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "heading": {
+            "type": "number",
+            "nullable": true
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "heading",
+          "updatedAt"
         ]
       },
       "CancelOrderDto": {

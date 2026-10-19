@@ -1,3 +1,4 @@
+import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_city_picker.dart';
 import '../../../ride_marketplace/presentation/ride_feed_screen.dart';
 import 'package:flutter/material.dart';
@@ -654,6 +655,9 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 6),
+                    const Align(alignment: Alignment.centerLeft, child: SizedBox(width: 190, child: CurrentCityBadge())),
+                    const SizedBox(height: 6),
                     Expanded(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 220),

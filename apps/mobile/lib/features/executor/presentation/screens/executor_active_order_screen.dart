@@ -1,3 +1,4 @@
+import '../../../../shared/widgets/current_city_badge.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -177,6 +178,8 @@ class _ExecutorActiveOrderScreenState extends State<ExecutorActiveOrderScreen> {
                                         CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      const SizedBox(width: 170, child: CurrentCityBadge()),
+                                      const SizedBox(height: 4),
                                       Text(
                                         _statusLabel(l10n, session.status),
                                         maxLines: 1,

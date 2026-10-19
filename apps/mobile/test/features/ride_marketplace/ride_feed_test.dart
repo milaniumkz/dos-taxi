@@ -169,6 +169,10 @@ void main() {
         await tester.pump();
         await tester.pump();
         expect(find.text('Ближайшая подача'), findsOneWidget);
+        expect(find.text('A'), findsWidgets);
+        expect(find.text('B'), findsWidgets);
+        expect(find.byIcon(Icons.trip_origin), findsNothing);
+        expect(find.byIcon(Icons.place), findsNothing);
         expect(find.byIcon(Icons.add), findsNothing);
         expect(
           tester.getRect(find.text('Подача 4')).bottom,

@@ -66,6 +66,29 @@ void main() {
     positionInterpolator: const ExecutorPositionInterpolator(steps: 1),
   );
 
+  test('new GPS fixes cancel old interpolation without moving the driver backwards', () async {
+    final cubit = ActiveOrderCubit(session: session,
+      activeOrderRepository: activeOrderRepository,
+      positionInterpolator: const ExecutorPositionInterpolator(steps: 4));
+    final latitudes = <double>[];
+    final subscription = cubit.stream.listen((state) {
+      if (state.executorLocation != null) latitudes.add(state.executorLocation!.latitude);
+    });
+    await cubit.startTracking();
+    trackingController.add(const ActiveOrderTrackingEvent.executorLocationUpdated(executorLocation: LatLng(43, 76)));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    trackingController.add(const ActiveOrderTrackingEvent.executorLocationUpdated(executorLocation: LatLng(43.01, 76)));
+    await Future<void>.delayed(const Duration(milliseconds: 140));
+    trackingController.add(const ActiveOrderTrackingEvent.executorLocationUpdated(executorLocation: LatLng(43.02, 76)));
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    expect(cubit.state.executorLocation!.latitude, closeTo(43.02, 0.000001));
+    for (var i = 1; i < latitudes.length; i++) {
+      expect(latitudes[i], greaterThanOrEqualTo(latitudes[i-1]));
+    }
+    await subscription.cancel();
+    await cubit.close();
+  });
+
   blocTest<ActiveOrderCubit, ActiveOrderState>(
     'moves from connecting to accepted when tracking emits executor info',
     build: buildCubit,

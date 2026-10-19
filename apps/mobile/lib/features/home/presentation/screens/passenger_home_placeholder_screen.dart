@@ -1,3 +1,4 @@
+import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_request_screen.dart';
 import '../../../ride_marketplace/presentation/ride_request_cubit.dart';
 import '../../../ride_marketplace/domain/ride_repository.dart';
@@ -166,6 +167,11 @@ class _PassengerHomePlaceholderScreenState
                           : const Icon(Icons.my_location_rounded),
                     ),
                   ),
+                Positioned(
+                  top: MediaQuery.paddingOf(context).top + 16,
+                  left: 16,
+                  child: const SizedBox(width: 190, child: CurrentCityBadge()),
+                ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),

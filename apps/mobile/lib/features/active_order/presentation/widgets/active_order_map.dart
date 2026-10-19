@@ -5,61 +5,75 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/dos_ui.dart';
 import '../../domain/entities/active_order_session.dart';
+import '../../domain/entities/active_order_service_type.dart';
 
-class ActiveOrderMap extends StatelessWidget {
+class ActiveOrderMap extends StatefulWidget {
   const ActiveOrderMap({
     required this.session,
     required this.executorLocation,
+    this.bottomFraction = 0.32,
     super.key,
   });
 
   final ActiveOrderSession session;
   final LatLng? executorLocation;
 
+  final double bottomFraction;
+
+  @override
+  State<ActiveOrderMap> createState() => _ActiveOrderMapState();
+}
+
+class _ActiveOrderMapState extends State<ActiveOrderMap> {
+  final MapController _controller = MapController();
+  bool _ready = false;
+  Size _size = Size.zero;
+
+  void _follow() {
+    if (!_ready) return;
+    final center = widget.executorLocation ?? widget.session.fromAddress.location;
+    _controller.move(center, _controller.camera.zoom,
+      offset: Offset(0, -_size.height * widget.bottomFraction / 2 + 35));
+  }
+
+  @override
+  void didUpdateWidget(covariant ActiveOrderMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _follow(); });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final rideRoutePoints = session.routePoints.length >= 2
-        ? session.routePoints
-        : [session.fromAddress.location, session.toAddress.location];
-    final pickupRoutePoints = executorLocation == null
-        ? const <LatLng>[]
-        : [executorLocation!, session.fromAddress.location];
-    final center =
-        executorLocation ??
-        (session.routePoints.isNotEmpty
-            ? session.routePoints.first
-            : session.fromAddress.location);
-
-    return Stack(
+    final session = widget.session;
+    final executorLocation = widget.executorLocation;
+    final center = executorLocation ?? session.fromAddress.location;
+    return LayoutBuilder(builder: (context, constraints) {
+      final size = constraints.biggest;
+      if (size != _size) {
+        _size = size;
+        WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _follow(); });
+      }
+      return Stack(
       children: [
         FlutterMap(
-          options: MapOptions(initialCenter: center, initialZoom: 13),
+          mapController: _controller,
+          options: MapOptions(initialCenter: center, initialZoom: 16,
+            interactionOptions: const InteractionOptions(flags: InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom | InteractiveFlag.scrollWheelZoom),
+            onPositionChanged: (_, gesture) {
+              if (gesture) WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _follow(); });
+            },
+            onMapReady: () { _ready = true; _follow(); }),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.dos.dos_mobile',
             ),
-            if (rideRoutePoints.length >= 2)
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: rideRoutePoints,
-                    strokeWidth: 5,
-                    color: AppColors.primaryDark,
-                  ),
-                  Polyline(
-                    points: rideRoutePoints,
-                    strokeWidth: 3,
-                    color: AppColors.primary,
-                  ),
-                  if (pickupRoutePoints.length >= 2)
-                    Polyline(
-                      points: pickupRoutePoints,
-                      strokeWidth: 4,
-                      color: AppColors.text.withValues(alpha: 0.62),
-                    ),
-                ],
-              ),
             MarkerLayer(
               markers: [
                 Marker(
@@ -85,7 +99,8 @@ class ActiveOrderMap extends StatelessWidget {
                     point: executorLocation!,
                     width: 58,
                     height: 58,
-                    child: const _ExecutorMarker(),
+                    child: _ExecutorMarker(icon: session.serviceType == ActiveOrderServiceType.delivery
+                      ? Icons.local_shipping_rounded : Icons.local_taxi_rounded),
                   ),
               ],
             ),
@@ -101,6 +116,7 @@ class ActiveOrderMap extends StatelessWidget {
         ),
       ],
     );
+    });
   }
 }
 
@@ -131,7 +147,9 @@ class _OrderMarker extends StatelessWidget {
 }
 
 class _ExecutorMarker extends StatelessWidget {
-  const _ExecutorMarker();
+  const _ExecutorMarker({required this.icon});
+
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +166,8 @@ class _ExecutorMarker extends StatelessWidget {
           ),
         ],
       ),
-      child: const Icon(
-        Icons.local_taxi_rounded,
+      child: Icon(
+        icon,
         color: AppColors.text,
         size: 28,
       ),

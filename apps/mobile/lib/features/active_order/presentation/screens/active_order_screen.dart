@@ -1,3 +1,4 @@
+import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_offers_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,10 +18,17 @@ import '../widgets/active_order_details_sheet.dart';
 import '../widgets/active_order_map.dart';
 import 'rating_screen.dart';
 
-class ActiveOrderScreen extends StatelessWidget {
+class ActiveOrderScreen extends StatefulWidget {
   const ActiveOrderScreen({super.key});
 
   static const routePath = '/active-order';
+
+  @override
+  State<ActiveOrderScreen> createState() => _ActiveOrderScreenState();
+}
+
+class _ActiveOrderScreenState extends State<ActiveOrderScreen> {
+  double _bottomFraction = 0.32;
 
   @override
   Widget build(BuildContext context) {
@@ -61,12 +69,18 @@ class ActiveOrderScreen extends StatelessWidget {
         }
         return Scaffold(
           extendBodyBehindAppBar: true,
-          body: Stack(
+          body: NotificationListener<DraggableScrollableNotification>(
+            onNotification: (notification) {
+              setState(() => _bottomFraction = notification.extent);
+              return false;
+            },
+            child: Stack(
             children: [
               Positioned.fill(
                 child: ActiveOrderMap(
                   session: state.session,
                   executorLocation: state.executorLocation,
+                  bottomFraction: _bottomFraction,
                 ),
               ),
               Positioned(
@@ -77,11 +91,7 @@ class ActiveOrderScreen extends StatelessWidget {
                   bottom: false,
                   child: Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 22,
-                        backgroundColor: AppColors.surface,
-                        child: Icon(Icons.menu_rounded, color: AppColors.text),
-                      ),
+                      const SizedBox(width: 145, child: CurrentCityBadge()),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: DosCard(
@@ -188,6 +198,7 @@ class ActiveOrderScreen extends StatelessWidget {
                 },
               ),
             ],
+          ),
           ),
         );
       },

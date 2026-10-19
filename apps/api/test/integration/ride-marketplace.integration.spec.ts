@@ -193,6 +193,73 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       await db.destroy();
     }
   });
+  it("detects the active GPS city and validates coordinates", async () => {
+    const c = await user();
+    await db.getRepository(CityEntity).update(city.id, {
+      serviceZone: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [61, 46],
+            [62, 46],
+            [62, 47],
+            [61, 47],
+            [61, 46],
+          ],
+        ],
+      },
+    });
+    const found = await requestHttp(app.getHttpServer())
+      .get("/ride-requests/current-city")
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .query({ lat: 46.8, lng: 61.67 })
+      .expect(200);
+    expect(found.body.id).toBe(city.id);
+    await requestHttp(app.getHttpServer())
+      .get("/ride-requests/current-city")
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .query({ lat: 146, lng: 61.67 })
+      .expect(400);
+  });
+
+  it.each([ServiceType.TAXI, ServiceType.INTERCITY, ServiceType.DELIVERY])(
+    "exposes only the assigned active driver's fresh GPS to the owning passenger (%s)",
+    async (serviceType) => {
+      const c = await user(),
+        stranger = await user(),
+        d = await driver();
+      const { order: ride } = await request(c.id);
+      await db.getRepository(OrderEntity).update(ride.id, {
+        executorId: d.id,
+        status: OrderStatus.IN_PROGRESS,
+        serviceType,
+      });
+      await db
+        .getRepository(ExecutorLocationEntity)
+        .save({ executorId: d.id, lat: 46.8, lng: 61.67, heading: 90 });
+      expect(await orders.getExecutorLocation(c.id, ride.id)).toMatchObject({
+        lat: 46.8,
+        lng: 61.67,
+        heading: 90,
+      });
+      await expect(
+        orders.getExecutorLocation(stranger.id, ride.id),
+      ).rejects.toThrow("Order not found");
+      await db.query(
+        "UPDATE executor_locations SET updated_at=now()-interval '3 minutes' WHERE executor_id=$1",
+        [d.id],
+      );
+      expect(await orders.getExecutorLocation(c.id, ride.id)).toBeNull();
+      await db
+        .getRepository(ExecutorLocationEntity)
+        .save({ executorId: d.id, lat: 46.81, lng: 61.68 });
+      await db
+        .getRepository(OrderEntity)
+        .update(ride.id, { status: OrderStatus.COMPLETED });
+      expect(await orders.getExecutorLocation(c.id, ride.id)).toBeNull();
+    },
+  );
+
   it("takes the passenger price immediately, is retryable and prevents two assigned drivers", async () => {
     const c = await user(),
       d1 = await driver(),
@@ -397,30 +464,26 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
         randomUUID(),
       ),
     ).rejects.toThrow("ПСБ доступен только в Байконуре.");
-    const another = await db
-      .getRepository(CityEntity)
-      .save({
-        nameRu: "Другой город",
-        nameKk: "Басқа қала",
-        countryCode: "KZ",
-        currency: Currency.RUB,
-        timezone: "Asia/Almaty",
-        isActive: true,
-      });
+    const another = await db.getRepository(CityEntity).save({
+      nameRu: "Другой город",
+      nameKk: "Басқа қала",
+      countryCode: "KZ",
+      currency: Currency.RUB,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    });
     expect(
       (await market.quote({ ...base, cityId: another.id }))
         .availablePaymentMethods,
     ).not.toContain(PaymentMethod.TRANSFER_PSB);
-    const baikonur = await db
-      .getRepository(CityEntity)
-      .save({
-        nameRu: "Байконур",
-        nameKk: "Байқоңыр",
-        countryCode: "KZ",
-        currency: Currency.RUB,
-        timezone: "Asia/Almaty",
-        isActive: true,
-      });
+    const baikonur = await db.getRepository(CityEntity).save({
+      nameRu: "Байконур",
+      nameKk: "Байқоңыр",
+      countryCode: "KZ",
+      currency: Currency.RUB,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    });
     const allowed = await market.quote({ ...base, cityId: baikonur.id });
     expect(allowed.availablePaymentMethods).toContain(
       PaymentMethod.TRANSFER_PSB,

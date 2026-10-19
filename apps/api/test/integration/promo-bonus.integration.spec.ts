@@ -369,6 +369,57 @@ describe("Promo redemption and driver bonus progress", () => {
     expect(completed.finalPrice).toBe("1800.00");
     expect(completed.discountAmount).toBe("200.00");
   });
+  it.each([
+    ["Байконур", "Байқоңыр", Currency.RUB, 714.29],
+    ["Алматы", "Алматы", Currency.KZT, 5000],
+    ["Другой город", "Басқа қала", Currency.KZT, 5000],
+  ])(
+    "shows bonus for %s in the expected currency",
+    async (nameRu, nameKk, currency, bonusAmount) => {
+      await db
+        .getRepository(CityEntity)
+        .update(city.id, {
+          nameRu,
+          nameKk,
+          currency: Currency.RUB,
+          rideExchangeRate: "7",
+        });
+      await db
+        .getRepository(ExecutorEntity)
+        .save({
+          userId: driver.id,
+          cityId: city.id,
+          executorType: ExecutorType.DRIVER,
+        });
+      await db
+        .getRepository(DriverBonusSettingEntity)
+        .save({
+          key: "default",
+          isEnabled: true,
+          ordersRequired: 20,
+          bonusAmount: "5000",
+        });
+      const response = await request(app.getHttpServer())
+        .get("/api/v1/executor/bonuses/progress")
+        .set("x-user-id", driver.id)
+        .expect(200);
+      expect(response.body).toMatchObject({ currency, bonusAmount });
+      if (currency === Currency.RUB) {
+        await db
+          .getRepository(CityEntity)
+          .update(city.id, { rideExchangeRate: "8" });
+        const changed = await request(app.getHttpServer())
+          .get("/api/v1/executor/bonuses/progress")
+          .set("x-user-id", driver.id)
+          .expect(200);
+        expect(changed.body).toMatchObject({
+          currency: Currency.RUB,
+          bonusAmount: 625,
+        });
+      }
+    },
+  );
+
   it("returns current bonus conditions and counts only the driver's completed orders", async () => {
     const executor = await db.getRepository(ExecutorEntity).save({
       userId: driver.id,

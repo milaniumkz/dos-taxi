@@ -56,8 +56,8 @@ class ActiveOrderRemoteDataSource {
     final timers = <Timer>[];
     io.Socket? socket;
 
-    void addEvent(ActiveOrderTrackingEvent event) {
-      if (!controller.isClosed) {
+    void addEvent(ActiveOrderTrackingEvent? event) {
+      if (event != null && !controller.isClosed) {
         controller.add(event);
       }
     }
@@ -116,11 +116,13 @@ class ActiveOrderRemoteDataSource {
       );
     }
 
-    ActiveOrderTrackingEvent mapLocationEvent(dynamic payload) {
+    ActiveOrderTrackingEvent? mapLocationEvent(dynamic payload) {
       final map = payloadAsMap(payload);
-      final lat = (map['lat'] ?? map['latitude'] ?? 0) as num;
-      final lng = (map['lng'] ?? map['lon'] ?? map['longitude'] ?? 0) as num;
-      final heading = (map['heading'] as num?)?.toDouble();
+      final lat = map['lat'] ?? map['latitude'];
+      final lng = map['lng'] ?? map['lon'] ?? map['longitude'];
+      if (lat is! num || lng is! num || !lat.isFinite || !lng.isFinite ||
+          lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+      final heading = map['heading'] is num ? (map['heading'] as num).toDouble() : null;
 
       return ActiveOrderTrackingEvent.executorLocationUpdated(
         executorLocation: LatLng(lat.toDouble(), lng.toDouble()),
@@ -135,12 +137,14 @@ class ActiveOrderRemoteDataSource {
       return ActiveOrderTrackingEvent.etaUpdated(etaSeconds: eta.toInt());
     }
 
+    bool polling = false;
     Future<void> pollOrderSnapshot() async {
-      if (controller.isClosed || session.orderId.isEmpty) {
+      if (controller.isClosed || session.orderId.isEmpty || polling) {
         return;
       }
 
       try {
+        polling = true;
         final response = await _apiClient.guard(
           () => _apiClient.dio.get<Map<String, dynamic>>(
             '/orders/${session.orderId}',
@@ -150,6 +154,19 @@ class ActiveOrderRemoteDataSource {
           response.data ?? <String, dynamic>{},
         );
         addEvent(mapOrderSnapshot(snapshot));
+        try {
+          final location = await _apiClient.guard(
+            () => _apiClient.dio.get<dynamic>('/orders/${session.orderId}/executor-location'),
+          );
+          if (location.data is Map) {
+            final position = payloadAsMap(location.data);
+            if (position['lat'] is num && position['lng'] is num) {
+              addEvent(mapLocationEvent(position));
+            }
+          }
+        } catch (_) {
+          // Status polling and socket updates remain available during GPS gaps.
+        }
         addEvent(
           ActiveOrderTrackingEvent.etaUpdated(
             etaSeconds: snapshot.initialOrderStatus == 'completed'
@@ -159,6 +176,8 @@ class ActiveOrderRemoteDataSource {
         );
       } catch (_) {
         // WebSocket can still deliver updates; polling is a best-effort fallback.
+      } finally {
+        polling = false;
       }
     }
 

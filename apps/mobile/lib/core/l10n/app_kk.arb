@@ -280,6 +280,8 @@
   "driverLastNameLabel": "Тегі",
   "driverMiddleNameLabel": "Әкесінің аты (бар болса)",
   "driverIdentityRequired": "Тегіңіз бен атыңызды енгізіңіз. Әр өріс 100 таңбадан аспауы керек.",
+  "cityDetecting": "Қала анықталуда…",
+  "cityNotDetected": "Қала анықталмады",
   "profileNameLabel": "Аты",
   "profilePhoneLabel": "Телефон",
   "profileLanguageLabel": "Интерфейс тілі",
