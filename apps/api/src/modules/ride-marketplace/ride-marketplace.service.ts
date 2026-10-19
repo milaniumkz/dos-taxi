@@ -77,6 +77,17 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       order: { nameRu: "ASC" },
     });
   }
+  async currentCity(lat: number, lng: number) {
+    const city = await this.orders.resolveBookingCity(undefined, [
+      { lat, lng },
+    ]);
+    return {
+      id: city.id,
+      nameRu: city.nameRu,
+      nameKk: city.nameKk,
+      currency: city.currency,
+    };
+  }
   async quote(dto: RideQuoteDto) {
     const city = await this.orders.resolveBookingCity(
       dto.cityId,

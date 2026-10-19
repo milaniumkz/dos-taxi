@@ -27,6 +27,7 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
 import { OrderResponseDto } from "../orders/dto/order-response.dto";
 import {
+  CurrentRideCityQueryDto,
   AcceptRideOfferDto,
   CreateRideRequestDto,
   RideFeedQueryDto,
@@ -58,6 +59,15 @@ export class RideMarketplaceController {
   })
   cities() {
     return this.marketplace.cities();
+  }
+  @Get("current-city")
+  @Roles(UserRole.CLIENT, UserRole.EXECUTOR)
+  @ApiOperation({
+    summary: "Detect active service city from the current GPS location",
+  })
+  @ApiOkResponse({ type: RideCityResponseDto })
+  currentCity(@Query() query: CurrentRideCityQueryDto) {
+    return this.marketplace.currentCity(query.lat, query.lng);
   }
   @Post("quote")
   @HttpCode(200)

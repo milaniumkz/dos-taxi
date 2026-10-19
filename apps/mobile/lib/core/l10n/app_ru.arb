@@ -280,6 +280,8 @@
   "driverLastNameLabel": "Фамилия",
   "driverMiddleNameLabel": "Отчество (если есть)",
   "driverIdentityRequired": "Укажите фамилию и имя. Каждое поле — не более 100 символов.",
+  "cityDetecting": "Определяем город…",
+  "cityNotDetected": "Город не определён",
   "profileNameLabel": "Имя",
   "profilePhoneLabel": "Телефон",
   "profileLanguageLabel": "Язык интерфейса",

@@ -21,6 +21,10 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+export class CurrentRideCityQueryDto {
+  @ApiProperty() @Type(() => Number) @IsLatitude() lat!: number;
+  @ApiProperty() @Type(() => Number) @IsLongitude() lng!: number;
+}
 export class RideRequestPointDto {
   @ApiProperty() @IsLatitude() lat!: number;
   @ApiProperty() @IsLongitude() lng!: number;

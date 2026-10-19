@@ -1,3 +1,4 @@
+import { ExecutorLocationEntity } from "../executors/entities/executor-location.entity";
 import {
   availableOrderPaymentMethods,
   assertOrderPaymentAllowed,
@@ -362,6 +363,33 @@ export class OrdersService {
     await this.dispatchQueueService.enqueueDispatchOrder(order.id);
 
     return this.getOrder(clientId, order.id);
+  }
+
+  async getExecutorLocation(clientId: string, orderId: string) {
+    const order = await this.ordersRepository.findOne({
+      where: { id: orderId, clientId },
+    });
+    if (!order)
+      throw new NotFoundException({
+        code: "ORDER_NOT_FOUND",
+        message: "Order not found",
+      });
+    if (
+      !order.executorId ||
+      !["accepted", "arriving", "waiting", "in_progress"].includes(order.status)
+    )
+      return null;
+    const location = await this.ordersRepository.manager
+      .getRepository(ExecutorLocationEntity)
+      .findOneBy({ executorId: order.executorId });
+    if (!location || Date.now() - location.updatedAt.getTime() > 120000)
+      return null;
+    return {
+      lat: location.lat,
+      lng: location.lng,
+      heading: location.heading,
+      updatedAt: location.updatedAt,
+    };
   }
 
   async getOrder(clientId: string, orderId: string): Promise<OrderResponseDto> {

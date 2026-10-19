@@ -261,43 +261,87 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
               ),
             ],
           ),
-          Wrap(
-            spacing: 6,
+          Row(
             children: [
-              FilterChip(
-                label: Text(l.rideChildSeat),
-                selected: child,
-                selectedColor: AppColors.primaryDark,
-                checkmarkColor: Colors.white,
-                labelStyle: TextStyle(
-                  color: child ? Colors.white : AppColors.text,
+              Expanded(
+                child: FilterChip(
+                  label: SizedBox(
+                    width: double.infinity,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.child_care_rounded, size: 15),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            l.rideChildSeat,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  selected: child,
+                  selectedColor: AppColors.primary,
+                  backgroundColor: AppColors.surfaceAlt,
+                  side: BorderSide.none,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  showCheckmark: false,
+                  labelStyle: const TextStyle(
+                    color: AppColors.text,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  onSelected: (v) => setState(() => child = v),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                onSelected: (v) => setState(() => child = v),
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              FilterChip(
-                label: Text(l.rideTogether),
-                selected: shared,
-                selectedColor: AppColors.primaryDark,
-                checkmarkColor: Colors.white,
-                labelStyle: TextStyle(
-                  color: shared ? Colors.white : AppColors.text,
+              const SizedBox(width: 6),
+              Expanded(
+                child: FilterChip(
+                  label: SizedBox(
+                    width: double.infinity,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.people_alt_rounded, size: 15),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            l.rideTogether,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  selected: shared,
+                  selectedColor: AppColors.primary,
+                  backgroundColor: AppColors.surfaceAlt,
+                  side: BorderSide.none,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  showCheckmark: false,
+                  labelStyle: const TextStyle(
+                    color: AppColors.text,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  onSelected: (v) => setState(() => shared = v),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                onSelected: (v) => setState(() => shared = v),
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ],
           ),
           Row(
             children: [
-              Icon(
-                Icons.payments_outlined,
-                size: 18,
-                semanticLabel: l.ridePayment,
-              ),
-              const SizedBox(width: 6),
               for (final entry in _payments(l).entries)
                 Expanded(
                   child: Padding(
@@ -307,25 +351,42 @@ class _RideRequestScreenState extends State<RideRequestScreen> {
                         width: double.infinity,
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            entry.value,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                entry.key == 'cash'
+                                    ? Icons.payments_rounded
+                                    : Icons.account_balance_rounded,
+                                size: 13,
+                                color: AppColors.text,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                entry.value,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                              ),
+                            ],
                           ),
                         ),
                       ),
                       selected: payment == entry.key,
-                      selectedColor: AppColors.primaryDark,
+                      selectedColor: AppColors.primary,
+                      backgroundColor: AppColors.surfaceAlt,
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       labelStyle: TextStyle(
-                        fontSize: entry.key == 'cash' ? 12 : null,
-                        color: payment == entry.key
-                            ? Colors.white
-                            : AppColors.text,
+                        fontSize: entry.key == 'cash' ? 11 : 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
                       ),
                       showCheckmark: false,
                       visualDensity: VisualDensity.compact,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 3),
                       onSelected: (_) => setState(() => payment = entry.key),
                     ),
                   ),
@@ -743,7 +804,14 @@ class RideRouteSummary extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.trip_origin, size: 18),
+              const SizedBox(
+                width: 18,
+                child: Text(
+                  'A',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(child: Text(pickup)),
             ],
@@ -751,7 +819,14 @@ class RideRouteSummary extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.place, size: 18),
+              const SizedBox(
+                width: 18,
+                child: Text(
+                  'B',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(child: Text(destination)),
             ],
