@@ -25,9 +25,9 @@ void main() {
         await tester.pump();
         await tester.pump();
         final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
-        final projected = map.mapController!.camera.latLngToScreenOffset(point);
-        expect(projected.dx, closeTo(180, 2));
-        expect(projected.dy, closeTo(640 * (1-fraction)/2+35, 2));
+        final projected = map.mapController!.camera.latLngToScreenPoint(point);
+        expect(projected.x, closeTo(180, 2));
+        expect(projected.y, closeTo(640 * (1-fraction)/2+35, 2));
         expect(find.byType(PolylineLayer), findsNothing);
       }
       await show(const LatLng(43.24, 76.90), 0.32);
