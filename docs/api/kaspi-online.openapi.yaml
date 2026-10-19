@@ -91,13 +91,12 @@ paths:
                     example: '5000.00'
                   fields:
                     type: object
-                    description: Successful check only. Verified driver identity;
-                      empty patronymic if absent. Not returned for unavailable accounts.
+                    description: Successful check only. Full driver name in one string
+                      and phone. Patronymic omitted when absent. No fields for unavailable
+                      accounts.
                     required:
                     - field1
                     - field2
-                    - field3
-                    - field4
                     properties:
                       field1:
                         type: object
@@ -108,37 +107,11 @@ paths:
                           '@name':
                             type: string
                             enum:
-                            - last_name
+                            - full_name
                           '#text':
                             type: string
-                            example: Иванов
+                            example: Иванов Иван Иванович
                       field2:
-                        type: object
-                        required:
-                        - '@name'
-                        - '#text'
-                        properties:
-                          '@name':
-                            type: string
-                            enum:
-                            - first_name
-                          '#text':
-                            type: string
-                            example: Иван
-                      field3:
-                        type: object
-                        required:
-                        - '@name'
-                        - '#text'
-                        properties:
-                          '@name':
-                            type: string
-                            enum:
-                            - middle_name
-                          '#text':
-                            type: string
-                            example: Иванович
-                      field4:
                         type: object
                         required:
                         - '@name'
@@ -159,15 +132,9 @@ paths:
                     comment: OK
                     fields:
                       field1:
-                        '@name': last_name
-                        '#text': Иванов
+                        '@name': full_name
+                        '#text': Иванов Иван Иванович
                       field2:
-                        '@name': first_name
-                        '#text': Иван
-                      field3:
-                        '@name': middle_name
-                        '#text': Иванович
-                      field4:
                         '@name': phone
                         '#text': '+77010000000'
                 pay:

@@ -8129,25 +8129,11 @@
           "field1": {
             "type": "object",
             "example": {
-              "@name": "last_name",
-              "#text": "Иванов"
+              "@name": "full_name",
+              "#text": "Иванов Иван Иванович"
             }
           },
           "field2": {
-            "type": "object",
-            "example": {
-              "@name": "first_name",
-              "#text": "Иван"
-            }
-          },
-          "field3": {
-            "type": "object",
-            "example": {
-              "@name": "middle_name",
-              "#text": "Иванович"
-            }
-          },
-          "field4": {
             "type": "object",
             "example": {
               "@name": "phone",
@@ -8157,9 +8143,7 @@
         },
         "required": [
           "field1",
-          "field2",
-          "field3",
-          "field4"
+          "field2"
         ]
       },
       "KaspiResponseDto": {

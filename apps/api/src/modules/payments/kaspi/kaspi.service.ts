@@ -36,18 +36,16 @@ export class KaspiService {
         ...failure(0, "OK"),
         fields: {
           field1: {
-            "@name": "last_name",
-            "#text": executor.user.lastName!.trim(),
+            "@name": "full_name",
+            "#text": [
+              executor.user.lastName!.trim(),
+              executor.user.firstName!.trim(),
+              executor.user.middleName?.trim(),
+            ]
+              .filter(Boolean)
+              .join(" "),
           },
-          field2: {
-            "@name": "first_name",
-            "#text": executor.user.firstName!.trim(),
-          },
-          field3: {
-            "@name": "middle_name",
-            "#text": executor.user.middleName?.trim() ?? "",
-          },
-          field4: { "@name": "phone", "#text": executor.user.phone },
+          field2: { "@name": "phone", "#text": executor.user.phone },
         },
       };
     }
