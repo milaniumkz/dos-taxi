@@ -47,14 +47,12 @@ export class KaspiQueryDto {
 }
 
 export class KaspiDriverFieldsDto {
-  @ApiProperty({ example: { "@name": "last_name", "#text": "Иванов" } })
+  @ApiProperty({
+    example: { "@name": "full_name", "#text": "Иванов Иван Иванович" },
+  })
   field1!: { "@name": string; "#text": string };
-  @ApiProperty({ example: { "@name": "first_name", "#text": "Иван" } })
-  field2!: { "@name": string; "#text": string };
-  @ApiProperty({ example: { "@name": "middle_name", "#text": "Иванович" } })
-  field3!: { "@name": string; "#text": string };
   @ApiProperty({ example: { "@name": "phone", "#text": "+77010000000" } })
-  field4!: { "@name": string; "#text": string };
+  field2!: { "@name": string; "#text": string };
 }
 
 export class KaspiResponseDto {

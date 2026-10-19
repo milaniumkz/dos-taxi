@@ -80,14 +80,12 @@ describe("Kaspi online balance payments", () => {
       timezone: "Asia/Almaty",
       isActive: true,
     });
-    const user = await db
-      .getRepository(UserEntity)
-      .save({
-        phone: "+77010000000",
-        lastName: "Иванов",
-        firstName: "Иван",
-        middleName: "Иванович",
-      });
+    const user = await db.getRepository(UserEntity).save({
+      phone: "+77010000000",
+      lastName: "Иванов",
+      firstName: "Иван",
+      middleName: "Иванович",
+    });
     driver = await db.getRepository(ExecutorEntity).save({
       userId: user.id,
       executorType: ExecutorType.DRIVER,
@@ -146,10 +144,8 @@ describe("Kaspi online balance payments", () => {
       result: 0,
       comment: "OK",
       fields: {
-        field1: { "@name": "last_name", "#text": "Иванов" },
-        field2: { "@name": "first_name", "#text": "Иван" },
-        field3: { "@name": "middle_name", "#text": "Иванович" },
-        field4: { "@name": "phone", "#text": "+77010000000" },
+        field1: { "@name": "full_name", "#text": "Иванов Иван Иванович" },
+        field2: { "@name": "phone", "#text": "+77010000000" },
       },
     });
     expect(
@@ -199,9 +195,9 @@ describe("Kaspi online balance payments", () => {
       .query({ ...payment, command: "check" })
       .expect(200);
     expect(response.body.result).toBe(0);
-    expect(response.body.fields.field3).toEqual({
-      "@name": "middle_name",
-      "#text": "",
+    expect(response.body.fields.field1).toEqual({
+      "@name": "full_name",
+      "#text": "Иванов Иван",
     });
     const unknown = await request(app.getHttpServer())
       .get(endpoint)

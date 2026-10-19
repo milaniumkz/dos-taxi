@@ -17,8 +17,8 @@ from reportlab.platypus import (
 )
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / 'docs/api/kaspi-bank-handoff-v3.md'
-OUTPUT = ROOT / 'apps/mobile/web/docs/kaspi-driver-topup-v3.pdf'
+SOURCE = ROOT / 'docs/api/kaspi-bank-handoff-v4.md'
+OUTPUT = ROOT / 'apps/mobile/web/docs/kaspi-driver-topup-v4.pdf'
 FONT_DIR = Path('/usr/share/fonts/truetype/dejavu')
 for name, filename in [('DOS', 'DejaVuSans.ttf'), ('DOS-Bold', 'DejaVuSans-Bold.ttf'), ('DOS-Mono', 'DejaVuSansMono.ttf')]:
     pdfmetrics.registerFont(TTFont(name, str(FONT_DIR / filename)))
@@ -38,7 +38,7 @@ def markup(value):
 def footer(canvas, doc):
     canvas.setFont('DOS', 8)
     canvas.setFillColor(colors.HexColor('#64748b'))
-    canvas.drawString(42, 24, 'DOS / Kaspi — версия 3 — 19.10.2026')
+    canvas.drawString(42, 24, 'DOS / Kaspi — версия 4 — 19.10.2026')
     canvas.drawRightString(553, 24, str(doc.page))
 
 
