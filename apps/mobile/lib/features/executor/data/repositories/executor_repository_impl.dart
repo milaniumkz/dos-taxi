@@ -87,6 +87,9 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   @override
   Future<Either<Failure, ExecutorProfile>> submitOnboarding({
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
     required String executorType,
     String? vehicleType,
     String? vehicleMake,
@@ -98,6 +101,9 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
     try {
       final profile = await _remoteDataSource.submitOnboarding(
         name: name,
+        lastName: lastName,
+        firstName: firstName,
+        middleName: middleName,
         executorType: executorType,
         vehicleType: vehicleType,
         vehicleMake: vehicleMake,
@@ -185,14 +191,28 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   Future<Either<Failure, ExecutorProfile>> updateDriverProfile({
     required ExecutorProfile profile,
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
   }) async {
     try {
-      final updated = await _remoteDataSource.updateDriverProfile(name: name);
+      final updated = await _remoteDataSource.updateDriverProfile(
+        name: name,
+        lastName: lastName,
+        firstName: firstName,
+        middleName: middleName,
+      );
       return right(updated);
     } on Failure catch (failure) {
       if (_allowsLocalFallback) {
         return right(
-          profile.copyWith(name: name, verificationStatus: 'pending'),
+          profile.copyWith(
+            name: name,
+            lastName: lastName,
+            firstName: firstName,
+            middleName: middleName,
+            verificationStatus: 'pending',
+          ),
         );
       }
       return left(failure);

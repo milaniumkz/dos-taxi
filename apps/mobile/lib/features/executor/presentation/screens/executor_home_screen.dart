@@ -162,6 +162,8 @@ class DriverOnboardingScreen extends StatefulWidget {
 
 class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   final _nameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
   final _vehicleMakeController = TextEditingController();
   final _vehicleModelController = TextEditingController();
   final _vehicleYearController = TextEditingController();
@@ -173,6 +175,8 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _lastNameController.dispose();
+    _middleNameController.dispose();
     _vehicleMakeController.dispose();
     _vehicleModelController.dispose();
     _vehicleYearController.dispose();
@@ -183,9 +187,13 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
 
   void _submit() {
     final l10n = AppLocalizations.of(context)!;
-    if (_nameController.text.trim().isEmpty) {
+    if (_nameController.text.trim().isEmpty ||
+        (_executorType == 'driver' && _lastNameController.text.trim().isEmpty) ||
+        [_nameController, _lastNameController, _middleNameController].any(
+          (controller) => controller.text.trim().length > 100,
+        )) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.driverOnboardingNameRequired)),
+        SnackBar(content: Text(l10n.driverIdentityRequired)),
       );
       return;
     }
@@ -226,6 +234,9 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
 
     context.read<ExecutorStatusCubit>().submitOnboarding(
       name: _nameController.text.trim(),
+      firstName: _executorType == 'driver' ? _nameController.text.trim() : null,
+      lastName: _executorType == 'driver' ? _lastNameController.text.trim() : null,
+      middleName: _executorType == 'driver' ? _middleNameController.text.trim() : null,
       executorType: _executorType,
       vehicleType: _executorType == 'courier' ? _vehicleType : null,
       vehicleMake: _executorType == 'driver' ? vehicleMake : null,
@@ -252,11 +263,27 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: AppSpacing.lg),
+            if (_executorType == 'driver') ...[
+              TextField(
+                controller: _lastNameController,
+                decoration: InputDecoration(labelText: l10n.driverLastNameLabel),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             TextField(
               controller: _nameController,
               decoration: InputDecoration(labelText: l10n.profileNameLabel),
             ),
             const SizedBox(height: AppSpacing.md),
+            if (_executorType == 'driver') ...[
+              TextField(
+                controller: _middleNameController,
+                decoration: InputDecoration(labelText: l10n.driverMiddleNameLabel),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             DropdownButtonFormField<String>(
               initialValue: _executorType,
               decoration: InputDecoration(
@@ -1507,17 +1534,23 @@ class _DriverPersonalSettingsSheet extends StatefulWidget {
 
 class _DriverPersonalSettingsSheetState
     extends State<_DriverPersonalSettingsSheet> {
-  late final TextEditingController _nameController;
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _middleNameController;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.profile.name);
+    _firstNameController = TextEditingController(text: widget.profile.firstName);
+    _lastNameController = TextEditingController(text: widget.profile.lastName);
+    _middleNameController = TextEditingController(text: widget.profile.middleName);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _middleNameController.dispose();
     super.dispose();
   }
 
@@ -1568,8 +1601,20 @@ class _DriverPersonalSettingsSheetState
             ),
             const SizedBox(height: AppSpacing.md),
             _DarkTextField(
-              controller: _nameController,
+              controller: _lastNameController,
+              label: l10n.driverLastNameLabel,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _DarkTextField(
+              controller: _firstNameController,
               label: l10n.profileNameLabel,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _DarkTextField(
+              controller: _middleNameController,
+              label: l10n.driverMiddleNameLabel,
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -1625,16 +1670,25 @@ class _DriverPersonalSettingsSheetState
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
-    final name = _nameController.text.trim();
-    if (name.length < 2) {
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    final middleName = _middleNameController.text.trim();
+    if (firstName.isEmpty ||
+        lastName.isEmpty ||
+        [firstName, lastName, middleName].any((value) => value.length > 100)) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.profileNameRequired)));
+      ).showSnackBar(SnackBar(content: Text(l10n.driverIdentityRequired)));
       return;
     }
 
     final saved = await context.read<ExecutorStatusCubit>().updateDriverProfile(
-      name: name,
+      name: [lastName, firstName, middleName]
+          .where((part) => part.isNotEmpty)
+          .join(' '),
+      lastName: lastName,
+      firstName: firstName,
+      middleName: middleName,
     );
     if (!mounted || !saved) {
       return;

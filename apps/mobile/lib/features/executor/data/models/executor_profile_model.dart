@@ -7,6 +7,9 @@ class ExecutorProfileModel extends ExecutorProfile {
     required super.id,
     required super.phone,
     required super.name,
+    super.lastName,
+    super.firstName,
+    super.middleName,
     required super.executorType,
     required super.vehicleType,
     required super.carClass,
@@ -33,6 +36,9 @@ class ExecutorProfileModel extends ExecutorProfile {
       id: json['id'] as String? ?? '',
       phone: user['phone'] as String? ?? '',
       name: user['name'] as String? ?? '',
+      lastName: user['lastName'] as String? ?? '',
+      firstName: user['firstName'] as String? ?? '',
+      middleName: user['middleName'] as String? ?? '',
       executorType:
           json['executorType'] as String? ??
           json['executor_type'] as String? ??

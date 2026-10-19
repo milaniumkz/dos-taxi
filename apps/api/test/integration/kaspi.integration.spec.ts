@@ -82,7 +82,12 @@ describe("Kaspi online balance payments", () => {
     });
     const user = await db
       .getRepository(UserEntity)
-      .save({ phone: "+77010000000" });
+      .save({
+        phone: "+77010000000",
+        lastName: "Иванов",
+        firstName: "Иван",
+        middleName: "Иванович",
+      });
     driver = await db.getRepository(ExecutorEntity).save({
       userId: user.id,
       executorType: ExecutorType.DRIVER,
@@ -100,12 +105,10 @@ describe("Kaspi online balance payments", () => {
   });
 
   it("credits a RUB wallet from a KZT bank payment and repeats the saved transaction after a rate change", async () => {
-    await db
-      .getRepository(CityEntity)
-      .update(driver.cityId!, {
-        currency: Currency.RUB,
-        rideExchangeRate: "7",
-      });
+    await db.getRepository(CityEntity).update(driver.cityId!, {
+      currency: Currency.RUB,
+      rideExchangeRate: "7",
+    });
     const query = { ...payment, sum: "1000.00" };
     const first = await request(app.getHttpServer())
       .get(endpoint)
@@ -142,6 +145,12 @@ describe("Kaspi online balance payments", () => {
       txn_id: payment.txn_id,
       result: 0,
       comment: "OK",
+      fields: {
+        field1: { "@name": "last_name", "#text": "Иванов" },
+        field2: { "@name": "first_name", "#text": "Иван" },
+        field3: { "@name": "middle_name", "#text": "Иванович" },
+        field4: { "@name": "phone", "#text": "+77010000000" },
+      },
     });
     expect(
       (
@@ -152,6 +161,56 @@ describe("Kaspi online balance payments", () => {
     ).toBe("1000.00");
     expect(response.headers["cache-control"]).toBe("no-store");
   });
+  it("does not expose personal data for blocked, unverified or incomplete profiles", async () => {
+    for (const change of [
+      { isBlocked: true },
+      { isBlocked: false, firstName: null },
+      { firstName: "Иван", lastName: null },
+    ]) {
+      await db.getRepository(UserEntity).update(driver.userId, change);
+      const response = await request(app.getHttpServer())
+        .get(endpoint)
+        .query({ ...payment, command: "check" })
+        .expect(200);
+      expect(response.body.result).toBe(1);
+      expect(response.body.fields).toBeUndefined();
+    }
+    await db
+      .getRepository(UserEntity)
+      .update(driver.userId, { lastName: "Иванов" });
+    await db
+      .getRepository(ExecutorEntity)
+      .update(driver.id, { verificationStatus: "pending" });
+    const response = await request(app.getHttpServer())
+      .get(endpoint)
+      .query({ ...payment, command: "check" })
+      .expect(200);
+    expect(response.body.result).toBe(1);
+    expect(response.body.fields).toBeUndefined();
+    expect(await db.getRepository(ExecutorBalanceTopUpEntity).count()).toBe(0);
+  });
+
+  it("supports a driver without a patronymic and never leaks fields for an unknown number", async () => {
+    await db
+      .getRepository(UserEntity)
+      .update(driver.userId, { middleName: "" });
+    const response = await request(app.getHttpServer())
+      .get(endpoint)
+      .query({ ...payment, command: "check" })
+      .expect(200);
+    expect(response.body.result).toBe(0);
+    expect(response.body.fields.field3).toEqual({
+      "@name": "middle_name",
+      "#text": "",
+    });
+    const unknown = await request(app.getHttpServer())
+      .get(endpoint)
+      .query({ ...payment, command: "check", account: "77019999999" })
+      .expect(200);
+    expect(unknown.body.result).toBe(1);
+    expect(unknown.body.fields).toBeUndefined();
+  });
+
   it("credits once for concurrent 18-digit transaction duplicates", async () => {
     const responses = await Promise.all(
       Array.from({ length: 10 }, () =>

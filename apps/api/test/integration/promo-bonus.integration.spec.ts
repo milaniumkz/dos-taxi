@@ -423,6 +423,11 @@ describe("Promo redemption and driver bonus progress", () => {
     ).toBe(401);
   });
   it("keeps concurrent Kaspi credits, commissions and a single milestone bonus", async () => {
+    await db.getRepository(UserEntity).update(driver.id, {
+      lastName: "Иванов",
+      firstName: "Иван",
+      middleName: "Иванович",
+    });
     const executor = await db.getRepository(ExecutorEntity).save({
       userId: driver.id,
       cityId: city.id,

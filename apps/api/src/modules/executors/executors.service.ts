@@ -83,8 +83,24 @@ export class ExecutorsService {
       }
     }
 
+    const originalUser = { ...user } as UserEntity;
+    const structuredNameChanged =
+      dto.lastName !== undefined ||
+      dto.firstName !== undefined ||
+      dto.middleName !== undefined;
+    const lastName = dto.lastName ?? user.lastName;
+    const firstName = dto.firstName ?? user.firstName;
+    const middleName = dto.middleName ?? user.middleName;
     const updatedUser = this.usersRepository.merge(user, {
-      name: dto.name ?? user.name,
+      lastName,
+      firstName,
+      middleName,
+      name: structuredNameChanged
+        ? [lastName, firstName, middleName]
+            .filter(Boolean)
+            .join(" ")
+            .slice(0, 100)
+        : (dto.name ?? user.name),
       preferredLanguage: dto.preferredLanguage ?? user.preferredLanguage,
     });
     await this.usersRepository.save(updatedUser);
@@ -94,7 +110,8 @@ export class ExecutorsService {
       relations: ["user", "city"],
     });
     const requiresReview =
-      executor != null && this.profileUpdateRequiresReview(user, executor, dto);
+      executor != null &&
+      this.profileUpdateRequiresReview(originalUser, executor, dto);
 
     const inferredExecutorType =
       dto.executorType ?? this.inferExecutorType(dto.vehicleType);
@@ -312,6 +329,9 @@ export class ExecutorsService {
     dto: UpdateExecutorProfileDto,
   ): boolean {
     return (
+      this.changed(dto.lastName, user.lastName) ||
+      this.changed(dto.firstName, user.firstName) ||
+      this.changed(dto.middleName, user.middleName) ||
       this.changed(dto.name, user.name) ||
       this.changed(dto.executorType, executor.executorType) ||
       this.changed(dto.vehicleType, executor.vehicleType) ||
