@@ -177,7 +177,14 @@ class _CompactRequestCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const SizedBox(width: 14, child: Text('A', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700))),
+                    const SizedBox(
+                      width: 14,
+                      child: Text(
+                        'A',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -195,7 +202,14 @@ class _CompactRequestCard extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    const SizedBox(width: 14, child: Text('B', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700))),
+                    const SizedBox(
+                      width: 14,
+                      child: Text(
+                        'B',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(

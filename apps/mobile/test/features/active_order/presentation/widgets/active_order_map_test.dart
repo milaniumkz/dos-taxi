@@ -9,27 +9,53 @@ import 'package:latlong2/latlong.dart';
 
 void main() {
   for (final type in ActiveOrderServiceType.values) {
-    testWidgets('follows assigned driver above the order sheet for $type', (tester) async {
+    testWidgets('follows assigned driver above the order sheet for $type', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final session = ActiveOrderSession(orderId: 'order', serviceType: type,
-        fromAddress: const AddressSuggestion(title: 'A', subtitle: '', location: LatLng(43.23, 76.88)),
-        toAddress: const AddressSuggestion(title: 'B', subtitle: '', location: LatLng(43.25, 76.95)),
+      final session = ActiveOrderSession(
+        orderId: 'order',
+        serviceType: type,
+        fromAddress: const AddressSuggestion(
+          title: 'A',
+          subtitle: '',
+          location: LatLng(43.23, 76.88),
+        ),
+        toAddress: const AddressSuggestion(
+          title: 'B',
+          subtitle: '',
+          location: LatLng(43.25, 76.95),
+        ),
         routePoints: const [LatLng(43.23, 76.88), LatLng(43.25, 76.95)],
-        price: 500, currency: 'KZT', initialEtaSeconds: 300, vehicleLabel: 'Taxi');
+        price: 500,
+        currency: 'KZT',
+        initialEtaSeconds: 300,
+        vehicleLabel: 'Taxi',
+      );
       Future<void> show(LatLng point, double fraction) async {
-        await tester.pumpWidget(MaterialApp(home: Scaffold(body:
-          ActiveOrderMap(session: session, executorLocation: point, bottomFraction: fraction))));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ActiveOrderMap(
+                session: session,
+                executorLocation: point,
+                bottomFraction: fraction,
+              ),
+            ),
+          ),
+        );
         await tester.pump();
         await tester.pump();
         final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
         final projected = map.mapController!.camera.latLngToScreenPoint(point);
         expect(projected.x, closeTo(180, 2));
-        expect(projected.y, closeTo(640 * (1-fraction)/2+35, 2));
+        expect(projected.y, closeTo(640 * (1 - fraction) / 2 + 35, 2));
         expect(find.byType(PolylineLayer), findsNothing);
       }
+
       await show(const LatLng(43.24, 76.90), 0.32);
       await show(const LatLng(43.245, 76.91), 0.32);
       await show(const LatLng(43.245, 76.91), 0.60);

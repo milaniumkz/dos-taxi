@@ -31,15 +31,21 @@ class _ActiveOrderMapState extends State<ActiveOrderMap> {
 
   void _follow() {
     if (!_ready) return;
-    final center = widget.executorLocation ?? widget.session.fromAddress.location;
-    _controller.move(center, _controller.camera.zoom,
-      offset: Offset(0, -_size.height * widget.bottomFraction / 2 + 35));
+    final center =
+        widget.executorLocation ?? widget.session.fromAddress.location;
+    _controller.move(
+      center,
+      _controller.camera.zoom,
+      offset: Offset(0, -_size.height * widget.bottomFraction / 2 + 35),
+    );
   }
 
   @override
   void didUpdateWidget(covariant ActiveOrderMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _follow(); });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _follow();
+    });
   }
 
   @override
@@ -53,70 +59,94 @@ class _ActiveOrderMapState extends State<ActiveOrderMap> {
     final session = widget.session;
     final executorLocation = widget.executorLocation;
     final center = executorLocation ?? session.fromAddress.location;
-    return LayoutBuilder(builder: (context, constraints) {
-      final size = constraints.biggest;
-      if (size != _size) {
-        _size = size;
-        WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _follow(); });
-      }
-      return Stack(
-      children: [
-        FlutterMap(
-          mapController: _controller,
-          options: MapOptions(initialCenter: center, initialZoom: 16,
-            interactionOptions: const InteractionOptions(flags: InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom | InteractiveFlag.scrollWheelZoom),
-            onPositionChanged: (_, gesture) {
-              if (gesture) WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _follow(); });
-            },
-            onMapReady: () { _ready = true; _follow(); }),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        if (size != _size) {
+          _size = size;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _follow();
+          });
+        }
+        return Stack(
           children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.dos.dos_mobile',
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: session.fromAddress.location,
-                  width: 50,
-                  height: 50,
-                  child: const _OrderMarker(
-                    icon: Icons.trip_origin_rounded,
-                    color: AppColors.success,
-                  ),
+            FlutterMap(
+              mapController: _controller,
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: 16,
+                interactionOptions: const InteractionOptions(
+                  flags:
+                      InteractiveFlag.pinchZoom |
+                      InteractiveFlag.doubleTapZoom |
+                      InteractiveFlag.scrollWheelZoom,
                 ),
-                Marker(
-                  point: session.toAddress.location,
-                  width: 54,
-                  height: 54,
-                  child: const _OrderMarker(
-                    icon: Icons.location_on_rounded,
-                    color: AppColors.primaryDark,
-                  ),
+                onPositionChanged: (_, gesture) {
+                  if (gesture) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _follow();
+                    });
+                  }
+                },
+                onMapReady: () {
+                  _ready = true;
+                  _follow();
+                },
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.dos.dos_mobile',
                 ),
-                if (executorLocation != null)
-                  Marker(
-                    point: executorLocation,
-                    width: 58,
-                    height: 58,
-                    child: _ExecutorMarker(icon: session.serviceType == ActiveOrderServiceType.delivery
-                      ? Icons.local_shipping_rounded : Icons.local_taxi_rounded),
-                  ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: session.fromAddress.location,
+                      width: 50,
+                      height: 50,
+                      child: const _OrderMarker(
+                        icon: Icons.trip_origin_rounded,
+                        color: AppColors.success,
+                      ),
+                    ),
+                    Marker(
+                      point: session.toAddress.location,
+                      width: 54,
+                      height: 54,
+                      child: const _OrderMarker(
+                        icon: Icons.location_on_rounded,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    if (executorLocation != null)
+                      Marker(
+                        point: executorLocation,
+                        width: 58,
+                        height: 58,
+                        child: _ExecutorMarker(
+                          icon:
+                              session.serviceType ==
+                                  ActiveOrderServiceType.delivery
+                              ? Icons.local_shipping_rounded
+                              : Icons.local_taxi_rounded,
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
-        const DosMapOverlay(),
-        const Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(color: Color(0x0EFFFFFF)),
+            const DosMapOverlay(),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: Color(0x0EFFFFFF)),
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
-    });
   }
 }
 
@@ -166,11 +196,7 @@ class _ExecutorMarker extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        icon,
-        color: AppColors.text,
-        size: 28,
-      ),
+      child: Icon(icon, color: AppColors.text, size: 28),
     );
   }
 }

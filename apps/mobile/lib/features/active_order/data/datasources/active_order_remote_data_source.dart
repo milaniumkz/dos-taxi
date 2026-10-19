@@ -120,11 +120,19 @@ class ActiveOrderRemoteDataSource {
       final map = payloadAsMap(payload);
       final lat = map['lat'] ?? map['latitude'];
       final lng = map['lng'] ?? map['lon'] ?? map['longitude'];
-      if (lat is! num || lng is! num || !lat.isFinite || !lng.isFinite ||
-          lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      if (lat is! num ||
+          lng is! num ||
+          !lat.isFinite ||
+          !lng.isFinite ||
+          lat < -90 ||
+          lat > 90 ||
+          lng < -180 ||
+          lng > 180) {
         return null;
       }
-      final heading = map['heading'] is num ? (map['heading'] as num).toDouble() : null;
+      final heading = map['heading'] is num
+          ? (map['heading'] as num).toDouble()
+          : null;
 
       return ActiveOrderTrackingEvent.executorLocationUpdated(
         executorLocation: LatLng(lat.toDouble(), lng.toDouble()),
@@ -158,7 +166,9 @@ class ActiveOrderRemoteDataSource {
         addEvent(mapOrderSnapshot(snapshot));
         try {
           final location = await _apiClient.guard(
-            () => _apiClient.dio.get<dynamic>('/orders/${session.orderId}/executor-location'),
+            () => _apiClient.dio.get<dynamic>(
+              '/orders/${session.orderId}/executor-location',
+            ),
           );
           if (location.data is Map) {
             final position = payloadAsMap(location.data);

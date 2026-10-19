@@ -42,7 +42,10 @@ class _CurrentCityBadgeState extends State<CurrentCityBadge>
       final response = await client.guard(
         () => client.dio.get<Map<String, dynamic>>(
           '/ride-requests/current-city',
-          queryParameters: {'lat': location.latitude, 'lng': location.longitude},
+          queryParameters: {
+            'lat': location.latitude,
+            'lng': location.longitude,
+          },
         ),
       );
       return response.data;
@@ -82,8 +85,10 @@ class _CurrentCityBadgeState extends State<CurrentCityBadge>
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final language = Localizations.localeOf(context).languageCode;
-    final name = (_city?[language == 'kk' ? 'nameKk' : 'nameRu'] ??
-            _city?['nameRu'])?.toString().trim();
+    final name =
+        (_city?[language == 'kk' ? 'nameKk' : 'nameRu'] ?? _city?['nameRu'])
+            ?.toString()
+            .trim();
     final label = name != null && name.isNotEmpty
         ? name
         : (_loading ? l.cityDetecting : l.cityNotDetected);
@@ -98,8 +103,17 @@ class _CurrentCityBadgeState extends State<CurrentCityBadge>
           children: [
             const Icon(Icons.location_city_rounded, size: 16),
             const SizedBox(width: 5),
-            Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
       ),
