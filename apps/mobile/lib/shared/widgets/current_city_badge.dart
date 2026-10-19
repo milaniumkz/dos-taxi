@@ -33,7 +33,9 @@ class _CurrentCityBadgeState extends State<CurrentCityBadge>
 
   Future<Map<String, dynamic>?> _locate() async {
     if (!serviceLocator.isRegistered<LocationService>() ||
-        !serviceLocator.isRegistered<ApiClient>()) return null;
+        !serviceLocator.isRegistered<ApiClient>()) {
+      return null;
+    }
     final result = await serviceLocator<LocationService>().currentLocation();
     return result.fold((_) async => null, (location) async {
       final client = serviceLocator<ApiClient>();

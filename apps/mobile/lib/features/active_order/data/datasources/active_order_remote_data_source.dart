@@ -121,7 +121,9 @@ class ActiveOrderRemoteDataSource {
       final lat = map['lat'] ?? map['latitude'];
       final lng = map['lng'] ?? map['lon'] ?? map['longitude'];
       if (lat is! num || lng is! num || !lat.isFinite || !lng.isFinite ||
-          lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+          lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return null;
+      }
       final heading = map['heading'] is num ? (map['heading'] as num).toDouble() : null;
 
       return ActiveOrderTrackingEvent.executorLocationUpdated(

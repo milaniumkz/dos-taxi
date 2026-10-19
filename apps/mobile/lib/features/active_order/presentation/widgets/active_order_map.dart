@@ -96,7 +96,7 @@ class _ActiveOrderMapState extends State<ActiveOrderMap> {
                 ),
                 if (executorLocation != null)
                   Marker(
-                    point: executorLocation!,
+                    point: executorLocation,
                     width: 58,
                     height: 58,
                     child: _ExecutorMarker(icon: session.serviceType == ActiveOrderServiceType.delivery
