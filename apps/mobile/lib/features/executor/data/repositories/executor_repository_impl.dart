@@ -1,3 +1,4 @@
+import "../../domain/entities/driver_statistics.dart";
 import "../../domain/entities/driver_topup_settings.dart";
 import 'package:dartz/dartz.dart';
 import 'package:latlong2/latlong.dart';
@@ -24,6 +25,22 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   final AppConfig _config;
 
   bool get _allowsLocalFallback => _config.flavor != AppFlavor.prod;
+
+  @override
+  Future<Either<Failure, DriverStatistics>> fetchStatistics() async {
+    try {
+      return Right(await _remoteDataSource.fetchStatistics());
+    } on Failure catch (failure) {
+      return Left(failure);
+    } catch (_) {
+      return const Left(
+        Failure(
+          code: 'DRIVER_STATISTICS_UNAVAILABLE',
+          message: 'DRIVER_STATISTICS_UNAVAILABLE',
+        ),
+      );
+    }
+  }
 
   @override
   Future<Either<Failure, DriverTopUpSettings>> fetchTopUpSettings() async {

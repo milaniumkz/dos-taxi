@@ -4314,6 +4314,33 @@
         ]
       }
     },
+    "/api/v1/executor/statistics": {
+      "get": {
+        "operationId": "DriverStatisticsController_get",
+        "summary": "Get own real completed-order count, passenger rating and completion activity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverStatisticsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/settings/driver-topup": {
       "get": {
         "operationId": "AdminTopUpSettingsController_get",
@@ -8368,6 +8395,40 @@
       "ExecutorDocumentEntity": {
         "type": "object",
         "properties": {}
+      },
+      "DriverStatisticsDto": {
+        "type": "object",
+        "properties": {
+          "completedOrders": {
+            "type": "number",
+            "description": "All-time completed orders across all services"
+          },
+          "cancelledByDriver": {
+            "type": "number",
+            "description": "All-time orders cancelled by this driver"
+          },
+          "ratedOrders": {
+            "type": "number",
+            "description": "Completed orders with a passenger rating from 1 to 5"
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true,
+            "description": "Mean passenger rating on completed orders, rounded to 2 decimals. Null before the first rating."
+          },
+          "activityPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "100 * completed / (completed + cancelled by driver), rounded to 1 decimal. Client/system cancellations and active orders excluded. Null without eligible orders."
+          }
+        },
+        "required": [
+          "completedOrders",
+          "cancelledByDriver",
+          "ratedOrders",
+          "rating",
+          "activityPercent"
+        ]
       },
       "TopUpSettingsDto": {
         "type": "object",

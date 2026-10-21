@@ -675,5 +675,10 @@
   "driverTopUpActionSubtitle": "Толықтыру тәсілі",
   "driverTopUpDisabled": "Толықтыру уақытша өшірілген",
   "driverTopUpUnavailable": "Толықтыруды ашу мүмкін болмады. Интернетті тексеріп, қайталап көріңіз.",
-  "driverTopUpLinkFailed": "Kaspi сілтемесін ашу мүмкін болмады. Қайталап көріңіз."
+  "driverTopUpLinkFailed": "Kaspi сілтемесін ашу мүмкін болмады. Қайталап көріңіз.",
+  "driverStatisticsPeriod": "Барлық уақыт бойынша",
+  "driverStatisticsNoRatings": "Әзірге бағалар жоқ",
+  "driverStatisticsUnavailable": "Көрсеткіштерді жүктеу мүмкін болмады",
+  "driverStatisticsRefresh": "Көрсеткіштерді жаңарту",
+  "driverActivityDescription": "Орындалған және жүргізуші бас тартқан тапсырыстар ішіндегі орындалғандарының үлесі. Жолаушы мен жүйенің бас тартулары есептелмейді."
 }
