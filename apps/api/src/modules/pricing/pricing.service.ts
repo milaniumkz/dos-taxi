@@ -268,7 +268,7 @@ export class PricingService {
     requestedAt: Date;
     allowLegacyFallback?: boolean;
   }): Promise<ResolvedTariff> {
-    const cacheKey = `pricing:tariff:v2:${cityId}:${serviceType}:${vehicleClass ?? "default"}`;
+    const cacheKey = `pricing:tariff:v3:${cityId}:${serviceType}:${vehicleClass ?? "default"}`;
     const cached =
       await this.redisStoreService.getJson<ResolvedTariff>(cacheKey);
 

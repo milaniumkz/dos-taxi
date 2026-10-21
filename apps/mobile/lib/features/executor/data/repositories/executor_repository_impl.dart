@@ -1,3 +1,5 @@
+import "../../domain/entities/driver_statistics.dart";
+import "../../domain/entities/driver_topup_settings.dart";
 import 'package:dartz/dartz.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -23,6 +25,38 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   final AppConfig _config;
 
   bool get _allowsLocalFallback => _config.flavor != AppFlavor.prod;
+
+  @override
+  Future<Either<Failure, DriverStatistics>> fetchStatistics() async {
+    try {
+      return Right(await _remoteDataSource.fetchStatistics());
+    } on Failure catch (failure) {
+      return Left(failure);
+    } catch (_) {
+      return const Left(
+        Failure(
+          code: 'DRIVER_STATISTICS_UNAVAILABLE',
+          message: 'DRIVER_STATISTICS_UNAVAILABLE',
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, DriverTopUpSettings>> fetchTopUpSettings() async {
+    try {
+      return Right(await _remoteDataSource.fetchTopUpSettings());
+    } on Failure catch (failure) {
+      return Left(failure);
+    } catch (_) {
+      return const Left(
+        Failure(
+          code: 'TOPUP_SETTINGS_UNAVAILABLE',
+          message: 'TOPUP_SETTINGS_UNAVAILABLE',
+        ),
+      );
+    }
+  }
 
   @override
   Future<Either<Failure, DriverBonusProgress>> fetchBonusProgress() async {
@@ -87,6 +121,9 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   @override
   Future<Either<Failure, ExecutorProfile>> submitOnboarding({
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
     required String executorType,
     String? vehicleType,
     String? vehicleMake,
@@ -98,6 +135,9 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
     try {
       final profile = await _remoteDataSource.submitOnboarding(
         name: name,
+        lastName: lastName,
+        firstName: firstName,
+        middleName: middleName,
         executorType: executorType,
         vehicleType: vehicleType,
         vehicleMake: vehicleMake,
@@ -185,14 +225,28 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   Future<Either<Failure, ExecutorProfile>> updateDriverProfile({
     required ExecutorProfile profile,
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
   }) async {
     try {
-      final updated = await _remoteDataSource.updateDriverProfile(name: name);
+      final updated = await _remoteDataSource.updateDriverProfile(
+        name: name,
+        lastName: lastName,
+        firstName: firstName,
+        middleName: middleName,
+      );
       return right(updated);
     } on Failure catch (failure) {
       if (_allowsLocalFallback) {
         return right(
-          profile.copyWith(name: name, verificationStatus: 'pending'),
+          profile.copyWith(
+            name: name,
+            lastName: lastName,
+            firstName: firstName,
+            middleName: middleName,
+            verificationStatus: 'pending',
+          ),
         );
       }
       return left(failure);

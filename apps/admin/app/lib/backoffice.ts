@@ -34,6 +34,7 @@ export type PaymentMethod =
   | "cash"
   | "transfer_kaspi"
   | "transfer_halyk"
+  | "transfer_psb"
   | "corporate"
   | "bonus";
 export type PaymentStatus =
@@ -87,6 +88,13 @@ export type AdminActivityAction =
 
 export type CitySnapshot = {
   ridePricingBasis?: "seat" | "salon";
+  rideMinimumOrderKzt?: string;
+  rideExchangeRate?: string;
+  rideManualPricePolicy?: {
+    rubMinimum: string;
+    kztMinimum: string;
+    kztThreshold: string;
+  } | null;
   id: string;
   nameRu: string;
   nameKk: string;
@@ -357,6 +365,10 @@ export type ExecutorBalanceTopUpSnapshot = {
   executorName: string | null;
   executorPhone: string | null;
   amount: string;
+  paymentCurrency?: string | null;
+  creditedAmount?: string | null;
+  creditedCurrency?: string | null;
+  exchangeRate?: string | null;
   phone: string;
   status: "pending" | "invoiced" | "confirmed" | "rejected";
   invoiceProvider: string;
@@ -1308,6 +1320,7 @@ function normalizePaymentMethod(
     case "cash":
     case "transfer_kaspi":
     case "transfer_halyk":
+    case "transfer_psb":
     case "corporate":
     case "bonus":
       return value;
@@ -1471,6 +1484,13 @@ function normalizeUserSnapshot(raw: {
 
 function normalizeCitySnapshot(raw: {
   ridePricingBasis?: string;
+  rideMinimumOrderKzt?: string | number;
+  rideExchangeRate?: string | number;
+  rideManualPricePolicy?: {
+    rubMinimum: string;
+    kztMinimum: string;
+    kztThreshold: string;
+  } | null;
   id: string;
   nameRu?: string | null;
   nameKk?: string | null;
@@ -1482,6 +1502,15 @@ function normalizeCitySnapshot(raw: {
   return {
     id: raw.id,
     ridePricingBasis: raw.ridePricingBasis === "salon" ? "salon" : "seat",
+    rideMinimumOrderKzt:
+      raw.rideMinimumOrderKzt === undefined
+        ? undefined
+        : String(raw.rideMinimumOrderKzt),
+    rideExchangeRate:
+      raw.rideExchangeRate === undefined
+        ? undefined
+        : String(raw.rideExchangeRate),
+    rideManualPricePolicy: raw.rideManualPricePolicy ?? null,
     nameRu: raw.nameRu ?? "",
     nameKk: raw.nameKk ?? "",
     countryCode: raw.countryCode ?? "",
@@ -2134,6 +2163,10 @@ function normalizeExecutorBalanceTopUpSnapshot(raw: {
     } | null;
   } | null;
   amount?: string | number | null;
+  paymentCurrency?: string | null;
+  creditedAmount?: string | null;
+  creditedCurrency?: string | null;
+  exchangeRate?: string | null;
   phone?: string | null;
   status?: string | null;
   invoiceProvider?: string | null;
@@ -2153,6 +2186,10 @@ function normalizeExecutorBalanceTopUpSnapshot(raw: {
     executorName: raw.executor?.user?.name ?? null,
     executorPhone: raw.executor?.user?.phone ?? null,
     amount: String(raw.amount ?? "0.00"),
+    paymentCurrency: raw.paymentCurrency ?? null,
+    creditedAmount: raw.creditedAmount ?? null,
+    creditedCurrency: raw.creditedCurrency ?? null,
+    exchangeRate: raw.exchangeRate ?? null,
     phone: raw.phone ?? "",
     status,
     invoiceProvider: raw.invoiceProvider ?? "kaspi",
@@ -2185,9 +2222,7 @@ function normalizeExecutorPayoutSnapshot(raw: {
   paidAt?: string | Date | null;
 }): ExecutorPayoutSnapshot {
   const status =
-    raw.status === "paid" || raw.status === "rejected"
-      ? raw.status
-      : "pending";
+    raw.status === "paid" || raw.status === "rejected" ? raw.status : "pending";
   const method =
     raw.method === "halyk" || raw.method === "cash" ? raw.method : "kaspi";
   return {
@@ -3419,7 +3454,9 @@ export async function getExecutorsSnapshot(
 
     return items.map((item) => normalizeExecutorSnapshot(item));
   } catch {
-    throw new Error("Не удалось загрузить водителей из API. Повторите попытку позже.");
+    throw new Error(
+      "Не удалось загрузить водителей из API. Повторите попытку позже.",
+    );
   }
 }
 

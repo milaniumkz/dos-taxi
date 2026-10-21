@@ -274,10 +274,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get taxiPaymentMethodBonus => 'Бонусами';
 
   @override
-  String get paymentMethodKaspiTransfer => 'Перевод Kaspi';
+  String get paymentMethodKaspiTransfer => 'Kaspi.kz';
 
   @override
-  String get paymentMethodHalykTransfer => 'Перевод Halyk';
+  String get paymentMethodHalykTransfer => 'Halyk.kz';
+
+  @override
+  String get paymentMethodPsbTransfer => 'ПСБ';
 
   @override
   String get paymentMethodTransferSubtitle => 'Оплата переводом после поездки';
@@ -825,7 +828,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get driverBalanceTopUpSubtitle =>
-      'Заявка уйдёт администратору для счёта Kaspi';
+      'Пополняйте в тенге. На рублёвый баланс сумма зачисляется по курсу города на момент подтверждения.';
 
   @override
   String get driverBalanceTopUpAmountLabel => 'Сумма пополнения';
@@ -1276,6 +1279,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rideRetry => 'Повторить';
 
   @override
+  String get rideEntranceShort => 'Подъезд';
+
+  @override
+  String get rideCommentShort => 'Комментарий';
+
+  @override
   String get rideEntrance => 'Подъезд (необязательно)';
 
   @override
@@ -1297,10 +1306,36 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rideCash => 'Наличными';
 
   @override
-  String get rideKaspi => 'Перевод Kaspi';
+  String get rideKaspi => 'Kaspi.kz';
 
   @override
-  String get rideHalyk => 'Перевод Halyk';
+  String get rideHalyk => 'Halyk.kz';
+
+  @override
+  String get requiredUpdateTitle => 'Обновите приложение';
+
+  @override
+  String get requiredUpdateBody =>
+      'Доступна новая версия. Чтобы продолжить пользоваться приложением, установите обновление из магазина.';
+
+  @override
+  String get requiredUpdateAction => 'Обновить';
+
+  @override
+  String get requiredUpdateRetry => 'Проверить снова';
+
+  @override
+  String get requiredUpdateOpenError =>
+      'Не удалось открыть магазин. Попробуйте ещё раз.';
+
+  @override
+  String get ridePsb => 'ПСБ';
+
+  @override
+  String get rideTakeOrder => 'Взять заказ';
+
+  @override
+  String get rideRejectOffer => 'Отклонить';
 
   @override
   String get rideSubmit => 'Подать заявку';
@@ -1563,4 +1598,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get rideExtrasDone => 'Готово';
+
+  @override
+  String get supportContactsIntro =>
+      'Оператор ответит здесь. Также можно связаться с поддержкой:';
+
+  @override
+  String get supportContactsUnavailable =>
+      'Не удалось загрузить контакты поддержки';
+
+  @override
+  String get supportContactOpenFailed => 'Не удалось открыть способ связи';
+
+  @override
+  String get ridePerOrder => 'Цена за весь заказ';
 }

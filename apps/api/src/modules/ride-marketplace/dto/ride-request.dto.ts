@@ -21,12 +21,24 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
+export class CurrentRideCityQueryDto {
+  @ApiProperty() @Type(() => Number) @IsLatitude() lat!: number;
+  @ApiProperty() @Type(() => Number) @IsLongitude() lng!: number;
+}
 export class RideRequestPointDto {
   @ApiProperty() @IsLatitude() lat!: number;
   @ApiProperty() @IsLongitude() lng!: number;
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(500) address!: string;
 }
 export class RideQuoteDto {
+  @ApiPropertyOptional({
+    description:
+      "Entered price covers the entire passenger group; omitted for legacy per-seat requests",
+  })
+  @IsOptional()
+  @IsBoolean()
+  priceIsTotal?: boolean;
+
   @ApiPropertyOptional({ format: "uuid" })
   @IsOptional()
   @IsUUID()
@@ -64,6 +76,15 @@ export class CreateRideRequestDto extends RideQuoteDto {
   @Min(0)
   @Max(1000)
   priceSteps!: number;
+  @ApiPropertyOptional({
+    description:
+      "Manual amount for the pricing basis, covering the whole group when priceIsTotal; KZT except the configured Baikonur currency threshold",
+    example: "90.00",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{1,7}(\.\d{1,2})?$/)
+  unitPrice?: string;
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -85,6 +106,13 @@ export class SubmitRideOfferDto {
   @Min(-1000)
   @Max(1000)
   priceSteps!: number;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() hasChildSeat?: boolean;
+}
+export class TakeRideRequestDto {
+  @ApiProperty({ description: "Passenger total price displayed to the driver" })
+  @IsString()
+  @Matches(/^\d{1,9}(\.\d{1,2})?$/)
+  totalPrice!: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() hasChildSeat?: boolean;
 }
 export class AcceptRideOfferDto {

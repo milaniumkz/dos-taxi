@@ -31,6 +31,50 @@
         ]
       }
     },
+    "/api/v1/ride-requests/current-city": {
+      "get": {
+        "operationId": "RideMarketplaceController_currentCity",
+        "summary": "Detect active service city from the current GPS location",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RideCityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/ride-requests/quote": {
       "post": {
         "operationId": "RideMarketplaceController_quote",
@@ -253,6 +297,92 @@
                 }
               }
             }
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/{id}/take": {
+      "post": {
+        "operationId": "RideMarketplaceController_take",
+        "summary": "Take a request immediately at the displayed passenger price",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TakeRideRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assigned order ID and status"
+          }
+        },
+        "tags": [
+          "ride-marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ride-requests/{id}/offers/{offerId}/reject": {
+      "post": {
+        "operationId": "RideMarketplaceController_reject",
+        "summary": "Passenger declines an unchanged driver counteroffer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptRideOfferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Proposal rejected"
           }
         },
         "tags": [
@@ -501,6 +631,54 @@
         ]
       }
     },
+    "/api/v1/admin/push-notifications": {
+      "get": {
+        "operationId": "AdminPushController_list",
+        "summary": "List push campaigns and reachable device counts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminPushController_send",
+        "summary": "Queue a push notification to passengers, drivers or both",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushCampaignDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/orders/estimate": {
       "post": {
         "operationId": "OrdersController_estimate",
@@ -623,6 +801,42 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrdersHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/executor-location": {
+      "get": {
+        "operationId": "OrdersController_getExecutorLocation",
+        "summary": "Get current assigned driver position for the owning passenger's active order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fresh position, or null when unavailable or the order is no longer active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutorTrackingDto"
                 }
               }
             }
@@ -4100,6 +4314,122 @@
         ]
       }
     },
+    "/api/v1/executor/statistics": {
+      "get": {
+        "operationId": "DriverStatisticsController_get",
+        "summary": "Get own real completed-order count, passenger rating and completion activity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverStatisticsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/settings/driver-topup": {
+      "get": {
+        "operationId": "AdminTopUpSettingsController_get",
+        "summary": "Get driver top-up button settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopUpSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminTopUpSettingsController_update",
+        "summary": "Switch driver top-up between manual requests, Kaspi link and disabled",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopUpSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopUpSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/topup-settings": {
+      "get": {
+        "operationId": "ExecutorTopUpSettingsController_get",
+        "summary": "Get fresh driver top-up action before opening payment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopUpSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "HealthController_health",
@@ -4192,6 +4522,33 @@
         ]
       }
     },
+    "/api/v1/support/contacts": {
+      "get": {
+        "operationId": "SupportController_getContacts",
+        "summary": "Get current support contacts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportContactsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "support"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/support/messages": {
       "get": {
         "operationId": "SupportController_listMessages",
@@ -4249,6 +4606,68 @@
         },
         "tags": [
           "support"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/settings/support-contacts": {
+      "get": {
+        "operationId": "AdminSupportContactsController_get",
+        "summary": "Get support contacts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportContactsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminSupportContactsController_update",
+        "summary": "Update support contacts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportContactsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportContactsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
         ],
         "security": [
           {
@@ -4417,6 +4836,10 @@
       "RideQuoteDto": {
         "type": "object",
         "properties": {
+          "priceIsTotal": {
+            "type": "boolean",
+            "description": "Entered price covers the entire passenger group; omitted for legacy per-seat requests"
+          },
           "cityId": {
             "type": "string",
             "format": "uuid"
@@ -4444,12 +4867,58 @@
           "routePoints"
         ]
       },
+      "RideManualPricePolicyDto": {
+        "type": "object",
+        "properties": {
+          "rubMinimum": {
+            "type": "string",
+            "example": "90.00"
+          },
+          "kztMinimum": {
+            "type": "string",
+            "example": "500.00"
+          },
+          "kztThreshold": {
+            "type": "string",
+            "example": "500.00"
+          }
+        },
+        "required": [
+          "rubMinimum",
+          "kztMinimum",
+          "kztThreshold"
+        ]
+      },
       "RideQuoteResponseDto": {
         "type": "object",
         "properties": {
+          "availablePaymentMethods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "card",
+                "cash",
+                "transfer_kaspi",
+                "transfer_halyk",
+                "transfer_psb",
+                "corporate",
+                "bonus"
+              ]
+            }
+          },
+          "priceIsTotal": {
+            "type": "boolean"
+          },
           "termsKey": {
             "type": "string",
             "description": "Fingerprint to pass unchanged when submitting"
+          },
+          "priceInputMode": {
+            "type": "string",
+            "enum": [
+              "manual"
+            ]
           },
           "cityId": {
             "type": "string",
@@ -4457,6 +4926,14 @@
           },
           "cityName": {
             "type": "string"
+          },
+          "manualPricePolicy": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RideManualPricePolicyDto"
+              }
+            ]
           },
           "currency": {
             "type": "string",
@@ -4500,7 +4977,10 @@
           }
         },
         "required": [
+          "availablePaymentMethods",
+          "priceIsTotal",
           "termsKey",
+          "priceInputMode",
           "cityId",
           "cityName",
           "currency",
@@ -4643,6 +5123,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -4752,6 +5233,10 @@
       "CreateRideRequestDto": {
         "type": "object",
         "properties": {
+          "priceIsTotal": {
+            "type": "boolean",
+            "description": "Entered price covers the entire passenger group; omitted for legacy per-seat requests"
+          },
           "cityId": {
             "type": "string",
             "format": "uuid"
@@ -4784,6 +5269,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -4792,6 +5278,11 @@
             "type": "number",
             "description": "Number of positive price-button steps above the minimum",
             "default": 0
+          },
+          "unitPrice": {
+            "type": "string",
+            "description": "Manual amount for the pricing basis, covering the whole group when priceIsTotal; KZT except the configured Baikonur currency threshold",
+            "example": "90.00"
           },
           "pickupEntrance": {
             "type": "string"
@@ -4958,6 +5449,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -5111,6 +5603,21 @@
           "priceSteps"
         ]
       },
+      "TakeRideRequestDto": {
+        "type": "object",
+        "properties": {
+          "totalPrice": {
+            "type": "string",
+            "description": "Passenger total price displayed to the driver"
+          },
+          "hasChildSeat": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "totalPrice"
+        ]
+      },
       "AcceptRideOfferDto": {
         "type": "object",
         "properties": {
@@ -5229,6 +5736,35 @@
           "platform"
         ]
       },
+      "PushCampaignDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable request UUID to prevent duplicate broadcasts"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "all",
+              "passenger",
+              "driver"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "audience",
+          "title",
+          "body"
+        ]
+      },
       "EstimateRoutePointDto": {
         "type": "object",
         "properties": {
@@ -5321,6 +5857,21 @@
       "EstimateResultDto": {
         "type": "object",
         "properties": {
+          "availablePaymentMethods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "card",
+                "cash",
+                "transfer_kaspi",
+                "transfer_halyk",
+                "transfer_psb",
+                "corporate",
+                "bonus"
+              ]
+            }
+          },
           "discountAmount": {
             "type": "number"
           },
@@ -5429,6 +5980,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -5517,6 +6069,31 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "ExecutorTrackingDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "heading": {
+            "type": "number",
+            "nullable": true
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "heading",
+          "updatedAt"
         ]
       },
       "CancelOrderDto": {
@@ -5666,6 +6243,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -6037,6 +6615,10 @@
           },
           "rideCommissionPercent": {
             "type": "number"
+          },
+          "rideMinimumOrderRub": {
+            "type": "number",
+            "description": "RUB minimum, only for Baikonur manual pricing"
           }
         }
       },
@@ -6104,6 +6686,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -6413,6 +6996,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -6568,6 +7152,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7100,6 +7685,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7309,6 +7895,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7478,6 +8065,7 @@
               "cash",
               "transfer_kaspi",
               "transfer_halyk",
+              "transfer_psb",
               "corporate",
               "bonus"
             ]
@@ -7651,9 +8239,35 @@
           "duplicated"
         ]
       },
+      "KaspiDriverFieldsDto": {
+        "type": "object",
+        "properties": {
+          "field1": {
+            "type": "object",
+            "example": {
+              "@name": "full_name",
+              "#text": "Иванов Иван Иванович"
+            }
+          },
+          "field2": {
+            "type": "object",
+            "example": {
+              "@name": "phone",
+              "#text": "+77010000000"
+            }
+          }
+        },
+        "required": [
+          "field1",
+          "field2"
+        ]
+      },
       "KaspiResponseDto": {
         "type": "object",
         "properties": {
+          "fields": {
+            "$ref": "#/components/schemas/KaspiDriverFieldsDto"
+          },
           "txn_id": {
             "type": "string"
           },
@@ -7739,7 +8353,23 @@
       },
       "UpdateExecutorProfileDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "lastName": {
+            "type": "string",
+            "description": "Driver surname",
+            "maxLength": 100
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Driver given name",
+            "maxLength": 100
+          },
+          "middleName": {
+            "type": "string",
+            "description": "Driver patronymic; empty if absent",
+            "maxLength": 100
+          }
+        }
       },
       "UpdateExecutorStatusDto": {
         "type": "object",
@@ -7765,6 +8395,88 @@
       "ExecutorDocumentEntity": {
         "type": "object",
         "properties": {}
+      },
+      "DriverStatisticsDto": {
+        "type": "object",
+        "properties": {
+          "completedOrders": {
+            "type": "number",
+            "description": "All-time completed orders across all services"
+          },
+          "cancelledByDriver": {
+            "type": "number",
+            "description": "All-time orders cancelled by this driver"
+          },
+          "ratedOrders": {
+            "type": "number",
+            "description": "Completed orders with a passenger rating from 1 to 5"
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true,
+            "description": "Mean passenger rating on completed orders, rounded to 2 decimals. Null before the first rating."
+          },
+          "activityPercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "100 * completed / (completed + cancelled by driver), rounded to 1 decimal. Client/system cancellations and active orders excluded. Null without eligible orders."
+          }
+        },
+        "required": [
+          "completedOrders",
+          "cancelledByDriver",
+          "ratedOrders",
+          "rating",
+          "activityPercent"
+        ]
+      },
+      "TopUpSettingsDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "kaspi_link",
+              "disabled"
+            ]
+          },
+          "kaspiUrl": {
+            "type": "string",
+            "description": "Kaspi HTTPS universal link; required in kaspi_link mode, otherwise may be empty"
+          }
+        },
+        "required": [
+          "mode",
+          "kaspiUrl"
+        ]
+      },
+      "SupportContactsDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Support phone in international format, or empty to hide"
+          },
+          "whatsapp": {
+            "type": "string",
+            "description": "WhatsApp phone in international format, or empty to hide"
+          },
+          "email": {
+            "type": "string",
+            "description": "Support email, or empty to hide"
+          },
+          "telegram": {
+            "type": "string",
+            "description": "HTTPS t.me contact link, or empty to hide"
+          }
+        },
+        "required": [
+          "phone",
+          "whatsapp",
+          "email",
+          "telegram"
+        ]
       },
       "SupportMessageDto": {
         "type": "object",

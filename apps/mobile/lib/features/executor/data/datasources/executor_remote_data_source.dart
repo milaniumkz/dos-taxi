@@ -1,3 +1,5 @@
+import "../../domain/entities/driver_statistics.dart";
+import "../../domain/entities/driver_topup_settings.dart";
 import 'dart:async';
 
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -72,6 +74,9 @@ class ExecutorRemoteDataSource {
 
   Future<ExecutorProfileModel> submitOnboarding({
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
     required String executorType,
     String? vehicleType,
     String? vehicleMake,
@@ -81,7 +86,10 @@ class ExecutorRemoteDataSource {
     String? vehiclePlate,
   }) async {
     final payload = <String, dynamic>{
-      'name': name,
+      if (lastName == null && firstName == null) 'name': name,
+      if (lastName != null) 'lastName': lastName.trim(),
+      if (firstName != null) 'firstName': firstName.trim(),
+      if (middleName != null) 'middleName': middleName.trim(),
       'executorType': executorType,
     };
     if (executorType == 'courier' && vehicleType != null) {
@@ -151,11 +159,20 @@ class ExecutorRemoteDataSource {
 
   Future<ExecutorProfileModel> updateDriverProfile({
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
   }) async {
     final response = await _apiClient.guard(
       () => _apiClient.dio.patch<Map<String, dynamic>>(
         '/executor/profile',
-        data: {'name': name.trim()},
+        data: {
+          if (lastName == null && firstName == null && middleName == null)
+            'name': name.trim(),
+          if (lastName != null) 'lastName': lastName.trim(),
+          if (firstName != null) 'firstName': firstName.trim(),
+          if (middleName != null) 'middleName': middleName.trim(),
+        },
       ),
     );
     return ExecutorProfileModel.fromJson(response.data ?? <String, dynamic>{});
@@ -178,6 +195,21 @@ class ExecutorRemoteDataSource {
       ),
     );
     return ExecutorProfileModel.fromJson(response.data ?? <String, dynamic>{});
+  }
+
+  Future<DriverStatistics> fetchStatistics() async {
+    final response = await _apiClient.guard(
+      () => _apiClient.dio.get<Map<String, dynamic>>('/executor/statistics'),
+    );
+    return DriverStatistics.fromJson(response.data ?? <String, dynamic>{});
+  }
+
+  Future<DriverTopUpSettings> fetchTopUpSettings() async {
+    final response = await _apiClient.guard(
+      () =>
+          _apiClient.dio.get<Map<String, dynamic>>('/executor/topup-settings'),
+    );
+    return DriverTopUpSettings.fromJson(response.data ?? <String, dynamic>{});
   }
 
   Future<void> requestBalanceTopUp({

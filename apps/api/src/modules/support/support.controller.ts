@@ -1,3 +1,5 @@
+import { SupportContactsDto } from "./dto/support-contacts.dto";
+import { SupportContactsService } from "./support-contacts.service";
 import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -21,7 +23,17 @@ import { SupportService } from "./support.service";
 @UseGuards(JwtAuthGuard)
 @Controller("support")
 export class SupportController {
-  constructor(private readonly supportService: SupportService) {}
+  constructor(
+    private readonly supportService: SupportService,
+    private readonly contacts: SupportContactsService,
+  ) {}
+
+  @Get("contacts")
+  @ApiOperation({ summary: "Get current support contacts" })
+  @ApiOkResponse({ type: SupportContactsDto })
+  getContacts(): Promise<SupportContactsDto> {
+    return this.contacts.get();
+  }
 
   @Get("messages")
   @ApiOperation({ summary: "List current user's support chat messages" })

@@ -1,3 +1,4 @@
+import { DriverBonusesService } from "../../src/modules/executors/driver-bonuses.service";
 import { RideMarketplaceGuard } from "../../src/modules/ride-marketplace/ride-marketplace.guard";
 import requestHttp from "supertest";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
@@ -192,7 +193,374 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       await db.destroy();
     }
   });
-  it("quotes 500 KZT per seat and 7 KZT/RUB; salon hides quantity", async () => {
+  it("detects the active GPS city and validates coordinates", async () => {
+    const c = await user();
+    await db.getRepository(CityEntity).update(city.id, {
+      serviceZone: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [61, 46],
+            [62, 46],
+            [62, 47],
+            [61, 47],
+            [61, 46],
+          ],
+        ],
+      },
+    });
+    const found = await requestHttp(app.getHttpServer())
+      .get("/ride-requests/current-city")
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .query({ lat: 46.8, lng: 61.67 })
+      .expect(200);
+    expect(found.body.id).toBe(city.id);
+    await requestHttp(app.getHttpServer())
+      .get("/ride-requests/current-city")
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .query({ lat: 146, lng: 61.67 })
+      .expect(400);
+  });
+
+  it.each([ServiceType.TAXI, ServiceType.INTERCITY, ServiceType.DELIVERY])(
+    "exposes only the assigned active driver's fresh GPS to the owning passenger (%s)",
+    async (serviceType) => {
+      const c = await user(),
+        stranger = await user(),
+        d = await driver();
+      const { order: ride } = await request(c.id);
+      await db.getRepository(OrderEntity).update(ride.id, {
+        executorId: d.id,
+        status: OrderStatus.IN_PROGRESS,
+        serviceType,
+      });
+      await db
+        .getRepository(ExecutorLocationEntity)
+        .save({ executorId: d.id, lat: 46.8, lng: 61.67, heading: 90 });
+      expect(await orders.getExecutorLocation(c.id, ride.id)).toMatchObject({
+        lat: 46.8,
+        lng: 61.67,
+        heading: 90,
+      });
+      await expect(
+        orders.getExecutorLocation(stranger.id, ride.id),
+      ).rejects.toThrow("Order not found");
+      await db.query(
+        "UPDATE executor_locations SET updated_at=now()-interval '3 minutes' WHERE executor_id=$1",
+        [d.id],
+      );
+      expect(await orders.getExecutorLocation(c.id, ride.id)).toBeNull();
+      await db
+        .getRepository(ExecutorLocationEntity)
+        .save({ executorId: d.id, lat: 46.81, lng: 61.68 });
+      await db
+        .getRepository(OrderEntity)
+        .update(ride.id, { status: OrderStatus.COMPLETED });
+      expect(await orders.getExecutorLocation(c.id, ride.id)).toBeNull();
+    },
+  );
+
+  it("takes the passenger price immediately, is retryable and prevents two assigned drivers", async () => {
+    const c = await user(),
+      d1 = await driver(),
+      d2 = await driver();
+    const { order } = await request(c.id, { passengerCount: 2 });
+    const offer = await market.submit(d2.userId, order.id, { priceSteps: 1 });
+    const results = await Promise.allSettled([
+      market.take(d1.userId, order.id, { totalPrice: order.estimatedPrice! }),
+      market.take(d2.userId, order.id, { totalPrice: order.estimatedPrice! }),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const saved = await db
+      .getRepository(OrderEntity)
+      .findOneByOrFail({ id: order.id });
+    expect(saved.status).toBe(OrderStatus.ACCEPTED);
+    expect(saved.estimatedPrice).toBe(order.estimatedPrice);
+    const winner = saved.executorId === d1.id ? d1 : d2;
+    await expect(
+      market.take(winner.userId, order.id, {
+        totalPrice: order.estimatedPrice!,
+      }),
+    ).resolves.toEqual({
+      takenOrderId: order.id,
+      status: OrderStatus.ACCEPTED,
+    });
+    expect(
+      (
+        await db
+          .getRepository(RidePriceOfferEntity)
+          .findOneByOrFail({ id: offer.id })
+      ).status,
+    ).toBe("superseded");
+    expect((await market.listOffers(c.id, order.id)).order.executorId).toBe(
+      winner.id,
+    );
+    await orders.cancelOrder(c.id, order.id);
+  });
+  it("validates displayed price, child seat, busy state and pending offers when taking", async () => {
+    const c = await user(),
+      c2 = await user(),
+      d = await driver();
+    const { order } = await request(c.id, { needsChildSeat: true });
+    const path = `/ride-requests/${order.id}/take`;
+    await requestHttp(app.getHttpServer())
+      .post(path)
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .send({ totalPrice: order.estimatedPrice!, hasChildSeat: true })
+      .expect(403);
+    await requestHttp(app.getHttpServer())
+      .post(path)
+      .set("Authorization", `Bearer ${token(d.userId, UserRole.EXECUTOR)}`)
+      .send({ totalPrice: order.estimatedPrice! })
+      .expect(400);
+    await expect(
+      market.take(d.userId, order.id, {
+        totalPrice: "1.00",
+        hasChildSeat: true,
+      }),
+    ).rejects.toThrow("RIDE_OFFER_CHANGED");
+    const other = await request(c2.id);
+    await market.submit(d.userId, other.order.id, { priceSteps: 1 });
+    await expect(
+      market.take(d.userId, order.id, {
+        totalPrice: order.estimatedPrice!,
+        hasChildSeat: true,
+      }),
+    ).rejects.toThrow("RIDE_OFFER_PENDING");
+    await market.withdraw(d.userId, other.order.id);
+    await requestHttp(app.getHttpServer())
+      .post(path)
+      .set("Authorization", `Bearer ${token(d.userId, UserRole.EXECUTOR)}`)
+      .send({ totalPrice: order.estimatedPrice!, hasChildSeat: true })
+      .expect(200);
+    await expect(
+      market.take(d.userId, other.order.id, {
+        totalPrice: other.order.estimatedPrice!,
+      }),
+    ).rejects.toThrow("EXECUTOR_ALREADY_BUSY");
+    await orders.cancelOrder(c.id, order.id);
+    await orders.cancelOrder(c2.id, other.order.id);
+  });
+  it("passenger can decline only their current counteroffer and cannot accept it afterwards", async () => {
+    const c = await user(),
+      outsider = await user(),
+      d = await driver();
+    const { order } = await request(c.id);
+    const offer = await market.submit(d.userId, order.id, { priceSteps: 1 });
+    await expect(
+      market.reject(outsider.id, order.id, offer.id, {
+        version: offer.version,
+      }),
+    ).rejects.toThrow("ORDER_NOT_FOUND");
+    await expect(
+      market.reject(c.id, order.id, offer.id, { version: offer.version + 1 }),
+    ).rejects.toThrow("RIDE_OFFER_CHANGED");
+    await requestHttp(app.getHttpServer())
+      .post(`/ride-requests/${order.id}/offers/${offer.id}/reject`)
+      .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+      .send({ version: offer.version })
+      .expect(200);
+    await expect(
+      market.reject(c.id, order.id, offer.id, { version: offer.version }),
+    ).resolves.toEqual({ rejected: true });
+    expect((await market.listOffers(c.id, order.id)).items).toHaveLength(0);
+    await expect(
+      market.accept(c.id, order.id, offer.id, { version: offer.version }),
+    ).rejects.toThrow("RIDE_OFFER_UNAVAILABLE");
+    const revised = await market.submit(d.userId, order.id, { priceSteps: 2 });
+    expect(revised.version).toBe(offer.version + 1);
+    await market.accept(c.id, order.id, revised.id, {
+      version: revised.version,
+    });
+    await orders.cancelOrder(c.id, order.id);
+  });
+  it.each([true, false])(
+    "advertises 5000 KZT and converts the RUB wallet bonus only when enabled=%s",
+    async (enabled) => {
+      const rubCity = await db.getRepository(CityEntity).save({
+        nameRu: "Бонусный город",
+        nameKk: "Бонус қаласы",
+        countryCode: "KZ",
+        currency: Currency.RUB,
+        timezone: "Asia/Almaty",
+        isActive: true,
+        rideExchangeRate: "7.0000",
+      });
+      const c = await user(),
+        d = await driver(rubCity.id);
+      const setting = await db.getRepository(DriverBonusSettingEntity).save({
+        key: "default",
+        isEnabled: enabled,
+        ordersRequired: 1,
+        bonusAmount: "5000.00",
+      });
+      const progress = await new DriverBonusesService(
+        db.getRepository(ExecutorEntity),
+        db.getRepository(OrderEntity),
+        db.getRepository(DriverBonusSettingEntity),
+      ).getProgress(d.userId);
+      expect(progress).toMatchObject({
+        currency: Currency.KZT,
+        bonusAmount: 5000,
+        isEnabled: enabled,
+      });
+      const base = {
+        cityId: rubCity.id,
+        serviceType: ServiceType.TAXI,
+        routePoints: points,
+        priceIsTotal: true,
+        passengerCount: 2,
+      };
+      const quote = await market.quote(base);
+      const order = await market.create(
+        c.id,
+        {
+          ...base,
+          termsKey: quote.termsKey,
+          priceSteps: 0,
+          unitPrice: "500.00",
+          paymentMethod: PaymentMethod.CASH,
+        },
+        randomUUID(),
+      );
+      await market.take(d.userId, order.id, { totalPrice: "500.00" });
+      await orders.transition(order.id, OrderStatus.IN_PROGRESS, d.userId);
+      await orders.transition(order.id, OrderStatus.COMPLETED, d.userId);
+      const balance = (
+        await db.getRepository(ExecutorEntity).findOneByOrFail({ id: d.id })
+      ).balance;
+      expect(balance).toBe(enabled ? "1709.29" : "995.00");
+      const payouts = await db
+        .getRepository(DriverBonusPayoutEntity)
+        .findBy({ orderId: order.id });
+      expect(payouts).toHaveLength(enabled ? 1 : 0);
+      if (enabled) expect(payouts[0].amount).toBe("714.29");
+      await db.getRepository(DriverBonusSettingEntity).delete(setting.id);
+    },
+  );
+  it("permits PSB only in Baikonur and rejects it in other cities even with RUB wallets", async () => {
+    const client = await user();
+    const base = {
+      cityId: city.id,
+      serviceType: ServiceType.TAXI,
+      routePoints: points,
+      passengerCount: 2,
+      priceIsTotal: true,
+    };
+    const normal = await market.quote(base);
+    expect(normal.availablePaymentMethods).not.toContain(
+      PaymentMethod.TRANSFER_PSB,
+    );
+    await expect(
+      market.create(
+        client.id,
+        {
+          ...base,
+          termsKey: normal.termsKey,
+          priceSteps: 0,
+          unitPrice: "500.00",
+          paymentMethod: PaymentMethod.TRANSFER_PSB,
+        },
+        randomUUID(),
+      ),
+    ).rejects.toThrow("ПСБ доступен только в Байконуре.");
+    const another = await db.getRepository(CityEntity).save({
+      nameRu: "Другой город",
+      nameKk: "Басқа қала",
+      countryCode: "KZ",
+      currency: Currency.RUB,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    });
+    expect(
+      (await market.quote({ ...base, cityId: another.id }))
+        .availablePaymentMethods,
+    ).not.toContain(PaymentMethod.TRANSFER_PSB);
+    const baikonur = await db.getRepository(CityEntity).save({
+      nameRu: "Байконур",
+      nameKk: "Байқоңыр",
+      countryCode: "KZ",
+      currency: Currency.RUB,
+      timezone: "Asia/Almaty",
+      isActive: true,
+    });
+    const allowed = await market.quote({ ...base, cityId: baikonur.id });
+    expect(allowed.availablePaymentMethods).toContain(
+      PaymentMethod.TRANSFER_PSB,
+    );
+    const created = await market.create(
+      client.id,
+      {
+        ...base,
+        cityId: baikonur.id,
+        termsKey: allowed.termsKey,
+        priceSteps: 0,
+        unitPrice: "500.00",
+        paymentMethod: PaymentMethod.TRANSFER_PSB,
+      },
+      randomUUID(),
+    );
+    expect(
+      (await db.getRepository(OrderEntity).findOneByOrFail({ id: created.id }))
+        .paymentMethod,
+    ).toBe(PaymentMethod.TRANSFER_PSB);
+    await orders.cancelOrder(client.id, created.id);
+  });
+  it.each([2, 4])(
+    "keeps 500 as the entire fare for %i passengers through driver negotiation and completion",
+    async (passengerCount) => {
+      const client = await user();
+      const d = await driver();
+      const base = {
+        cityId: city.id,
+        serviceType: ServiceType.TAXI,
+        routePoints: points,
+        passengerCount,
+        priceIsTotal: true,
+      };
+      const quote = await market.quote(base);
+      expect(quote.minimumOrderPrice).toBe("500.00");
+      expect(quote.passengerCount).toBe(passengerCount);
+      const created = await market.create(
+        client.id,
+        {
+          ...base,
+          termsKey: quote.termsKey,
+          priceSteps: 0,
+          unitPrice: "500.00",
+          paymentMethod: PaymentMethod.TRANSFER_HALYK,
+        },
+        randomUUID(),
+      );
+      expect(created.estimatedPrice).toBe("500.00");
+      const saved = await db
+        .getRepository(OrderEntity)
+        .findOneByOrFail({ id: created.id });
+      expect(saved.passengerCount).toBe(passengerCount);
+      expect(saved.paymentMethod).toBe(PaymentMethod.TRANSFER_HALYK);
+      expect(saved.ridePricingBasis).toBe("salon");
+      const offer = await market.submit(d.userId, created.id, {
+        priceSteps: 2,
+        hasChildSeat: false,
+      });
+      expect(offer.totalPrice).toBe("600.00");
+      const accepted = await market.accept(client.id, created.id, offer.id, {
+        version: offer.version,
+      });
+      expect(accepted.estimatedPrice).toBe("600.00");
+      await orders.transition(created.id, OrderStatus.IN_PROGRESS, d.userId);
+      await orders.transition(created.id, OrderStatus.COMPLETED, d.userId);
+      const completed = await db
+        .getRepository(OrderEntity)
+        .findOneByOrFail({ id: created.id });
+      expect(completed.finalPrice).toBe("600.00");
+      expect(
+        (await db.getRepository(ExecutorEntity).findOneByOrFail({ id: d.id }))
+          .balance,
+      ).toBe("958.00");
+    },
+  );
+  it("quotes KZT outside configured Baikonur, regardless of wallet currency; salon hides quantity", async () => {
     const quote = await market.quote({
       cityId: city.id,
       serviceType: ServiceType.TAXI,
@@ -226,7 +594,8 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       routePoints: points,
       passengerCount: 4,
     });
-    expect(rubQuote.minimumOrderPrice).toBe("71.43");
+    expect(rubQuote.minimumOrderPrice).toBe("500.00");
+    expect(rubQuote.currency).toBe(Currency.KZT);
     expect(rubQuote.passengerCount).toBe(1);
     expect(rubQuote.pricingBasis).toBe("salon");
     await db
@@ -238,8 +607,175 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       routePoints: points,
       passengerCount: 2,
     });
-    expect(rubSeats.minimumUnitPrice).toBe("71.43");
-    expect(rubSeats.minimumOrderPrice).toBe("142.86");
+    expect(rubSeats.minimumUnitPrice).toBe("500.00");
+    expect(rubSeats.minimumOrderPrice).toBe("1000.00");
+  });
+  it("stores manual amounts, enforces city minima and limits RUB inference to Baikonur", async () => {
+    const manualCity = await db.getRepository(CityEntity).save({
+      nameRu: "Байконур",
+      nameKk: "Байқоңыр",
+      countryCode: "KZ",
+      currency: Currency.RUB,
+      timezone: "Asia/Almaty",
+      isActive: true,
+      rideManualPricePolicy: {
+        rubMinimum: "90.00",
+        kztMinimum: "500.00",
+        kztThreshold: "500.00",
+      },
+    });
+    const d = await driver(manualCity.id);
+    const base = {
+      cityId: manualCity.id,
+      serviceType: ServiceType.TAXI,
+      routePoints: points,
+      passengerCount: 2,
+    };
+    const quote = await market.quote(base);
+    expect(quote.minimumUnitPrice).toBe("90.00");
+    expect(quote.minimumOrderPrice).toBe("180.00");
+    for (const amount of ["90", "499", "500", "1000"]) {
+      const c = await user();
+      const dto = {
+        ...base,
+        unitPrice: amount,
+        priceSteps: 0,
+        termsKey: quote.termsKey,
+        paymentMethod: PaymentMethod.CASH,
+      };
+      const key = randomUUID();
+      const order = await market.create(c.id, dto, key);
+      const currency = Number(amount) < 500 ? Currency.RUB : Currency.KZT;
+      expect(order.currency).toBe(currency);
+      expect(Number(order.estimatedPrice)).toBe(Number(amount) * 2);
+      expect((await market.create(c.id, dto, key)).id).toBe(order.id);
+      const feed = await market.feed(d.userId, {
+        lat: points[0].lat,
+        lng: points[0].lng,
+      });
+      const item = feed.items.find((item) => item.id === order.id)!;
+      expect(item.currency).toBe(currency);
+      expect(Number(item.totalPrice)).toBe(Number(amount) * 2);
+      expect(Number(item.minimumUnitPrice)).toBe(
+        currency === Currency.RUB ? 90 : 500,
+      );
+      if (amount === "500") {
+        const proposal = await market.submit(d.userId, order.id, {
+          priceSteps: 0,
+        });
+        await market.accept(c.id, order.id, proposal.id, {
+          version: proposal.version,
+        });
+        await orders.transition(order.id, OrderStatus.IN_PROGRESS, d.userId);
+        // Changing the city rate must not change an already agreed settlement.
+        await db
+          .getRepository(CityEntity)
+          .update(manualCity.id, { rideExchangeRate: "9" });
+        await orders.transition(order.id, OrderStatus.COMPLETED, d.userId);
+        const settled = await db
+          .getRepository(ExecutorEntity)
+          .findOneByOrFail({ id: d.id });
+        expect(Number(settled.balance)).toBe(990); // 7% of 1000 KZT / snapshotted rate 7.
+        await db
+          .getRepository(CityEntity)
+          .update(manualCity.id, { rideExchangeRate: "7" });
+      } else await orders.cancelOrder(c.id, order.id);
+    }
+    for (const amount of ["0", "89", "89.99"]) {
+      const c = await user();
+      await expect(
+        market.create(
+          c.id,
+          {
+            ...base,
+            unitPrice: amount,
+            priceSteps: 0,
+            termsKey: quote.termsKey,
+            paymentMethod: PaymentMethod.CASH,
+          },
+          randomUUID(),
+        ),
+      ).rejects.toMatchObject({
+        response: { code: "RIDE_PRICE_BELOW_MINIMUM" },
+      });
+    }
+    const c = await user();
+    for (const invalid of [90, "-1", "NaN", "500.001", "10000000"]) {
+      await requestHttp(app.getHttpServer())
+        .post("/ride-requests")
+        .set("Authorization", `Bearer ${token(c.id, UserRole.CLIENT)}`)
+        .set("X-Idempotency-Key", randomUUID())
+        .send({
+          ...base,
+          unitPrice: invalid,
+          priceSteps: 0,
+          termsKey: quote.termsKey,
+          paymentMethod: PaymentMethod.CASH,
+        })
+        .expect(400);
+    }
+    const normalBase = { ...base, cityId: city.id };
+    const normalQuote = await market.quote(normalBase);
+    const normalOrder = await market.create(
+      c.id,
+      {
+        ...normalBase,
+        unitPrice: "1000",
+        priceSteps: 0,
+        termsKey: normalQuote.termsKey,
+        paymentMethod: PaymentMethod.CASH,
+      },
+      randomUUID(),
+    );
+    expect(normalOrder.currency).toBe(Currency.KZT);
+    await orders.cancelOrder(c.id, normalOrder.id);
+    await db
+      .getRepository(CityEntity)
+      .update(city.id, { rideMinimumOrderKzt: "800" });
+    const changedQuote = await market.quote(normalBase);
+    expect(changedQuote.minimumUnitPrice).toBe("800.00");
+    await expect(
+      market.create(
+        c.id,
+        {
+          ...normalBase,
+          unitPrice: "799",
+          priceSteps: 0,
+          termsKey: changedQuote.termsKey,
+          paymentMethod: PaymentMethod.CASH,
+        },
+        randomUUID(),
+      ),
+    ).rejects.toMatchObject({ response: { code: "RIDE_PRICE_BELOW_MINIMUM" } });
+    await expect(
+      market.create(
+        c.id,
+        {
+          ...normalBase,
+          unitPrice: "800",
+          priceSteps: 0,
+          termsKey: normalQuote.termsKey,
+          paymentMethod: PaymentMethod.CASH,
+        },
+        randomUUID(),
+      ),
+    ).rejects.toMatchObject({ response: { code: "RIDE_PRICING_CHANGED" } });
+    const accepted = await market.create(
+      c.id,
+      {
+        ...normalBase,
+        unitPrice: "800",
+        priceSteps: 0,
+        termsKey: changedQuote.termsKey,
+        paymentMethod: PaymentMethod.CASH,
+      },
+      randomUUID(),
+    );
+    expect(accepted.currency).toBe(Currency.KZT);
+    await orders.cancelOrder(c.id, accepted.id);
+    await db
+      .getRepository(CityEntity)
+      .update(city.id, { rideMinimumOrderKzt: "500" });
   });
   it("retains approved legacy drivers and resolves their missing city from fresh presence", async () => {
     const d = await driver();
@@ -470,7 +1006,7 @@ describe("Negotiated ride marketplace (real PostgreSQL)", () => {
       .getRepository(ExecutorEntity)
       .findOneByOrFail({ id: selectedDriver.id });
     expect(Number(balance.balance)).toBe(
-      1100 - Number(selected.estimatedPrice) * 0.1,
+      1100 - Number(selected.estimatedPrice) * 0.07,
     );
     expect(
       await db

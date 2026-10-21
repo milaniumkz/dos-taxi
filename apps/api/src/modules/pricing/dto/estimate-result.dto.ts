@@ -1,7 +1,10 @@
-import { Currency, ServiceType } from "@dos/shared-types";
+import { Currency, ServiceType, PaymentMethod } from "@dos/shared-types";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class EstimateResultDto {
+  @ApiPropertyOptional({ enum: PaymentMethod, isArray: true })
+  availablePaymentMethods?: PaymentMethod[];
+
   @ApiPropertyOptional()
   discountAmount?: number;
 

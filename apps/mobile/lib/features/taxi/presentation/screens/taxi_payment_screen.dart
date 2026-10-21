@@ -99,7 +99,8 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
                           icon: Icons.payments_rounded,
                           title: l10n.taxiPaymentMethodCash,
                           selected:
-                              state.paymentMethod == TaxiPaymentMethod.cash,
+                              state.effectivePaymentMethod ==
+                              TaxiPaymentMethod.cash,
                           onTap: () =>
                               cubit.setPaymentMethod(TaxiPaymentMethod.cash),
                         ),
@@ -109,7 +110,8 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
                           title: l10n.paymentMethodKaspiTransfer,
                           subtitle: l10n.paymentMethodTransferSubtitle,
                           selected:
-                              state.paymentMethod == TaxiPaymentMethod.kaspi,
+                              state.effectivePaymentMethod ==
+                              TaxiPaymentMethod.kaspi,
                           brandColor: AppColors.primary,
                           onTap: () =>
                               cubit.setPaymentMethod(TaxiPaymentMethod.kaspi),
@@ -120,11 +122,26 @@ class _TaxiPaymentScreenState extends State<TaxiPaymentScreen> {
                           title: l10n.paymentMethodHalykTransfer,
                           subtitle: l10n.paymentMethodTransferSubtitle,
                           selected:
-                              state.paymentMethod == TaxiPaymentMethod.halyk,
+                              state.effectivePaymentMethod ==
+                              TaxiPaymentMethod.halyk,
                           brandColor: AppColors.primary,
                           onTap: () =>
                               cubit.setPaymentMethod(TaxiPaymentMethod.halyk),
                         ),
+                        if (state.psbAvailable) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          _PaymentRow(
+                            icon: Icons.account_balance_rounded,
+                            title: l10n.paymentMethodPsbTransfer,
+                            subtitle: l10n.paymentMethodTransferSubtitle,
+                            selected:
+                                state.effectivePaymentMethod ==
+                                TaxiPaymentMethod.psb,
+                            brandColor: AppColors.primary,
+                            onTap: () =>
+                                cubit.setPaymentMethod(TaxiPaymentMethod.psb),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         PromoCodeField(
                           controller: _promoController,

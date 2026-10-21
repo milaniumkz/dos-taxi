@@ -1,7 +1,9 @@
+import { availableOrderPaymentMethods } from "../payments/order-payment-policy";
 import { isUUID } from "class-validator";
 import { createHash } from "node:crypto";
 import {
   Currency,
+  PaymentMethod,
   ExecutorType,
   OrderStatus,
   ServiceType,
@@ -33,6 +35,7 @@ import {
   RideFeedQueryDto,
   RideQuoteDto,
   SubmitRideOfferDto,
+  TakeRideRequestDto,
 } from "./dto/ride-request.dto";
 import { minorUnits, money, totalAmount } from "./ride-money";
 function canonicalPayload(value: unknown): unknown {
@@ -74,6 +77,17 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       order: { nameRu: "ASC" },
     });
   }
+  async currentCity(lat: number, lng: number) {
+    const city = await this.orders.resolveBookingCity(undefined, [
+      { lat, lng },
+    ]);
+    return {
+      id: city.id,
+      nameRu: city.nameRu,
+      nameKk: city.nameKk,
+      currency: city.currency,
+    };
+  }
   async quote(dto: RideQuoteDto) {
     const city = await this.orders.resolveBookingCity(
       dto.cityId,
@@ -90,16 +104,32 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
         code: "RIDE_CURRENCY_UNSUPPORTED",
         message: "RIDE_CURRENCY_UNSUPPORTED",
       });
-    const basis = city.ridePricingBasis;
-    const count = basis === "seat" ? (dto.passengerCount ?? 1) : 1;
+    // Snapshot whole-group fares using the existing salon basis. Existing
+    // per-seat orders and older clients keep their original pricing semantics.
+    const basis = dto.priceIsTotal ? "salon" : city.ridePricingBasis;
+    const count =
+      dto.priceIsTotal || basis === "seat" ? (dto.passengerCount ?? 1) : 1;
     const rate = Number(city.rideExchangeRate);
-    const factor = city.currency === Currency.KZT ? 1 : rate;
+    const policy = city.rideManualPricePolicy
+      ? {
+          ...city.rideManualPricePolicy,
+          kztMinimum: money(
+            Math.ceil(minorUnits(city.rideMinimumOrderKzt) / 100) * 100,
+          ),
+        }
+      : null;
+    const currency = policy ? city.currency : Currency.KZT;
+    const factor = currency === Currency.KZT ? 1 : rate;
     const minimumBaseMinor = Math.ceil(
       (Number(city.rideMinimumOrderKzt) * 100) / factor - 1e-8,
     );
-    const rounding = city.currency === Currency.KZT ? 100 : 1;
-    const minimumUnitMinor = Math.ceil(minimumBaseMinor / rounding) * rounding;
-    const minimumTotalMinor = minimumUnitMinor * count;
+    const rounding = currency === Currency.KZT ? 100 : 1;
+    const minimumUnitMinor = policy
+      ? minorUnits(
+          currency === Currency.RUB ? policy.rubMinimum : policy.kztMinimum,
+        )
+      : Math.ceil(minimumBaseMinor / rounding) * rounding;
+    const minimumTotalMinor = minimumUnitMinor * (basis === "seat" ? count : 1);
     const stepMinor = Math.max(
       rounding,
       Math.round((Number(city.ridePriceStepKzt) * 100) / factor / rounding) *
@@ -109,12 +139,13 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       .update(
         JSON.stringify([
           city.id,
-          city.currency,
+          currency,
           basis,
           count,
           minimumTotalMinor,
           minimumUnitMinor,
           stepMinor,
+          ...(policy ? [policy, rate] : []),
         ]),
       )
       .digest("hex");
@@ -122,15 +153,28 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       termsKey,
       cityId: city.id,
       cityName: city.nameRu,
-      currency: city.currency,
+      availablePaymentMethods: availableOrderPaymentMethods(city),
+      manualPricePolicy: policy,
+      priceInputMode: "manual" as const,
+      balanceCurrency: city.currency,
+      currency,
       pricingBasis: basis,
+      priceIsTotal: dto.priceIsTotal ?? false,
       passengerCount: count,
       minimumOrderPrice: money(minimumTotalMinor),
       minimumUnitPrice: money(minimumUnitMinor),
       priceStep: money(stepMinor),
       exchangeRate: rate,
       commissionPercent: city.rideCommissionPercent,
-      commissionFixed: city.rideCommissionFixed,
+      commissionFixed:
+        city.currency !== currency
+          ? money(
+              Math.round(
+                minorUnits(city.rideCommissionFixed) *
+                  (currency === Currency.KZT ? rate : 1 / rate),
+              ),
+            )
+          : city.rideCommissionFixed,
     };
   }
   async create(
@@ -172,6 +216,15 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
         return existing;
       }
       const quote = await this.quote(dto);
+      if (
+        dto.paymentMethod === PaymentMethod.TRANSFER_PSB &&
+        !quote.availablePaymentMethods.includes(dto.paymentMethod)
+      ) {
+        throw new BadRequestException({
+          code: "PAYMENT_METHOD_UNAVAILABLE",
+          message: "ПСБ доступен только в Байконуре.",
+        });
+      }
       if (dto.termsKey !== quote.termsKey)
         throw new ConflictException({
           code: "RIDE_PRICING_CHANGED",
@@ -186,19 +239,60 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           code: "ORDER_ALREADY_ACTIVE",
           message: "ORDER_ALREADY_ACTIVE",
         });
-      const unit = money(
-        minorUnits(quote.minimumUnitPrice) +
-          minorUnits(quote.priceStep) * dto.priceSteps,
-      );
+      let currency = quote.currency;
+      let minimum = quote.minimumUnitPrice;
+      let step = quote.priceStep;
+      let fixed = quote.commissionFixed;
+      const policy = quote.manualPricePolicy;
+      let unit = money(minorUnits(minimum) + minorUnits(step) * dto.priceSteps);
+      if (dto.unitPrice !== undefined) {
+        if (dto.priceSteps !== 0)
+          throw new BadRequestException({
+            code: "RIDE_MANUAL_PRICE_NOT_ALLOWED",
+            message: "RIDE_MANUAL_PRICE_NOT_ALLOWED",
+          });
+        const amount = minorUnits(dto.unitPrice);
+        if (policy) {
+          currency =
+            amount < minorUnits(policy.kztThreshold)
+              ? Currency.RUB
+              : Currency.KZT;
+          minimum =
+            currency === Currency.RUB ? policy.rubMinimum : policy.kztMinimum;
+        }
+        if (amount < minorUnits(minimum))
+          throw new BadRequestException({
+            code: "RIDE_PRICE_BELOW_MINIMUM",
+            message: "RIDE_PRICE_BELOW_MINIMUM",
+          });
+        unit = money(amount);
+        if (currency !== quote.currency) {
+          const factor =
+            currency === Currency.KZT
+              ? quote.exchangeRate
+              : 1 / quote.exchangeRate;
+          const rounding = currency === Currency.KZT ? 100 : 1;
+          step = money(
+            Math.max(
+              rounding,
+              Math.round((minorUnits(step) * factor) / rounding) * rounding,
+            ),
+          );
+          fixed = money(Math.round(minorUnits(fixed) * factor));
+        }
+      }
       const newOrder = await repository.save(
         repository.create({
           clientId,
           cityId: quote.cityId,
-          currency: quote.currency,
+          currency,
           serviceType: dto.serviceType,
           status: OrderStatus.DRAFT,
           paymentMethod: dto.paymentMethod,
-          estimatedPrice: totalAmount(unit, quote.passengerCount),
+          estimatedPrice: totalAmount(
+            unit,
+            quote.pricingBasis === "seat" ? quote.passengerCount : 1,
+          ),
           discountAmount: "0.00",
           carClass: null,
           isNegotiated: true,
@@ -207,10 +301,12 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           passengerCount: quote.passengerCount,
           ridePricingBasis: quote.pricingBasis,
           rideUnitPrice: unit,
-          rideMinimumUnitPrice: quote.minimumUnitPrice,
-          ridePriceStep: quote.priceStep,
+          rideMinimumUnitPrice: minimum,
+          ridePriceStep: step,
           rideCommissionPercent: quote.commissionPercent,
-          rideCommissionFixed: quote.commissionFixed,
+          rideCommissionFixed: fixed,
+          rideBalanceCurrency: quote.balanceCurrency,
+          rideExchangeRate: String(quote.exchangeRate),
           pickupEntrance: dto.pickupEntrance?.trim() || null,
           pickupComment: dto.pickupComment?.trim() || null,
           needsChildSeat: dto.needsChildSeat ?? false,
@@ -500,7 +596,10 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
           executorId: driver.id,
           priceSteps: dto.priceSteps,
           unitPrice: money(price),
-          totalPrice: money(price * order.passengerCount),
+          totalPrice: money(
+            price *
+              (order.ridePricingBasis === "seat" ? order.passengerCount : 1),
+          ),
           hasChildSeat: Boolean(dto.hasChildSeat),
           status: "pending",
           version: (existing?.version ?? 0) + 1,
@@ -515,6 +614,137 @@ export class RideMarketplaceService implements OnModuleInit, OnModuleDestroy {
       currency: offered.order.currency,
       serverTime: new Date().toISOString(),
     };
+  }
+  async take(userId: string, orderId: string, dto: TakeRideRequestDto) {
+    let changed = false;
+    const order = await this.db.transaction(async (manager) => {
+      const repository = manager.getRepository(OrderEntity);
+      const order = await repository.findOne({
+        where: { id: orderId },
+        lock: { mode: "pessimistic_write" },
+      });
+      const profile = await manager
+        .getRepository(ExecutorEntity)
+        .findOneBy({ userId });
+      if (
+        order?.isNegotiated &&
+        profile &&
+        order.executorId === profile.id &&
+        driverBusyStatuses.some((status) => status === order.status)
+      )
+        return order;
+      if (
+        !order?.isNegotiated ||
+        order.status !== OrderStatus.SEARCHING ||
+        order.executorId
+      )
+        throw new ConflictException({
+          code: "RIDE_REQUEST_NOT_OPEN",
+          message: "RIDE_REQUEST_NOT_OPEN",
+        });
+      const driver = await this.driver(manager, userId, true);
+      if (
+        driver.cityId !== order.cityId ||
+        driver.passengerCapacity < order.passengerCount
+      )
+        throw new ForbiddenException({
+          code: "RIDE_DRIVER_NOT_ELIGIBLE",
+          message: "RIDE_DRIVER_NOT_ELIGIBLE",
+        });
+      if (order.needsChildSeat && !dto.hasChildSeat)
+        throw new BadRequestException({
+          code: "RIDE_CHILD_SEAT_REQUIRED",
+          message: "RIDE_CHILD_SEAT_REQUIRED",
+        });
+      if (
+        minorUnits(dto.totalPrice) !== minorUnits(order.estimatedPrice ?? "0")
+      )
+        throw new ConflictException({
+          code: "RIDE_OFFER_CHANGED",
+          message: "RIDE_OFFER_CHANGED",
+        });
+      if (
+        await repository.exists({
+          where: { executorId: driver.id, status: In(driverBusyStatuses) },
+        })
+      )
+        throw new ConflictException({
+          code: "EXECUTOR_ALREADY_BUSY",
+          message: "EXECUTOR_ALREADY_BUSY",
+        });
+      const offers = manager.getRepository(RidePriceOfferEntity);
+      const waiting = await offers
+        .createQueryBuilder("pending")
+        .innerJoin(
+          OrderEntity,
+          "waiting_order",
+          "waiting_order.id=pending.order_id",
+        )
+        .where(
+          "pending.executor_id=:driverId AND pending.order_id<>:orderId AND pending.status='pending' AND pending.expires_at>now() AND waiting_order.status='searching' AND waiting_order.executor_id IS NULL",
+          { driverId: driver.id, orderId },
+        )
+        .getExists();
+      if (waiting)
+        throw new ConflictException({
+          code: "RIDE_OFFER_PENDING",
+          message: "RIDE_OFFER_PENDING",
+        });
+      order.executorId = driver.id;
+      await repository.save(order);
+      await offers.update(
+        { orderId, status: "pending" },
+        { status: "superseded" },
+      );
+      const accepted = await this.orders.transition(
+        orderId,
+        OrderStatus.ACCEPTED,
+        userId,
+        { source: "driver_accepted_passenger_price" },
+        manager,
+      );
+      changed = true;
+      return accepted;
+    });
+    if (changed) await this.announce(order, OrderStatus.ACCEPTED);
+    return { takenOrderId: order.id, status: order.status };
+  }
+  async reject(
+    clientId: string,
+    orderId: string,
+    offerId: string,
+    dto: AcceptRideOfferDto,
+  ) {
+    await this.db.transaction(async (manager) => {
+      const order = await manager.getRepository(OrderEntity).findOne({
+        where: { id: orderId, clientId },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!order?.isNegotiated)
+        throw new NotFoundException({
+          code: "ORDER_NOT_FOUND",
+          message: "ORDER_NOT_FOUND",
+        });
+      const offers = manager.getRepository(RidePriceOfferEntity);
+      const offer = await offers.findOneBy({ id: offerId, orderId });
+      if (!offer || offer.version !== dto.version)
+        throw new ConflictException({
+          code: "RIDE_OFFER_CHANGED",
+          message: "RIDE_OFFER_CHANGED",
+        });
+      if (offer.status === "rejected") return;
+      if (
+        order.status !== OrderStatus.SEARCHING ||
+        offer.status !== "pending" ||
+        offer.expiresAt <= new Date()
+      )
+        throw new ConflictException({
+          code: "RIDE_OFFER_UNAVAILABLE",
+          message: "RIDE_OFFER_UNAVAILABLE",
+        });
+      await offers.update(offer.id, { status: "rejected" });
+    });
+    return { rejected: true };
   }
   async withdraw(userId: string, orderId: string) {
     const driver = await this.db

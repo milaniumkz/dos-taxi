@@ -1,12 +1,14 @@
 openapi: 3.0.3
 info:
   title: DOS / Kaspi online balance API
-  version: 1.0.0
+  version: 1.1.0
   description: HTTPS GET check/pay protocol. No request body or card data. Access
-    restricted to confirmed bank source IPs.
+    restricted to confirmed bank source IPs. Successful check returns structured driver
+    identity in fields; surname and given name must be present.
 servers:
 - url: https://89.126.200.51
-  description: Verified IP HTTPS endpoint with automatic certificate renewal; bank acceptance required before enabling
+  description: Verified IP HTTPS endpoint with automatic certificate renewal; bank
+    acceptance required before enabling
 paths:
   /api/v1/payments/kaspi:
     get:
@@ -87,12 +89,54 @@ paths:
                   sum:
                     type: string
                     example: '5000.00'
+                  fields:
+                    type: object
+                    description: Successful check only. Full driver name in one string
+                      and phone. Patronymic omitted when absent. No fields for unavailable
+                      accounts.
+                    required:
+                    - field1
+                    - field2
+                    properties:
+                      field1:
+                        type: object
+                        required:
+                        - '@name'
+                        - '#text'
+                        properties:
+                          '@name':
+                            type: string
+                            enum:
+                            - full_name
+                          '#text':
+                            type: string
+                            example: Иванов Иван Иванович
+                      field2:
+                        type: object
+                        required:
+                        - '@name'
+                        - '#text'
+                        properties:
+                          '@name':
+                            type: string
+                            enum:
+                            - phone
+                          '#text':
+                            type: string
+                            example: '+77010000000'
               examples:
                 check:
                   value:
                     txn_id: '123456789012345677'
                     result: 0
                     comment: OK
+                    fields:
+                      field1:
+                        '@name': full_name
+                        '#text': Иванов Иван Иванович
+                      field2:
+                        '@name': phone
+                        '#text': '+77010000000'
                 pay:
                   value:
                     txn_id: '123456789012345678'

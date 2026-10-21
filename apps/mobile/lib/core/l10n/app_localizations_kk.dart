@@ -276,10 +276,13 @@ class AppLocalizationsKk extends AppLocalizations {
   String get taxiPaymentMethodBonus => 'Бонустармен';
 
   @override
-  String get paymentMethodKaspiTransfer => 'Kaspi аударымы';
+  String get paymentMethodKaspiTransfer => 'Kaspi.kz';
 
   @override
-  String get paymentMethodHalykTransfer => 'Halyk аударымы';
+  String get paymentMethodHalykTransfer => 'Halyk.kz';
+
+  @override
+  String get paymentMethodPsbTransfer => 'ПСБ';
 
   @override
   String get paymentMethodTransferSubtitle => 'Сапардан кейін аударыммен төлеу';
@@ -828,7 +831,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get driverBalanceTopUpSubtitle =>
-      'Өтінім Kaspi шоты үшін әкімшіге түседі';
+      'Теңгемен толықтырыңыз. Рубльдегі балансқа сома растау сәтіндегі қала бағамымен есептеледі.';
 
   @override
   String get driverBalanceTopUpAmountLabel => 'Толықтыру сомасы';
@@ -1282,6 +1285,12 @@ class AppLocalizationsKk extends AppLocalizations {
   String get rideRetry => 'Қайталау';
 
   @override
+  String get rideEntranceShort => 'Кіреберіс';
+
+  @override
+  String get rideCommentShort => 'Пікір';
+
+  @override
   String get rideEntrance => 'Кіреберіс (міндетті емес)';
 
   @override
@@ -1303,10 +1312,36 @@ class AppLocalizationsKk extends AppLocalizations {
   String get rideCash => 'Қолма-қол';
 
   @override
-  String get rideKaspi => 'Kaspi аударымы';
+  String get rideKaspi => 'Kaspi.kz';
 
   @override
-  String get rideHalyk => 'Halyk аударымы';
+  String get rideHalyk => 'Halyk.kz';
+
+  @override
+  String get requiredUpdateTitle => 'Қолданбаны жаңартыңыз';
+
+  @override
+  String get requiredUpdateBody =>
+      'Жаңа нұсқа қолжетімді. Қолданбаны пайдалануды жалғастыру үшін дүкеннен жаңартуды орнатыңыз.';
+
+  @override
+  String get requiredUpdateAction => 'Жаңарту';
+
+  @override
+  String get requiredUpdateRetry => 'Қайта тексеру';
+
+  @override
+  String get requiredUpdateOpenError =>
+      'Дүкенді ашу мүмкін болмады. Қайталап көріңіз.';
+
+  @override
+  String get ridePsb => 'ПСБ';
+
+  @override
+  String get rideTakeOrder => 'Тапсырысты алу';
+
+  @override
+  String get rideRejectOffer => 'Бас тарту';
 
   @override
   String get rideSubmit => 'Өтінім беру';
@@ -1563,4 +1598,18 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get rideExtrasDone => 'Дайын';
+
+  @override
+  String get supportContactsIntro =>
+      'Оператор осы жерде жауап береді. Қолдау қызметімен байланысуға да болады:';
+
+  @override
+  String get supportContactsUnavailable =>
+      'Қолдау байланыстарын жүктеу мүмкін болмады';
+
+  @override
+  String get supportContactOpenFailed => 'Байланыс тәсілін ашу мүмкін болмады';
+
+  @override
+  String get ridePerOrder => 'Бүкіл тапсырыс бағасы';
 }

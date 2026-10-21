@@ -13,6 +13,7 @@ import IORedis from "ioredis";
 import { sendSmscSms } from "./smsc.provider";
 
 export type NotificationType =
+  | "admin_broadcast"
   | "ride_price_offer"
   | "auth_otp"
   | "executor_incoming_order"
@@ -147,11 +148,17 @@ export class NotificationsQueueService
     await this.connection?.quit();
   }
 
-  async enqueuePush(job: Omit<PushNotificationJob, "channel">): Promise<void> {
-    await this.enqueue({
-      ...job,
-      channel: "push",
-    });
+  async enqueuePush(
+    job: Omit<PushNotificationJob, "channel">,
+    jobId?: string,
+  ): Promise<void> {
+    await this.enqueue(
+      {
+        ...job,
+        channel: "push",
+      },
+      jobId,
+    );
   }
 
   async enqueueSms(job: Omit<SmsNotificationJob, "channel">): Promise<void> {
@@ -208,9 +215,22 @@ export class NotificationsQueueService
     return [...this.bufferedNotifications];
   }
 
-  private async enqueue(job: NotificationJobPayload): Promise<void> {
+  private async enqueue(
+    job: NotificationJobPayload,
+    jobId?: string,
+  ): Promise<void> {
     if (this.queue) {
-      await this.queue.add(`notification-${job.channel}`, job);
+      await this.queue.add(
+        `notification-${job.channel}`,
+        job,
+        jobId
+          ? {
+              jobId,
+              removeOnComplete: { age: 604800 },
+              removeOnFail: { age: 604800 },
+            }
+          : undefined,
+      );
       return;
     }
 

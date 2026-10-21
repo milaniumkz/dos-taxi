@@ -36,8 +36,10 @@ class ActiveOrderCubit extends Cubit<ActiveOrderState> {
   final ExecutorPositionInterpolator _positionInterpolator;
   StreamSubscription<ActiveOrderTrackingEvent>? _subscription;
   bool _hasOpenedRating = false;
+  int _positionRevision = 0;
 
   Future<void> startTracking() async {
+    _positionRevision += 1;
     await _subscription?.cancel();
     emit(state.copyWith(isConnecting: true, errorMessage: null));
     _subscription = _activeOrderRepository
@@ -107,6 +109,7 @@ class ActiveOrderCubit extends Cubit<ActiveOrderState> {
 
   @override
   Future<void> close() async {
+    _positionRevision += 1;
     await _subscription?.cancel();
     return super.close();
   }
@@ -142,6 +145,7 @@ class ActiveOrderCubit extends Cubit<ActiveOrderState> {
           return;
         }
 
+        final revision = ++_positionRevision;
         final currentLocation = state.executorLocation;
         if (currentLocation == null) {
           emit(
@@ -159,7 +163,7 @@ class ActiveOrderCubit extends Cubit<ActiveOrderState> {
           nextLocation,
         );
         for (final point in points.skip(1)) {
-          if (isClosed) {
+          if (isClosed || revision != _positionRevision) {
             return;
           }
 

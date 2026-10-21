@@ -235,6 +235,23 @@ export class OrderEntity {
     nullable: true,
   })
   rideCommissionFixed!: string | null;
+  @Column({
+    name: "ride_balance_currency",
+    type: "varchar",
+    length: 3,
+    nullable: true,
+  })
+  rideBalanceCurrency!: Currency | null;
+
+  @Column({
+    name: "ride_exchange_rate",
+    type: "decimal",
+    precision: 12,
+    scale: 4,
+    nullable: true,
+  })
+  rideExchangeRate!: string | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 

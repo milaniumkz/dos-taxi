@@ -177,7 +177,14 @@ class _CompactRequestCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.trip_origin, size: 14),
+                    const SizedBox(
+                      width: 14,
+                      child: Text(
+                        'A',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -195,7 +202,14 @@ class _CompactRequestCard extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    const Icon(Icons.place, size: 14),
+                    const SizedBox(
+                      width: 14,
+                      child: Text(
+                        'B',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -254,7 +268,8 @@ class _CompactRequestCard extends StatelessWidget {
         value: cubit,
         child: BlocConsumer<RidePollCubit, RidePollState>(
           listener: (_, state) {
-            if (state.data?['pendingOffer'] != null) {
+            if (state.data?['pendingOffer'] != null ||
+                state.data?['takenOrderId'] != null) {
               final route = ModalRoute.of(sheetContext);
               if (route != null && route.isActive) {
                 Navigator.of(sheetContext).removeRoute(route);
@@ -367,7 +382,7 @@ class _RequestDetailsState extends State<_RequestDetails> {
               pickup: (points.first as Map)['address'].toString(),
               destination: (points.last as Map)['address'].toString(),
             ),
-            if (r['pricingBasis'] == 'seat')
+            if (r['pricingBasis'] == 'seat' || count > 1)
               Text('${l.ridePassengers}: $count'),
             if ((r['pickupEntrance']?.toString() ?? '').isNotEmpty)
               Text('${l.rideEntrance}: ${r['pickupEntrance']}'),
@@ -377,12 +392,13 @@ class _RequestDetailsState extends State<_RequestDetails> {
             Text(switch (r['paymentMethod']) {
               'transfer_kaspi' => l.rideKaspi,
               'transfer_halyk' => l.rideHalyk,
+              'transfer_psb' => l.ridePsb,
               _ => l.rideCash,
             }),
             RideStepper(
               label: r['pricingBasis'] == 'seat'
                   ? l.ridePerSeat
-                  : l.ridePerSalon,
+                  : l.ridePerOrder,
               value: amount(price),
               onMinus:
                   widget.disabled || price - step < minimum || steps <= -1000
@@ -393,7 +409,7 @@ class _RequestDetailsState extends State<_RequestDetails> {
                   : () => setState(() => steps++),
             ),
             Text(
-              '${l.rideTotal}: ${amount(price * count)}',
+              '${l.rideTotal}: ${amount(price * (r['pricingBasis'] == 'seat' ? count : 1))}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             if (r['needsChildSeat'] == true)
@@ -410,8 +426,14 @@ class _RequestDetailsState extends State<_RequestDetails> {
               onPressed:
                   widget.disabled || (r['needsChildSeat'] == true && !childSeat)
                   ? null
-                  : () => cubit.propose(r['id'] as String, steps, childSeat),
-              child: Text(l.ridePropose),
+                  : () => steps == 0
+                        ? cubit.take(
+                            r['id'] as String,
+                            r['totalPrice'].toString(),
+                            childSeat,
+                          )
+                        : cubit.propose(r['id'] as String, steps, childSeat),
+              child: Text(steps == 0 ? l.rideTakeOrder : l.ridePropose),
             ),
             if (pending)
               TextButton(

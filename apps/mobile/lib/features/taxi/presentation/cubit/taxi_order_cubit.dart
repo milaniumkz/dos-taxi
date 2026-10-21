@@ -20,7 +20,8 @@ enum TaxiOrderStage { idle, estimating, selecting, searching }
 enum TaxiPaymentMethod {
   cash('cash'),
   kaspi('transfer_kaspi'),
-  halyk('transfer_halyk');
+  halyk('transfer_halyk'),
+  psb('transfer_psb');
 
   const TaxiPaymentMethod(this.apiValue);
 
@@ -362,7 +363,7 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
         pickup: pickup,
         destination: destination,
         carClass: selectedEstimate.carClass,
-        paymentMethod: state.paymentMethod.apiValue,
+        paymentMethod: state.effectivePaymentMethod.apiValue,
         distanceMeters: route.distanceMeters,
         durationSeconds: route.durationSeconds,
         serviceType: state.serviceType,
@@ -374,7 +375,9 @@ class TaxiOrderCubit extends Cubit<TaxiOrderState> {
       (failure) => emit(
         state.copyWith(
           stage: TaxiOrderStage.selecting,
-          errorMessage: failure.code.startsWith('PROMO_CODE_') ? failure.code : failure.message,
+          errorMessage: failure.code.startsWith('PROMO_CODE_')
+              ? failure.code
+              : failure.message,
         ),
       ),
       (orderId) => emit(state.copyWith(createdOrderId: orderId)),

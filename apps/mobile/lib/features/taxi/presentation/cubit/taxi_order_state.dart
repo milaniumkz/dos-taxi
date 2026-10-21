@@ -36,6 +36,14 @@ class TaxiOrderState extends Equatable {
   final List<TaxiEstimate> estimates;
   final TaxiEstimate? selectedEstimate;
   final TaxiPaymentMethod paymentMethod;
+  bool get psbAvailable =>
+      selectedEstimate?.availablePaymentMethods.contains('transfer_psb') ??
+      false;
+  TaxiPaymentMethod get effectivePaymentMethod =>
+      paymentMethod == TaxiPaymentMethod.psb && !psbAvailable
+      ? TaxiPaymentMethod.cash
+      : paymentMethod;
+
   final String promoCode;
   final String appliedPromoCode;
   final bool isApplyingPromo;

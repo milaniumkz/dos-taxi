@@ -4,11 +4,13 @@ async function main() {
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   await db.query('BEGIN READ ONLY');
-  const cities = (await db.query('SELECT id, name_ru, name_kk, is_active, currency, service_zone FROM cities ORDER BY created_at')).rows;
+  const cities = (await db.query('SELECT id, name_ru, name_kk, is_active, currency, service_zone, ride_manual_price_policy, ride_exchange_rate, ride_pricing_basis FROM cities ORDER BY created_at')).rows;
   const promos = (await db.query("SELECT code, discount_type, discount_value, is_active, valid_to, max_uses, (SELECT count(*) FROM orders WHERE promo_code_id = promo_codes.id) AS uses FROM promo_codes WHERE upper(code) = 'DOSTAXI2026'")).rows;
   console.log('PROMO', JSON.stringify(promos));
   const tariffs = (await db.query('SELECT city_id, service_type, vehicle_class, currency, is_active FROM tariffs WHERE is_active = true')).rows;
   console.log('CITIES', JSON.stringify(cities.map(city => ({ ...city, tariffs: tariffs.filter(t => t.city_id === city.id) }))));
+  const topups = (await db.query(`SELECT t.id,t.executor_id,t.amount,t.payment_currency,t.credited_amount,t.credited_currency,t.exchange_rate AS applied_rate,t.fx_corrected_at,t.status,t.confirmed_at,t.created_at,e.balance,c.name_ru AS city,c.currency AS balance_currency,c.ride_exchange_rate AS rate,right(u.phone,4) AS phone_suffix FROM executor_balance_topups t JOIN executors e ON e.id=t.executor_id JOIN users u ON u.id=e.user_id LEFT JOIN cities c ON c.id=e.city_id WHERE t.status='confirmed' AND c.ride_manual_price_policy IS NOT NULL ORDER BY t.confirmed_at DESC NULLS LAST,t.created_at DESC LIMIT 10`)).rows;
+  console.log('LATEST_BAIKONUR_TOPUPS', JSON.stringify(topups));
   const versions = (await db.query("SELECT t.id, c.name_ru AS city, t.vehicle_class, t.name_ru, t.currency, t.is_active, t.deleted_at, t.created_at FROM tariffs t JOIN cities c ON c.id=t.city_id WHERE t.service_type='taxi' ORDER BY c.name_ru, t.vehicle_class, t.created_at DESC")).rows;
   console.log('TARIFF_VERSIONS', JSON.stringify(versions));
   const pool = (await db.query("SELECT e.city_id, e.executor_type, e.is_online, e.verification_status, count(*) AS accounts, count(*) FILTER (WHERE NOT u.is_blocked AND e.balance >= 100) AS eligible_accounts FROM executors e JOIN users u ON u.id = e.user_id GROUP BY e.city_id, e.executor_type, e.is_online, e.verification_status")).rows;

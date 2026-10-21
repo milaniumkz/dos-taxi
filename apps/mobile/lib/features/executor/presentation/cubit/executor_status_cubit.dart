@@ -99,6 +99,9 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
 
   Future<void> submitOnboarding({
     required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
     required String executorType,
     String? vehicleType,
     String? vehicleMake,
@@ -110,6 +113,9 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
     emit(state.copyWith(isSubmittingOnboarding: true, errorMessage: null));
     final result = await _executorRepository.submitOnboarding(
       name: name,
+      lastName: lastName,
+      firstName: firstName,
+      middleName: middleName,
       executorType: executorType,
       vehicleType: vehicleType,
       vehicleMake: vehicleMake,
@@ -192,7 +198,12 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
     );
   }
 
-  Future<bool> updateDriverProfile({required String name}) async {
+  Future<bool> updateDriverProfile({
+    required String name,
+    String? lastName,
+    String? firstName,
+    String? middleName,
+  }) async {
     final profile = state.profile;
     if (profile == null) {
       return false;
@@ -202,6 +213,9 @@ class ExecutorStatusCubit extends Cubit<ExecutorStatusState> {
     final result = await _executorRepository.updateDriverProfile(
       profile: profile,
       name: name,
+      lastName: lastName,
+      firstName: firstName,
+      middleName: middleName,
     );
     if (isClosed) {
       return false;

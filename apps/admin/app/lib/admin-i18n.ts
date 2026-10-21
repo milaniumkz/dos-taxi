@@ -27,6 +27,7 @@ export type AdminDictionary = {
     cities: string;
     tariffs: string;
     reports: string;
+    pushNotifications: string;
     promoCodes: string;
     users: string;
     executors: string;
@@ -844,6 +845,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       cities: "Города",
       tariffs: "Тарифы",
       reports: "Отчёты",
+      pushNotifications: "Push-уведомления",
       promoCodes: "Промокоды",
       users: "Клиенты",
       executors: "Исполнители",
@@ -1210,7 +1212,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       updatedAtLabel: "Обновлено",
       adminCommentLabel: "Комментарий",
       adminCommentPlaceholder: "Например: счёт Kaspi выставлен",
-      creditAmountLabel: "Сумма к зачислению",
+      creditAmountLabel: "Сумма платежа, ₸",
       markInvoiced: "Счёт Kaspi выставлен",
       confirmAndCredit: "Подтвердить и зачислить",
       reject: "Отклонить",
@@ -1780,6 +1782,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
         cash: "Наличные",
         transfer_kaspi: "Перевод Kaspi",
         transfer_halyk: "Перевод Halyk",
+        transfer_psb: "ПСБ",
         corporate: "Корпоративный",
         bonus: "Бонусы",
       },
@@ -1857,6 +1860,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       cities: "Қалалар",
       tariffs: "Тарифтер",
       reports: "Есептер",
+      pushNotifications: "Push-хабарламалар",
       promoCodes: "Промокодтар",
       users: "Клиенттер",
       executors: "Орындаушылар",
@@ -2224,7 +2228,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
       updatedAtLabel: "Жаңартылды",
       adminCommentLabel: "Пікір",
       adminCommentPlaceholder: "Мысалы: Kaspi шоты шығарылды",
-      creditAmountLabel: "Есепке түсетін сома",
+      creditAmountLabel: "Төлем сомасы, ₸",
       markInvoiced: "Kaspi шоты шығарылды",
       confirmAndCredit: "Растау және толықтыру",
       reject: "Қабылдамау",
@@ -2797,6 +2801,7 @@ const dictionaries: Record<AdminLocale, AdminDictionary> = {
         cash: "Қолма-қол",
         transfer_kaspi: "Kaspi аударымы",
         transfer_halyk: "Halyk аударымы",
+        transfer_psb: "ПСБ",
         corporate: "Корпоративтік",
         bonus: "Бонустар",
       },

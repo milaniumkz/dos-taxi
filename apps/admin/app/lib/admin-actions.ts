@@ -1,4 +1,8 @@
 "use server";
+import { pushLabels } from "./push-notifications-i18n";
+
+import { topUpSettingsLabels } from "./topup-settings-i18n";
+import { supportContactsLabels } from "./support-contacts-i18n";
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
@@ -117,6 +121,9 @@ export async function createCityAction(formData: FormData) {
         currency: getString(formData, "currency"),
         timezone: getString(formData, "timezone"),
         ridePricingBasis: getString(formData, "ridePricingBasis") || undefined,
+        rideExchangeRate: getString(formData, "rideExchangeRate") || undefined,
+        rideMinimumOrderKzt:
+          getString(formData, "rideMinimumOrderKzt") || undefined,
         isActive: getBoolean(formData, "isActive"),
       }),
     });
@@ -169,6 +176,11 @@ export async function updateCityAction(formData: FormData) {
         currency: getString(formData, "currency"),
         timezone: getString(formData, "timezone"),
         ridePricingBasis: getString(formData, "ridePricingBasis") || undefined,
+        rideExchangeRate: getString(formData, "rideExchangeRate") || undefined,
+        rideMinimumOrderKzt:
+          getString(formData, "rideMinimumOrderKzt") || undefined,
+        rideMinimumOrderRub:
+          getString(formData, "rideMinimumOrderRub") || undefined,
         isActive: getBoolean(formData, "isActive"),
       }),
     });
@@ -793,4 +805,54 @@ export async function updateErrorMessageAction(formData: FormData): Promise<void
   }
   revalidateReturnPath(returnPath);
   redirectWithFlash(returnPath, 'notice', getAdminDictionary(locale).settingsPage.errorMessagesSaved);
+}
+
+export async function updateSupportContactsAction(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const returnPath = `/settings?lang=${locale}`;
+  try {
+    await adminApiRequest("admin/settings/support-contacts", {
+      method: "PATCH",
+      body: JSON.stringify({
+        phone: getString(formData, "phone"),
+        whatsapp: getString(formData, "whatsapp"),
+        email: getString(formData, "email"),
+        telegram: getString(formData, "telegram"),
+      }),
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, "error", failureMessage(locale, error));
+  }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(returnPath, "notice", supportContactsLabels(locale).saved);
+}
+
+export async function sendPushNotificationAction(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const returnPath = `/push-notifications?lang=${locale}`;
+  try {
+    await adminApiRequest("admin/push-notifications", {
+      method: "POST",
+      body: JSON.stringify({ id: getString(formData, "requestId"), audience: getString(formData, "audience"), title: getString(formData, "title"), body: getString(formData, "body") }),
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, "error", failureMessage(locale, error));
+  }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(returnPath, "notice", pushLabels(locale).saved);
+}
+
+export async function updateDriverTopUpSettingsAction(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const returnPath = `/settings?lang=${locale}`;
+  try {
+    await adminApiRequest("admin/settings/driver-topup", {
+      method: "PATCH",
+      body: JSON.stringify({ mode: getString(formData, "mode"), kaspiUrl: getString(formData, "kaspiUrl") }),
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, "error", failureMessage(locale, error));
+  }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(returnPath, "notice", topUpSettingsLabels(locale).saved);
 }

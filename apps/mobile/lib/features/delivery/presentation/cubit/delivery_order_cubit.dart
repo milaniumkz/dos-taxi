@@ -31,7 +31,8 @@ enum DeliveryOrderStage {
 enum DeliveryPaymentMethod {
   cash('cash'),
   kaspi('transfer_kaspi'),
-  halyk('transfer_halyk');
+  halyk('transfer_halyk'),
+  psb('transfer_psb');
 
   const DeliveryPaymentMethod(this.apiValue);
 
@@ -448,7 +449,7 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
         contactPhone: state.contactPhone,
         distanceMeters: routeInfo.distanceMeters,
         durationSeconds: routeInfo.durationSeconds,
-        paymentMethod: state.paymentMethod.apiValue,
+        paymentMethod: state.effectivePaymentMethod.apiValue,
         promoCode: state.promoCode.isEmpty ? null : state.promoCode,
       ),
     );
@@ -457,7 +458,9 @@ class DeliveryOrderCubit extends Cubit<DeliveryOrderState> {
       (failure) => emit(
         state.copyWith(
           stage: DeliveryOrderStage.confirming,
-          errorMessage: failure.code.startsWith('PROMO_CODE_') ? failure.code : failure.message,
+          errorMessage: failure.code.startsWith('PROMO_CODE_')
+              ? failure.code
+              : failure.message,
         ),
       ),
       (orderId) => emit(state.copyWith(createdOrderId: orderId)),

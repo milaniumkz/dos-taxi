@@ -125,7 +125,7 @@ class DeliveryConfirmScreen extends StatelessWidget {
                                     label: l10n.deliveryConfirmPaymentLabel,
                                     value: _paymentLabel(
                                       l10n,
-                                      state.paymentMethod,
+                                      state.effectivePaymentMethod,
                                     ),
                                   ),
                                   if (state.promoCode.isNotEmpty)
@@ -249,6 +249,8 @@ class DeliveryConfirmScreen extends StatelessWidget {
         return l10n.paymentMethodKaspiTransfer;
       case DeliveryPaymentMethod.halyk:
         return l10n.paymentMethodHalykTransfer;
+      case DeliveryPaymentMethod.psb:
+        return l10n.paymentMethodPsbTransfer;
     }
   }
 

@@ -1,4 +1,7 @@
+import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_request_screen.dart';
+import '../../../ride_marketplace/presentation/ride_request_cubit.dart';
+import '../../../ride_marketplace/domain/ride_repository.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -34,6 +37,37 @@ class PassengerHomePlaceholderScreen extends StatefulWidget {
 
 class _PassengerHomePlaceholderScreenState
     extends State<PassengerHomePlaceholderScreen> {
+  final GlobalKey _mapKey = GlobalKey();
+  final GlobalKey _orderPanelKey = GlobalKey();
+  EdgeInsets _routePadding = const EdgeInsets.all(40);
+  bool _mapLayoutScheduled = false;
+
+  void _scheduleMapLayout() {
+    if (_mapLayoutScheduled) return;
+    _mapLayoutScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapLayoutScheduled = false;
+      if (!mounted) return;
+      final map = _mapKey.currentContext?.findRenderObject();
+      final panel = _orderPanelKey.currentContext?.findRenderObject();
+      if (map is! RenderBox ||
+          panel is! RenderBox ||
+          !map.hasSize ||
+          !panel.hasSize) {
+        return;
+      }
+      final panelTop = map.globalToLocal(panel.localToGlobal(Offset.zero)).dy;
+      final top = MediaQuery.paddingOf(context).top + 32;
+      final bottom = (map.size.height - panelTop + 24)
+          .clamp(0.0, (map.size.height - top - 100).clamp(0.0, double.infinity))
+          .toDouble();
+      final padding = EdgeInsets.fromLTRB(40, top, 40, bottom);
+      if (_routePadding != padding) {
+        setState(() => _routePadding = padding);
+      }
+    });
+  }
+
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
 
@@ -47,6 +81,7 @@ class _PassengerHomePlaceholderScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    _scheduleMapLayout();
     return BlocProvider<HomeCubit>(
       create: (_) => serviceLocator<HomeCubit>()..initialize(),
       child: BlocConsumer<HomeCubit, HomeState>(
@@ -96,6 +131,8 @@ class _PassengerHomePlaceholderScreenState
               children: [
                 Positioned.fill(
                   child: MapWidget(
+                    key: _mapKey,
+                    routePadding: _routePadding,
                     center: state.mapCenter,
                     recenterRequestId: state.recenterRequestId,
                     currentLocation: state.currentLocation,
@@ -109,6 +146,32 @@ class _PassengerHomePlaceholderScreenState
                     onTap: cubit.selectRoutePointFromMap,
                   ),
                 ),
+                if (state.selectedAddress == null ||
+                    state.selectedService == HomeServiceType.delivery)
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + 12,
+                    right: 16,
+                    child: FloatingActionButton.small(
+                      heroTag: 'passenger-location',
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.text,
+                      onPressed: state.isResolvingCurrentLocation
+                          ? null
+                          : cubit.recenterToCurrentPosition,
+                      child: state.isResolvingCurrentLocation
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.my_location_rounded),
+                    ),
+                  ),
+                Positioned(
+                  top: MediaQuery.paddingOf(context).top + 16,
+                  left: 16,
+                  child: const SizedBox(width: 190, child: CurrentCityBadge()),
+                ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
@@ -117,57 +180,58 @@ class _PassengerHomePlaceholderScreenState
                         Expanded(
                           child: Align(
                             alignment: Alignment.bottomCenter,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: FloatingActionButton.small(
-                                      heroTag: 'passenger-location',
-                                      backgroundColor: AppColors.surface,
-                                      foregroundColor: AppColors.text,
-                                      onPressed:
-                                          state.isResolvingCurrentLocation
-                                          ? null
-                                          : cubit.recenterToCurrentPosition,
-                                      child: state.isResolvingCurrentLocation
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.my_location_rounded,
-                                            ),
-                                    ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) => ConstrainedBox(
+                                key: _orderPanelKey,
+                                constraints: BoxConstraints(
+                                  maxHeight: constraints.maxHeight,
+                                ),
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      NotificationListener<
+                                        SizeChangedLayoutNotification
+                                      >(
+                                        onNotification: (_) {
+                                          _scheduleMapLayout();
+                                          return false;
+                                        },
+                                        child: SizeChangedLayoutNotifier(
+                                          child: _PassengerOrderPanel(
+                                            state: state,
+                                            pickupController: _pickupController,
+                                            destinationController:
+                                                _destinationController,
+                                            onPickupChanged:
+                                                cubit.onPickupQueryChanged,
+                                            onPickupSelected:
+                                                cubit.selectPickup,
+                                            onPickupFocused:
+                                                cubit.activatePickupSearch,
+                                            onDestinationFocused:
+                                                cubit.activateDestinationSearch,
+                                            onUseCurrentPickup: () {
+                                              _pickupController.text =
+                                                  state
+                                                      .currentAddress
+                                                      ?.displayTitle ??
+                                                  '';
+                                              cubit.useCurrentPickup();
+                                            },
+                                            onServiceChanged: cubit.setService,
+                                            onDestinationChanged:
+                                                cubit.onSearchQueryChanged,
+                                            onDestinationSelected:
+                                                cubit.selectAddress,
+                                            onOrder: () =>
+                                                _startOrder(context, state),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  _PassengerOrderPanel(
-                                    state: state,
-                                    pickupController: _pickupController,
-                                    destinationController:
-                                        _destinationController,
-                                    onPickupChanged: cubit.onPickupQueryChanged,
-                                    onPickupSelected: cubit.selectPickup,
-                                    onPickupFocused: cubit.activatePickupSearch,
-                                    onDestinationFocused:
-                                        cubit.activateDestinationSearch,
-                                    onUseCurrentPickup: () {
-                                      _pickupController.text =
-                                          state.currentAddress?.displayTitle ??
-                                          '';
-                                      cubit.useCurrentPickup();
-                                    },
-                                    onServiceChanged: cubit.setService,
-                                    onDestinationChanged:
-                                        cubit.onSearchQueryChanged,
-                                    onDestinationSelected: cubit.selectAddress,
-                                    onOrder: () => _startOrder(context, state),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
@@ -236,26 +300,6 @@ class _PassengerHomePlaceholderScreenState
       }
       return;
     }
-
-    if (state.selectedAddress == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.taxiErrorCompleteOrder),
-        ),
-      );
-      return;
-    }
-
-    if (context.mounted) {
-      context.push(
-        RideRequestScreen.routePath,
-        extra: RideRequestArgs(
-          currentAddress,
-          state.selectedAddress!,
-          state.selectedService.apiValue,
-        ),
-      );
-    }
   }
 
   String _resolveHomeError(AppLocalizations l10n, String codeOrMessage) {
@@ -320,7 +364,7 @@ class _PassengerOrderPanel extends StatelessWidget {
             !state.isResolvingMapAddress);
 
     return DosCard(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -354,7 +398,7 @@ class _PassengerOrderPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
@@ -392,28 +436,79 @@ class _PassengerOrderPanel extends StatelessWidget {
               onSelected: onDestinationSelected,
             ),
           ],
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: onOrder,
-              child: Text(
-                state.selectedService == HomeServiceType.delivery
-                    ? l10n.deliveryConfirmOrderAction
-                    : l10n.homeOrderAction,
+          const SizedBox(height: 4),
+          if (state.selectedService != HomeServiceType.delivery)
+            _HomeRideCheckout(
+              pickup: state.effectivePickup,
+              destination: state.selectedAddress,
+              serviceType: state.selectedService.apiValue,
+            )
+          else if (state.selectedService == HomeServiceType.delivery)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onOrder,
+                child: Text(l10n.deliveryConfirmOrderAction),
               ),
             ),
-          ),
         ],
       ),
     );
   }
+}
+
+class _HomeRideCheckout extends StatefulWidget {
+  const _HomeRideCheckout({
+    required this.pickup,
+    required this.destination,
+    required this.serviceType,
+  });
+  final AddressSuggestion? pickup, destination;
+  final String serviceType;
+  @override
+  State<_HomeRideCheckout> createState() => _HomeRideCheckoutState();
+}
+
+class _HomeRideCheckoutState extends State<_HomeRideCheckout> {
+  late RideRequestCubit cubit;
+  RideRequestCubit _create() => RideRequestCubit(
+    serviceLocator<RideRepository>(),
+    widget.pickup,
+    widget.destination,
+    widget.serviceType,
+  )..refreshQuote();
+  @override
+  void initState() {
+    super.initState();
+    cubit = _create();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomeRideCheckout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (cubit.serviceType != widget.serviceType) {
+      final previous = cubit;
+      cubit = _create();
+      unawaited(previous.close());
+    } else if (oldWidget.pickup != widget.pickup ||
+        oldWidget.destination != widget.destination) {
+      cubit.pickup = widget.pickup;
+      cubit.destination = widget.destination;
+      unawaited(cubit.refreshQuote());
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(cubit.close());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => BlocProvider.value(
+    value: cubit,
+    child: const RideRequestScreen(embedded: true),
+  );
 }
 
 class _ServiceTile extends StatelessWidget {
@@ -489,6 +584,7 @@ class _DestinationSearchField extends StatelessWidget {
       ),
       child: AddressSearchBar(
         controller: controller,
+        compact: true,
         hintText: hintText,
         labelText: labelText,
         onTap: onTap,

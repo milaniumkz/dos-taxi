@@ -55,7 +55,8 @@ class _DeliveryPaymentScreenState extends State<DeliveryPaymentScreen> {
                           title: l10n.deliveryPaymentMethodCash,
                           icon: Icons.payments_rounded,
                           isSelected:
-                              state.paymentMethod == DeliveryPaymentMethod.cash,
+                              state.effectivePaymentMethod ==
+                              DeliveryPaymentMethod.cash,
                           onTap: () => cubit.setPaymentMethod(
                             DeliveryPaymentMethod.cash,
                           ),
@@ -66,7 +67,7 @@ class _DeliveryPaymentScreenState extends State<DeliveryPaymentScreen> {
                           subtitle: l10n.paymentMethodTransferSubtitle,
                           icon: Icons.account_balance_wallet_rounded,
                           isSelected:
-                              state.paymentMethod ==
+                              state.effectivePaymentMethod ==
                               DeliveryPaymentMethod.kaspi,
                           onTap: () => cubit.setPaymentMethod(
                             DeliveryPaymentMethod.kaspi,
@@ -78,12 +79,26 @@ class _DeliveryPaymentScreenState extends State<DeliveryPaymentScreen> {
                           subtitle: l10n.paymentMethodTransferSubtitle,
                           icon: Icons.account_balance_rounded,
                           isSelected:
-                              state.paymentMethod ==
+                              state.effectivePaymentMethod ==
                               DeliveryPaymentMethod.halyk,
                           onTap: () => cubit.setPaymentMethod(
                             DeliveryPaymentMethod.halyk,
                           ),
                         ),
+                        if (state.psbAvailable) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          PaymentMethodCard(
+                            title: l10n.paymentMethodPsbTransfer,
+                            subtitle: l10n.paymentMethodTransferSubtitle,
+                            icon: Icons.account_balance_rounded,
+                            isSelected:
+                                state.effectivePaymentMethod ==
+                                DeliveryPaymentMethod.psb,
+                            onTap: () => cubit.setPaymentMethod(
+                              DeliveryPaymentMethod.psb,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         PromoCodeField(
                           controller: _promoController,
@@ -120,7 +135,7 @@ class _DeliveryPaymentScreenState extends State<DeliveryPaymentScreen> {
                                   label: l10n.deliveryPaymentTitle,
                                   value: _paymentLabel(
                                     l10n,
-                                    state.paymentMethod,
+                                    state.effectivePaymentMethod,
                                   ),
                                 ),
                               ],
@@ -170,6 +185,8 @@ class _DeliveryPaymentScreenState extends State<DeliveryPaymentScreen> {
         return l10n.paymentMethodKaspiTransfer;
       case DeliveryPaymentMethod.halyk:
         return l10n.paymentMethodHalykTransfer;
+      case DeliveryPaymentMethod.psb:
+        return l10n.paymentMethodPsbTransfer;
     }
   }
 

@@ -1,3 +1,6 @@
+import '../widgets/driver_profile_statistics.dart';
+import '../widgets/driver_topup_button.dart';
+import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_city_picker.dart';
 import '../../../ride_marketplace/presentation/ride_feed_screen.dart';
 import 'package:flutter/material.dart';
@@ -162,6 +165,8 @@ class DriverOnboardingScreen extends StatefulWidget {
 
 class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   final _nameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
   final _vehicleMakeController = TextEditingController();
   final _vehicleModelController = TextEditingController();
   final _vehicleYearController = TextEditingController();
@@ -173,6 +178,8 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _lastNameController.dispose();
+    _middleNameController.dispose();
     _vehicleMakeController.dispose();
     _vehicleModelController.dispose();
     _vehicleYearController.dispose();
@@ -183,10 +190,17 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
 
   void _submit() {
     final l10n = AppLocalizations.of(context)!;
-    if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.driverOnboardingNameRequired)),
-      );
+    if (_nameController.text.trim().isEmpty ||
+        (_executorType == 'driver' &&
+            _lastNameController.text.trim().isEmpty) ||
+        [
+          _nameController,
+          _lastNameController,
+          _middleNameController,
+        ].any((controller) => controller.text.trim().length > 100)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.driverIdentityRequired)));
       return;
     }
 
@@ -226,6 +240,13 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
 
     context.read<ExecutorStatusCubit>().submitOnboarding(
       name: _nameController.text.trim(),
+      firstName: _executorType == 'driver' ? _nameController.text.trim() : null,
+      lastName: _executorType == 'driver'
+          ? _lastNameController.text.trim()
+          : null,
+      middleName: _executorType == 'driver'
+          ? _middleNameController.text.trim()
+          : null,
       executorType: _executorType,
       vehicleType: _executorType == 'courier' ? _vehicleType : null,
       vehicleMake: _executorType == 'driver' ? vehicleMake : null,
@@ -252,11 +273,31 @@ class _DriverOnboardingScreenState extends State<DriverOnboardingScreen> {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: AppSpacing.lg),
+            if (_executorType == 'driver') ...[
+              TextField(
+                controller: _lastNameController,
+                decoration: InputDecoration(
+                  labelText: l10n.driverLastNameLabel,
+                ),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             TextField(
               controller: _nameController,
               decoration: InputDecoration(labelText: l10n.profileNameLabel),
             ),
             const SizedBox(height: AppSpacing.md),
+            if (_executorType == 'driver') ...[
+              TextField(
+                controller: _middleNameController,
+                decoration: InputDecoration(
+                  labelText: l10n.driverMiddleNameLabel,
+                ),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             DropdownButtonFormField<String>(
               initialValue: _executorType,
               decoration: InputDecoration(
@@ -627,6 +668,12 @@ class _ExecutorDashboardScreenState extends State<_ExecutorDashboardScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 6),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(width: 190, child: CurrentCityBadge()),
+                    ),
+                    const SizedBox(height: 6),
                     Expanded(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 220),
@@ -1166,7 +1213,16 @@ class _DriverProfileTab extends StatelessWidget {
           borderColor: AppColors.primary,
           child: Column(
             children: [
-              const DosAvatar(initials: 'A', radius: 36),
+              DosAvatar(
+                initials: profile.name
+                    .trim()
+                    .split(RegExp(r'\s+'))
+                    .where((part) => part.isNotEmpty)
+                    .take(2)
+                    .map((part) => part.characters.first.toUpperCase())
+                    .join(),
+                radius: 36,
+              ),
               const SizedBox(height: AppSpacing.md),
               Text(name, style: Theme.of(context).textTheme.titleLarge),
               Text(
@@ -1176,27 +1232,9 @@ class _DriverProfileTab extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: AppColors.text),
               ),
               const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DriverStat(
-                      label: l10n.driverRatingLabel,
-                      value: '4.92',
-                    ),
-                  ),
-                  Expanded(
-                    child: _DriverStat(
-                      label: l10n.driverActivityLabel,
-                      value: '85%',
-                    ),
-                  ),
-                  Expanded(
-                    child: _DriverStat(
-                      label: l10n.driverTripsLabel,
-                      value: '120',
-                    ),
-                  ),
-                ],
+              DriverProfileStatistics(
+                key: ValueKey(profile.id),
+                repository: serviceLocator<ExecutorRepository>(),
               ),
             ],
           ),
@@ -1212,11 +1250,9 @@ class _DriverProfileTab extends StatelessWidget {
                 subtitle: l10n.driverProfilePersonalSubtitle,
                 onTap: () => _showDriverProfileEditSheet(context),
               ),
-              _DriverProfileTile(
-                icon: Icons.account_balance_wallet_rounded,
-                title: l10n.driverBalanceTopUpTitle,
-                subtitle: l10n.driverBalanceTopUpSubtitle,
-                onTap: () => _showBalanceTopUpSheet(context),
+              DriverTopUpButton(
+                repository: serviceLocator<ExecutorRepository>(),
+                onManual: () => _showBalanceTopUpSheet(context),
               ),
               _DriverProfileTile(
                 icon: Icons.directions_car_rounded,
@@ -1507,17 +1543,27 @@ class _DriverPersonalSettingsSheet extends StatefulWidget {
 
 class _DriverPersonalSettingsSheetState
     extends State<_DriverPersonalSettingsSheet> {
-  late final TextEditingController _nameController;
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _middleNameController;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.profile.name);
+    _firstNameController = TextEditingController(
+      text: widget.profile.firstName,
+    );
+    _lastNameController = TextEditingController(text: widget.profile.lastName);
+    _middleNameController = TextEditingController(
+      text: widget.profile.middleName,
+    );
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _middleNameController.dispose();
     super.dispose();
   }
 
@@ -1568,8 +1614,20 @@ class _DriverPersonalSettingsSheetState
             ),
             const SizedBox(height: AppSpacing.md),
             _DarkTextField(
-              controller: _nameController,
+              controller: _lastNameController,
+              label: l10n.driverLastNameLabel,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _DarkTextField(
+              controller: _firstNameController,
               label: l10n.profileNameLabel,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _DarkTextField(
+              controller: _middleNameController,
+              label: l10n.driverMiddleNameLabel,
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -1625,16 +1683,27 @@ class _DriverPersonalSettingsSheetState
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
-    final name = _nameController.text.trim();
-    if (name.length < 2) {
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    final middleName = _middleNameController.text.trim();
+    if (firstName.isEmpty ||
+        lastName.isEmpty ||
+        [firstName, lastName, middleName].any((value) => value.length > 100)) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.profileNameRequired)));
+      ).showSnackBar(SnackBar(content: Text(l10n.driverIdentityRequired)));
       return;
     }
 
     final saved = await context.read<ExecutorStatusCubit>().updateDriverProfile(
-      name: name,
+      name: [
+        lastName,
+        firstName,
+        middleName,
+      ].where((part) => part.isNotEmpty).join(' '),
+      lastName: lastName,
+      firstName: firstName,
+      middleName: middleName,
     );
     if (!mounted || !saved) {
       return;
@@ -2160,28 +2229,6 @@ class _DarkDropdownField<T> extends StatelessWidget {
       ),
       items: items,
       onChanged: onChanged,
-    );
-  }
-}
-
-class _DriverStat extends StatelessWidget {
-  const _DriverStat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: Theme.of(context).textTheme.titleMedium),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.text, fontSize: 11),
-        ),
-      ],
     );
   }
 }

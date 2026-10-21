@@ -1,8 +1,18 @@
+import { ExecutorLocationEntity } from "../executors/entities/executor-location.entity";
+import {
+  availableOrderPaymentMethods,
+  assertOrderPaymentAllowed,
+} from "../payments/order-payment-policy";
 import {
   driverBonusDay,
   driverBonusTimezone,
 } from "../executors/driver-bonus-day";
-import { DeliveryStatus, OrderStatus, ServiceType } from "@dos/shared-types";
+import {
+  Currency,
+  DeliveryStatus,
+  OrderStatus,
+  ServiceType,
+} from "@dos/shared-types";
 import {
   BadRequestException,
   ConflictException,
@@ -106,9 +116,14 @@ export class OrdersService {
       declaredValue: dto.declaredValue,
       cashOnDelivery: dto.cashOnDelivery,
     });
-    if (!dto.promoCode?.trim()) return estimate;
+    if (!dto.promoCode?.trim())
+      return {
+        ...estimate,
+        availablePaymentMethods: availableOrderPaymentMethods(city),
+      };
     return {
       ...estimate,
+      availablePaymentMethods: availableOrderPaymentMethods(city),
       originalPrice: estimate.estimatedPrice,
       ...(await this.promoCodesService.preview(
         dto.promoCode,
@@ -146,6 +161,7 @@ export class OrdersService {
       (left, right) => left.sequenceIndex - right.sequenceIndex,
     );
     const city = await this.resolveCity(dto.cityId, routePoints);
+    assertOrderPaymentAllowed(city, dto.paymentMethod);
     if (serviceType === ServiceType.INTERCITY) {
       this.assertPickupInServiceZone(city, routePoints);
     } else {
@@ -247,6 +263,7 @@ export class OrdersService {
       (left, right) => left.sequenceIndex - right.sequenceIndex,
     );
     const city = await this.resolveCity(dto.cityId, routePoints);
+    assertOrderPaymentAllowed(city, dto.paymentMethod);
     this.assertPointsInServiceZone(city, routePoints);
 
     const routeMetrics =
@@ -346,6 +363,33 @@ export class OrdersService {
     await this.dispatchQueueService.enqueueDispatchOrder(order.id);
 
     return this.getOrder(clientId, order.id);
+  }
+
+  async getExecutorLocation(clientId: string, orderId: string) {
+    const order = await this.ordersRepository.findOne({
+      where: { id: orderId, clientId },
+    });
+    if (!order)
+      throw new NotFoundException({
+        code: "ORDER_NOT_FOUND",
+        message: "Order not found",
+      });
+    if (
+      !order.executorId ||
+      !["accepted", "arriving", "waiting", "in_progress"].includes(order.status)
+    )
+      return null;
+    const location = await this.ordersRepository.manager
+      .getRepository(ExecutorLocationEntity)
+      .findOneBy({ executorId: order.executorId });
+    if (!location || Date.now() - location.updatedAt.getTime() > 120000)
+      return null;
+    return {
+      lat: location.lat,
+      lng: location.lng,
+      heading: location.heading,
+      updatedAt: location.updatedAt,
+    };
   }
 
   async getOrder(clientId: string, orderId: string): Promise<OrderResponseDto> {
@@ -910,10 +954,18 @@ export class OrdersService {
       return;
     }
 
+    const balanceCurrency = order.rideBalanceCurrency ?? commission.currency;
+    const rate = Number(order.rideExchangeRate ?? 1);
+    const balanceAmount =
+      balanceCurrency === commission.currency
+        ? commission.amount
+        : balanceCurrency === Currency.RUB
+          ? commission.amount / rate
+          : commission.amount * rate;
     await executors.decrement(
       { id: executor.id },
       "balance",
-      commission.amount.toFixed(2),
+      balanceAmount.toFixed(2),
     );
     const updated = await executors.findOne({
       where: { id: executor.id },
@@ -928,6 +980,9 @@ export class OrdersService {
         executorId: executor.id,
         tariffId: commission.tariffId,
         commissionAmount: commission.amount,
+        balanceAmount: Number(balanceAmount.toFixed(2)),
+        balanceCurrency,
+        exchangeRate: order.rideExchangeRate,
         commissionPercent: commission.percent,
         commissionFixed: commission.fixed,
         currency: commission.currency,
@@ -973,6 +1028,22 @@ export class OrdersService {
             .getRepository(CityEntity)
             .findOneBy({ id: executor.cityId })
         : null;
+      // Promotion settings are denominated in KZT. Credit the wallet in its
+      // city's currency using the current configured KZT-per-RUB rate.
+      const balanceCurrency = city?.currency ?? Currency.KZT;
+      const exchangeRate = Number(city?.rideExchangeRate ?? 1);
+      if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+        throw new BadRequestException({
+          code: "RIDE_EXCHANGE_RATE_INVALID",
+          message: "RIDE_EXCHANGE_RATE_INVALID",
+        });
+      }
+      const balanceAmount = Number(
+        (balanceCurrency === Currency.RUB
+          ? bonusAmount / exchangeRate
+          : bonusAmount
+        ).toFixed(2),
+      );
       const day = await driverBonusDay(
         manager,
         driverBonusTimezone(city?.timezone),
@@ -1000,13 +1071,13 @@ export class OrdersService {
           orderId: order.id,
           thresholdCompletedOrders: milestone,
           bonusDate: day.day,
-          amount: bonusAmount.toFixed(2),
+          amount: balanceAmount.toFixed(2),
         }),
       );
       await executors.increment(
         { id: executor.id },
         "balance",
-        bonusAmount.toFixed(2),
+        balanceAmount.toFixed(2),
       );
       return {
         executor: await executors.findOneOrFail({
@@ -1014,6 +1085,9 @@ export class OrdersService {
         }),
         completedOrders,
         bonusDate: day.day,
+        balanceAmount,
+        balanceCurrency,
+        exchangeRate,
       };
     };
     const credited = transaction
@@ -1032,6 +1106,10 @@ export class OrdersService {
         completedOrders: credited.completedOrders,
         thresholdCompletedOrders: milestone,
         bonusAmount,
+        currency: Currency.KZT,
+        balanceAmount: credited.balanceAmount,
+        balanceCurrency: credited.balanceCurrency,
+        exchangeRate: credited.exchangeRate,
         balanceAfter: credited.executor.balance,
       },
       transaction,
@@ -1118,12 +1196,10 @@ export class OrdersService {
             code: "ORDER_ASSIGN_INVALID_STATUS",
             message: "Order is no longer searching",
           });
-        const executor = await manager
-          .getRepository(ExecutorEntity)
-          .findOne({
-            where: { id: executorId },
-            lock: { mode: "pessimistic_write" },
-          });
+        const executor = await manager.getRepository(ExecutorEntity).findOne({
+          where: { id: executorId },
+          lock: { mode: "pessimistic_write" },
+        });
         if (!executor || executor.verificationStatus !== "verified")
           throw new BadRequestException({
             code: "EXECUTOR_ASSIGNMENT_INVALID",

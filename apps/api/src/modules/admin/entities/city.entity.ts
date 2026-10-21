@@ -76,7 +76,7 @@ export class CityEntity {
     type: "decimal",
     precision: 12,
     scale: 2,
-    default: 10,
+    default: 7,
   })
   rideCommissionPercent!: string;
 
@@ -100,6 +100,13 @@ export class CityEntity {
     default: 0,
   })
   rideCommissionFixed!: string;
+  @Column({ name: "ride_manual_price_policy", type: "jsonb", nullable: true })
+  rideManualPricePolicy!: {
+    rubMinimum: string;
+    kztMinimum: string;
+    kztThreshold: string;
+  } | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 }

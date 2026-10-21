@@ -1,3 +1,4 @@
+import { ExecutorTrackingDto } from "./dto/executor-tracking.dto";
 import {
   Body,
   Controller,
@@ -82,6 +83,23 @@ export class OrdersController {
     @Query() query: OrdersHistoryQueryDto,
   ): Promise<OrdersHistoryResponseDto> {
     return this.ordersService.getHistory(user.sub, query);
+  }
+
+  @Get(":id/executor-location")
+  @ApiOperation({
+    summary:
+      "Get current assigned driver position for the owning passenger's active order",
+  })
+  @ApiOkResponse({
+    type: ExecutorTrackingDto,
+    description:
+      "Fresh position, or null when unavailable or the order is no longer active",
+  })
+  getExecutorLocation(
+    @CurrentUser() user: JwtPayload,
+    @Param("id") orderId: string,
+  ) {
+    return this.ordersService.getExecutorLocation(user.sub, orderId);
   }
 
   @Get(":id")

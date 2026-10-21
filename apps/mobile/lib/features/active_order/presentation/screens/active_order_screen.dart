@@ -1,3 +1,4 @@
+import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_offers_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/errors/error_message_localizer.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/app_formatters.dart';
 import '../../../../shared/widgets/dos_ui.dart';
@@ -17,10 +17,17 @@ import '../widgets/active_order_details_sheet.dart';
 import '../widgets/active_order_map.dart';
 import 'rating_screen.dart';
 
-class ActiveOrderScreen extends StatelessWidget {
+class ActiveOrderScreen extends StatefulWidget {
   const ActiveOrderScreen({super.key});
 
   static const routePath = '/active-order';
+
+  @override
+  State<ActiveOrderScreen> createState() => _ActiveOrderScreenState();
+}
+
+class _ActiveOrderScreenState extends State<ActiveOrderScreen> {
+  double _bottomFraction = 0.32;
 
   @override
   Widget build(BuildContext context) {
@@ -61,133 +68,137 @@ class ActiveOrderScreen extends StatelessWidget {
         }
         return Scaffold(
           extendBodyBehindAppBar: true,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: ActiveOrderMap(
-                  session: state.session,
-                  executorLocation: state.executorLocation,
-                ),
-              ),
-              Positioned(
-                top: AppSpacing.md,
-                left: AppSpacing.md,
-                right: AppSpacing.md,
-                child: SafeArea(
-                  bottom: false,
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 22,
-                        backgroundColor: AppColors.surface,
-                        child: Icon(Icons.menu_rounded, color: AppColors.text),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: DosCard(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          radius: 20,
-                          child: Row(
-                            children: [
-                              if (state.isConnecting) ...[
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                              ],
-                              Expanded(
-                                child: Text(
-                                  _statusLabel(l10n, state.orderStatus),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+          body: NotificationListener<DraggableScrollableNotification>(
+            onNotification: (notification) {
+              setState(() => _bottomFraction = notification.extent);
+              return false;
+            },
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: ActiveOrderMap(
+                    session: state.session,
+                    executorLocation: state.executorLocation,
+                    bottomFraction: _bottomFraction,
                   ),
                 ),
-              ),
-              DraggableScrollableSheet(
-                initialChildSize: 0.32,
-                minChildSize: 0.18,
-                maxChildSize: 0.78,
-                snap: true,
-                snapSizes: const [0.18, 0.32, 0.78],
-                builder: (context, scrollController) {
-                  return SafeArea(
-                    top: false,
-                    child: ActiveOrderDetailsSheet(
-                      scrollController: scrollController,
-                      statusLabel: _statusLabel(l10n, state.orderStatus),
-                      driverLabel: l10n.activeOrderDetailDriver,
-                      tariffLabel: l10n.activeOrderDetailTariff,
-                      carLabel: l10n.activeOrderDetailCar,
-                      fromLabel: l10n.activeOrderDetailFrom,
-                      toLabel: l10n.activeOrderDetailTo,
-                      priceLabel: l10n.activeOrderDetailPrice,
-                      phoneLabel: l10n.activeOrderDetailPhone,
-                      changePaymentLabel: l10n.activeOrderChangePaymentAction,
-                      executorName:
-                          state.executorName ?? l10n.activeOrderExecutorPending,
-                      executorRating: state.executorRating != null
-                          ? AppFormatters.formatDecimal(
-                              context,
-                              state.executorRating!,
-                              decimalDigits: 1,
-                            )
-                          : '—',
-                      executorVehicleLabel:
-                          _localizedVehicleLabel(
-                            l10n,
-                            state.executorVehicleLabel ??
-                                state.session.executorVehicleLabel,
-                          ) ??
-                          l10n.activeOrderVehicleNotAssigned,
-                      tariffValue: _localizedTariffLabel(
-                        l10n,
-                        state.session.vehicleLabel,
-                      ),
-                      fromAddress: state.session.fromAddress.displayTitle,
-                      toAddress: state.session.toAddress.displayTitle,
-                      priceValue: _paymentAmount(context, state),
-                      executorPhoneMasked: state.executorPhoneMasked ?? '—',
-                      cancelLabel: l10n.activeOrderCancelAction,
-                      isCancelling: state.isCancelling,
-                      onPay: () => ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.activeOrderChangePaymentAction),
+                Positioned(
+                  top: AppSpacing.md,
+                  left: AppSpacing.md,
+                  right: AppSpacing.md,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 145, child: CurrentCityBadge()),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: DosCard(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            radius: 20,
+                            child: Row(
+                              children: [
+                                if (state.isConnecting) ...[
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    _statusLabel(l10n, state.orderStatus),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      onCall: state.executorPhone == null
-                          ? null
-                          : () => _callPhone(context, state.executorPhone!),
-                      onChat: () => context.push(
-                        OrderChatScreen.routePath,
-                        extra: OrderChatArgs(
-                          orderId: state.session.orderId,
-                          isExecutor: false,
-                          isClosed: _isChatClosed(state.orderStatus),
-                        ),
-                      ),
-                      onCancel: () => _confirmCancel(context, l10n),
+                      ],
                     ),
-                  );
-                },
-              ),
-            ],
+                  ),
+                ),
+                DraggableScrollableSheet(
+                  initialChildSize: 0.32,
+                  minChildSize: 0.18,
+                  maxChildSize: 0.78,
+                  snap: true,
+                  snapSizes: const [0.18, 0.32, 0.78],
+                  builder: (context, scrollController) {
+                    return SafeArea(
+                      top: false,
+                      child: ActiveOrderDetailsSheet(
+                        scrollController: scrollController,
+                        statusLabel: _statusLabel(l10n, state.orderStatus),
+                        driverLabel: l10n.activeOrderDetailDriver,
+                        tariffLabel: l10n.activeOrderDetailTariff,
+                        carLabel: l10n.activeOrderDetailCar,
+                        fromLabel: l10n.activeOrderDetailFrom,
+                        toLabel: l10n.activeOrderDetailTo,
+                        priceLabel: l10n.activeOrderDetailPrice,
+                        phoneLabel: l10n.activeOrderDetailPhone,
+                        changePaymentLabel: l10n.activeOrderChangePaymentAction,
+                        executorName:
+                            state.executorName ??
+                            l10n.activeOrderExecutorPending,
+                        executorRating: state.executorRating != null
+                            ? AppFormatters.formatDecimal(
+                                context,
+                                state.executorRating!,
+                                decimalDigits: 1,
+                              )
+                            : '—',
+                        executorVehicleLabel:
+                            _localizedVehicleLabel(
+                              l10n,
+                              state.executorVehicleLabel ??
+                                  state.session.executorVehicleLabel,
+                            ) ??
+                            l10n.activeOrderVehicleNotAssigned,
+                        tariffValue: _localizedTariffLabel(
+                          l10n,
+                          state.session.vehicleLabel,
+                        ),
+                        fromAddress: state.session.fromAddress.displayTitle,
+                        toAddress: state.session.toAddress.displayTitle,
+                        priceValue: _paymentAmount(context, state),
+                        executorPhoneMasked: state.executorPhoneMasked ?? '—',
+                        cancelLabel: l10n.activeOrderCancelAction,
+                        isCancelling: state.isCancelling,
+                        onPay: () => ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.activeOrderChangePaymentAction),
+                          ),
+                        ),
+                        onCall: state.executorPhone == null
+                            ? null
+                            : () => _callPhone(context, state.executorPhone!),
+                        onChat: () => context.push(
+                          OrderChatScreen.routePath,
+                          extra: OrderChatArgs(
+                            orderId: state.session.orderId,
+                            isExecutor: false,
+                            isClosed: _isChatClosed(state.orderStatus),
+                          ),
+                        ),
+                        onCancel: () => _confirmCancel(context, l10n),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },

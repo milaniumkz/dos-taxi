@@ -25,16 +25,58 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     this.serviceType,
   ) : super(const RideRequestState());
   final RideRepository repository;
-  AddressSuggestion pickup, destination;
+  AddressSuggestion? pickup, destination;
+  bool get routeReady => pickup != null && destination != null;
   final String serviceType;
+  static const _defaultPayments = ['cash', 'transfer_kaspi', 'transfer_halyk'];
+  List<String> availablePaymentMethods = _defaultPayments;
   int passengers = 1, steps = 0;
+  String? manualPrice;
+  Map? get manualPolicy => state.quote?['manualPricePolicy'] as Map?;
+  bool get usesManualPrice =>
+      state.quote == null ||
+      manualPolicy != null ||
+      state.quote?['priceInputMode'] == 'manual';
+  int get manualMinor =>
+      ((double.tryParse(manualPrice ?? '') ?? 0) * 100).round();
+  String get selectedCurrency => manualPolicy != null
+      ? (manualMinor <
+                (double.parse(manualPolicy!['kztThreshold'].toString()) * 100)
+                    .round()
+            ? 'RUB'
+            : 'KZT')
+      : state.quote?['currency']?.toString() ?? 'KZT';
+  int get minimumMinor => manualPolicy != null
+      ? (double.parse(
+                  manualPolicy![selectedCurrency == 'RUB'
+                          ? 'rubMinimum'
+                          : 'kztMinimum']
+                      .toString(),
+                ) *
+                100)
+            .round()
+      : (double.parse((state.quote?['minimumUnitPrice'] ?? '0').toString()) *
+                100)
+            .round();
+  bool get validManualPrice =>
+      state.quote == null ||
+      !usesManualPrice ||
+      (RegExp(r'^\d{1,7}$').hasMatch(manualPrice ?? '') &&
+          manualMinor >= minimumMinor);
+  void changeManualPrice(String value) {
+    if (!usesManualPrice || state.busy) return;
+    manualPrice = value;
+    emit(RideRequestState(quote: state.quote));
+  }
+
   int _revision = 0;
   String? _key;
   Map<String, dynamic>? _submitted;
   Map<String, dynamic> get _route => {
     'serviceType': serviceType,
+    'priceIsTotal': true,
     'passengerCount': passengers,
-    'routePoints': [pickup, destination]
+    'routePoints': [pickup!, destination!]
         .map(
           (a) => {
             'lat': a.location.latitude,
@@ -49,13 +91,34 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     final preservedSteps = count != null ? steps : 0;
     if (count != null) passengers = count;
     final revision = ++_revision;
+    if (!routeReady) {
+      availablePaymentMethods = _defaultPayments;
+      emit(const RideRequestState());
+      return;
+    }
     emit(const RideRequestState(busy: true));
     final result = await repository.quote(_route);
     if (isClosed || revision != _revision) return;
-    result.fold((f) => emit(RideRequestState(error: f.message)), (q) {
-      steps = preservedSteps;
-      emit(RideRequestState(quote: q));
-    });
+    result.fold(
+      (f) {
+        availablePaymentMethods = _defaultPayments;
+        emit(RideRequestState(error: f.message));
+      },
+      (q) {
+        availablePaymentMethods =
+            (q['availablePaymentMethods'] as List?)?.cast<String>() ??
+            _defaultPayments;
+        steps = preservedSteps;
+        if (q['manualPricePolicy'] == null && q['priceInputMode'] != 'manual') {
+          manualPrice = null;
+        } else {
+          manualPrice ??= double.parse(
+            q['minimumUnitPrice'].toString(),
+          ).ceil().toString();
+        }
+        emit(RideRequestState(quote: q));
+      },
+    );
   }
 
   Future<void> changeAddress(
@@ -83,12 +146,16 @@ class RideRequestCubit extends Cubit<RideRequestState> {
     required bool childSeat,
     required bool shared,
   }) async {
-    if (state.busy || state.quote == null) return;
+    if (!routeReady || state.busy || state.quote == null || !validManualPrice) {
+      return;
+    }
+    if (!availablePaymentMethods.contains(payment)) return;
     final q = state.quote!;
     final data = {
       ..._route,
       'termsKey': q['termsKey'],
-      'priceSteps': steps,
+      'priceSteps': usesManualPrice ? 0 : steps,
+      if (usesManualPrice) 'unitPrice': (manualMinor / 100).toStringAsFixed(2),
       'paymentMethod': payment,
       'pickupEntrance': entrance.trim(),
       'pickupComment': comment.trim(),

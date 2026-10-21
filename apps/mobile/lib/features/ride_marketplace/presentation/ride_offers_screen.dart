@@ -309,23 +309,50 @@ class _CompactOffer extends StatelessWidget {
                       padding: EdgeInsets.only(left: 6),
                       child: Icon(Icons.child_care, size: 16),
                     ),
-                  const Spacer(),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 26),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      textStyle: const TextStyle(fontSize: 11),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(0, 26),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(fontSize: 11),
+                      ),
+                      onPressed: disabled
+                          ? null
+                          : () => context.read<RidePollCubit>().reject(
+                              orderId,
+                              offer['id'] as String,
+                              (offer['version'] as num).toInt(),
+                            ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(l.rideRejectOffer),
+                      ),
                     ),
-                    onPressed: disabled
-                        ? null
-                        : () => context.read<RidePollCubit>().choose(
-                            orderId,
-                            offer['id'] as String,
-                            (offer['version'] as num).toInt(),
-                          ),
-                    child: Text(l.rideChooseDriver),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 26),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(fontSize: 11),
+                      ),
+                      onPressed: disabled
+                          ? null
+                          : () => context.read<RidePollCubit>().choose(
+                              orderId,
+                              offer['id'] as String,
+                              (offer['version'] as num).toInt(),
+                            ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(l.rideChooseDriver),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -376,6 +403,22 @@ class _OfferCard extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             if (offer['hasChildSeat'] == true) Text(l.rideChildSeat),
+            TextButton(
+              onPressed: disabled
+                  ? null
+                  : () async {
+                      final cubit = context.read<RidePollCubit>();
+                      await cubit.reject(
+                        orderId,
+                        offer['id'] as String,
+                        (offer['version'] as num).toInt(),
+                      );
+                      if (context.mounted && cubit.state.error == null) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+              child: Text(l.rideRejectOffer),
+            ),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: disabled

@@ -587,14 +587,20 @@ abstract class AppLocalizations {
   /// No description provided for @paymentMethodKaspiTransfer.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Kaspi'**
+  /// **'Kaspi.kz'**
   String get paymentMethodKaspiTransfer;
 
   /// No description provided for @paymentMethodHalykTransfer.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Halyk'**
+  /// **'Halyk.kz'**
   String get paymentMethodHalykTransfer;
+
+  /// No description provided for @paymentMethodPsbTransfer.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПСБ'**
+  String get paymentMethodPsbTransfer;
 
   /// No description provided for @paymentMethodTransferSubtitle.
   ///
@@ -1625,7 +1631,7 @@ abstract class AppLocalizations {
   /// No description provided for @driverBalanceTopUpSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Заявка уйдёт администратору для счёта Kaspi'**
+  /// **'Пополняйте в тенге. На рублёвый баланс сумма зачисляется по курсу города на момент подтверждения.'**
   String get driverBalanceTopUpSubtitle;
 
   /// No description provided for @driverBalanceTopUpAmountLabel.
@@ -2474,6 +2480,18 @@ abstract class AppLocalizations {
   /// **'Повторить'**
   String get rideRetry;
 
+  /// No description provided for @rideEntranceShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подъезд'**
+  String get rideEntranceShort;
+
+  /// No description provided for @rideCommentShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий'**
+  String get rideCommentShort;
+
   /// No description provided for @rideEntrance.
   ///
   /// In ru, this message translates to:
@@ -2519,14 +2537,62 @@ abstract class AppLocalizations {
   /// No description provided for @rideKaspi.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Kaspi'**
+  /// **'Kaspi.kz'**
   String get rideKaspi;
 
   /// No description provided for @rideHalyk.
   ///
   /// In ru, this message translates to:
-  /// **'Перевод Halyk'**
+  /// **'Halyk.kz'**
   String get rideHalyk;
+
+  /// No description provided for @requiredUpdateTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновите приложение'**
+  String get requiredUpdateTitle;
+
+  /// No description provided for @requiredUpdateBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доступна новая версия. Чтобы продолжить пользоваться приложением, установите обновление из магазина.'**
+  String get requiredUpdateBody;
+
+  /// No description provided for @requiredUpdateAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить'**
+  String get requiredUpdateAction;
+
+  /// No description provided for @requiredUpdateRetry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить снова'**
+  String get requiredUpdateRetry;
+
+  /// No description provided for @requiredUpdateOpenError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть магазин. Попробуйте ещё раз.'**
+  String get requiredUpdateOpenError;
+
+  /// No description provided for @ridePsb.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПСБ'**
+  String get ridePsb;
+
+  /// No description provided for @rideTakeOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Взять заказ'**
+  String get rideTakeOrder;
+
+  /// No description provided for @rideRejectOffer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклонить'**
+  String get rideRejectOffer;
 
   /// No description provided for @rideSubmit.
   ///
@@ -2989,6 +3055,30 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Готово'**
   String get rideExtrasDone;
+
+  /// No description provided for @supportContactsIntro.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оператор ответит здесь. Также можно связаться с поддержкой:'**
+  String get supportContactsIntro;
+
+  /// No description provided for @supportContactsUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить контакты поддержки'**
+  String get supportContactsUnavailable;
+
+  /// No description provided for @supportContactOpenFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть способ связи'**
+  String get supportContactOpenFailed;
+
+  /// No description provided for @ridePerOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена за весь заказ'**
+  String get ridePerOrder;
 }
 
 class _AppLocalizationsDelegate

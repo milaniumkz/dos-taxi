@@ -129,6 +129,7 @@ class _DriverBonusProgressCardState extends State<DriverBonusProgressCard>
                   context,
                   progress.bonusAmount,
                   currencyCode: progress.currency,
+                  decimalDigits: progress.currency == 'RUB' ? 2 : 0,
                 ),
               ),
               style: const TextStyle(color: AppColors.darkText),

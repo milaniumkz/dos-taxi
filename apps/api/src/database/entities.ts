@@ -1,3 +1,6 @@
+import { TopUpSettingsEntity } from "../modules/topup-settings/topup-settings.entity";
+import { PushCampaignEntity } from "../modules/notifications/entities/push-campaign.entity";
+import { SupportContactsEntity } from "../modules/support/entities/support-contacts.entity";
 import { RidePriceOfferEntity } from "../modules/ride-marketplace/entities/ride-price-offer.entity";
 import { KaspiTransactionEntity } from "../modules/payments/kaspi/kaspi-transaction.entity";
 import { AdminActivityLogEntity } from "../modules/admin/entities/admin-activity-log.entity";
@@ -25,6 +28,8 @@ import { PromoCodeEntity } from "../modules/promo-codes/entities/promo-code.enti
 import { UserEntity } from "../modules/users/entities/user.entity";
 
 export const databaseEntities = [
+  TopUpSettingsEntity,
+  SupportContactsEntity,
   RidePriceOfferEntity,
   KaspiTransactionEntity,
   UserEntity,
@@ -39,6 +44,7 @@ export const databaseEntities = [
   DriverBonusSettingEntity,
   ExecutorDocumentEntity,
   ExecutorLocationEntity,
+  PushCampaignEntity,
   NotificationTemplateEntity,
   NotificationDeviceTokenEntity,
   OrderEntity,

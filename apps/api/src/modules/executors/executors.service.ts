@@ -1,3 +1,4 @@
+import { TopUpSettingsService } from "../topup-settings/topup-settings.service";
 import { CourierVehicleType, ExecutorType } from "@dos/shared-types";
 import {
   BadRequestException,
@@ -38,6 +39,7 @@ export class ExecutorsService {
     private readonly citiesRepository: Repository<CityEntity>,
     private readonly redisStoreService: RedisStoreService,
     private readonly s3StorageService: S3StorageService,
+    private readonly topUpSettings: TopUpSettingsService,
   ) {}
 
   async getProfile(userId: string): Promise<ExecutorEntity> {
@@ -83,8 +85,24 @@ export class ExecutorsService {
       }
     }
 
+    const originalUser = { ...user } as UserEntity;
+    const structuredNameChanged =
+      dto.lastName !== undefined ||
+      dto.firstName !== undefined ||
+      dto.middleName !== undefined;
+    const lastName = dto.lastName ?? user.lastName;
+    const firstName = dto.firstName ?? user.firstName;
+    const middleName = dto.middleName ?? user.middleName;
     const updatedUser = this.usersRepository.merge(user, {
-      name: dto.name ?? user.name,
+      lastName,
+      firstName,
+      middleName,
+      name: structuredNameChanged
+        ? [lastName, firstName, middleName]
+            .filter(Boolean)
+            .join(" ")
+            .slice(0, 100)
+        : (dto.name ?? user.name),
       preferredLanguage: dto.preferredLanguage ?? user.preferredLanguage,
     });
     await this.usersRepository.save(updatedUser);
@@ -94,7 +112,8 @@ export class ExecutorsService {
       relations: ["user", "city"],
     });
     const requiresReview =
-      executor != null && this.profileUpdateRequiresReview(user, executor, dto);
+      executor != null &&
+      this.profileUpdateRequiresReview(originalUser, executor, dto);
 
     const inferredExecutorType =
       dto.executorType ?? this.inferExecutorType(dto.vehicleType);
@@ -166,6 +185,7 @@ export class ExecutorsService {
     userId: string,
     dto: CreateBalanceTopUpDto,
   ): Promise<ExecutorBalanceTopUpEntity> {
+    await this.topUpSettings.assertManualEnabled();
     const executor = await this.getProfile(userId);
     const phone = dto.phone.trim();
     if (!phone) {
@@ -178,6 +198,7 @@ export class ExecutorsService {
     const request = this.balanceTopUpsRepository.create({
       executorId: executor.id,
       amount: dto.amount.toFixed(2),
+      paymentCurrency: "KZT",
       phone,
       status: "pending",
       invoiceProvider: "kaspi",
@@ -311,6 +332,9 @@ export class ExecutorsService {
     dto: UpdateExecutorProfileDto,
   ): boolean {
     return (
+      this.changed(dto.lastName, user.lastName) ||
+      this.changed(dto.firstName, user.firstName) ||
+      this.changed(dto.middleName, user.middleName) ||
       this.changed(dto.name, user.name) ||
       this.changed(dto.executorType, executor.executorType) ||
       this.changed(dto.vehicleType, executor.vehicleType) ||

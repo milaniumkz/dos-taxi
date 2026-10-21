@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import { CourierVehicleType, ExecutorType } from "@dos/shared-types";
 import { Transform, Type } from "class-transformer";
 import {
@@ -28,6 +29,30 @@ function emptyStringToUndefined(value: unknown): unknown {
 }
 
 export class UpdateExecutorProfileDto {
+  @ApiPropertyOptional({ description: "Driver surname", maxLength: 100 })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
+  @IsString()
+  @Length(1, 100)
+  lastName?: string;
+
+  @ApiPropertyOptional({ description: "Driver given name", maxLength: 100 })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
+  @IsString()
+  @Length(1, 100)
+  firstName?: string;
+
+  @ApiPropertyOptional({
+    description: "Driver patronymic; empty if absent",
+    maxLength: 100,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
+  @IsString()
+  @Length(0, 100)
+  middleName?: string;
+
   @IsOptional()
   @Transform(({ value }) => emptyStringToUndefined(value))
   @IsString()

@@ -79,6 +79,26 @@ void main() {
     locationService: locationService,
   );
 
+  test('forwards structured identity and moves changed profile to review', () async {
+    final updated = verifiedProfile.copyWith(
+      name: 'Иванов Иван', lastName: 'Иванов', firstName: 'Иван',
+      middleName: '', verificationStatus: 'pending', isOnline: false,
+    );
+    when(() => repository.updateDriverProfile(
+      profile: verifiedProfile, name: 'Иванов Иван',
+      lastName: 'Иванов', firstName: 'Иван', middleName: '',
+    )).thenAnswer((_) async => Right(updated));
+    final cubit = buildCubit();
+    when(() => repository.fetchProfile()).thenAnswer((_) async => const Right(verifiedProfile));
+    await cubit.initialize();
+    expect(await cubit.updateDriverProfile(
+      name: 'Иванов Иван', lastName: 'Иванов', firstName: 'Иван', middleName: '',
+    ), isTrue);
+    expect(cubit.state.profile?.lastName, 'Иванов');
+    expect(cubit.state.stage, ExecutorScreenStage.verificationPending);
+    await cubit.close();
+  });
+
   blocTest<ExecutorStatusCubit, ExecutorStatusState>(
     'moves to verification pending after loading a pending profile',
     build: buildCubit,

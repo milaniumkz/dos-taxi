@@ -1,5 +1,9 @@
 import { Currency, OrderStatus } from "@dos/shared-types";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { And, MoreThanOrEqual, LessThan, Repository } from "typeorm";
 
@@ -50,13 +54,31 @@ export class DriverBonusesService {
       amount > 0,
     );
     const completed = enabled ? Math.min(total, required) : 0;
+    const isBaikonur = [executor.city?.nameRu, executor.city?.nameKk].some(
+      (name) =>
+        name &&
+        ["байконур", "байқоңыр", "baikonur"].includes(
+          name.trim().toLowerCase(),
+        ),
+    );
+    const currency = isBaikonur ? Currency.RUB : Currency.KZT;
+    const rate = isBaikonur ? Number(executor.city?.rideExchangeRate) : 1;
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new BadRequestException({
+        code: "RIDE_EXCHANGE_RATE_INVALID",
+        message: "RIDE_EXCHANGE_RATE_INVALID",
+      });
+    }
+    const displayAmount = Number.isFinite(amount)
+      ? Number((amount / rate).toFixed(2))
+      : 0;
     return {
       bonusDate: day.day,
       timezone,
       isEnabled: enabled,
       ordersRequired: required,
-      bonusAmount: Number.isFinite(amount) ? amount : 0,
-      currency: executor.city?.currency ?? Currency.KZT,
+      bonusAmount: displayAmount,
+      currency,
       totalCompletedOrders: total,
       completedInCycle: completed,
       remainingOrders: enabled ? Math.max(0, required - completed) : 0,
