@@ -1,3 +1,4 @@
+import { TopUpSettingsService } from "../../src/modules/topup-settings/topup-settings.service";
 import { ExecutorType } from "@dos/shared-types";
 import { Repository } from "typeorm";
 
@@ -27,6 +28,9 @@ describe("ExecutorsService", () => {
   let citiesRepository: jest.Mocked<Repository<CityEntity>>;
   let redisStoreService: jest.Mocked<RedisStoreService>;
   let s3StorageService: jest.Mocked<S3StorageService>;
+  let topUpSettings: jest.Mocked<
+    Pick<TopUpSettingsService, "assertManualEnabled">
+  >;
 
   beforeEach(() => {
     usersRepository = {
@@ -63,6 +67,9 @@ describe("ExecutorsService", () => {
       uploadExecutorDocument: jest.fn(),
     } as unknown as jest.Mocked<S3StorageService>;
 
+    topUpSettings = {
+      assertManualEnabled: jest.fn().mockResolvedValue(undefined),
+    };
     executorsService = new ExecutorsService(
       usersRepository,
       executorsRepository,
@@ -72,7 +79,19 @@ describe("ExecutorsService", () => {
       citiesRepository,
       redisStoreService,
       s3StorageService,
+      topUpSettings as unknown as TopUpSettingsService,
     );
+  });
+
+  it("rejects manual requests before writing when remote settings disable them", async () => {
+    topUpSettings.assertManualEnabled.mockRejectedValue(new Error("disabled"));
+    await expect(
+      executorsService.createBalanceTopUp("user-1", {
+        amount: 1000,
+        phone: "+77010000000",
+      }),
+    ).rejects.toThrow("disabled");
+    expect(balanceTopUpsRepository.save).not.toHaveBeenCalled();
   });
 
   it("creates executor profile when missing", async () => {

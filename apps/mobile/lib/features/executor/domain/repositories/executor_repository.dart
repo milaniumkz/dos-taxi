@@ -1,3 +1,4 @@
+import "../entities/driver_topup_settings.dart";
 import 'package:dartz/dartz.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -9,6 +10,8 @@ import '../entities/driver_bonus_progress.dart';
 import '../entities/incoming_executor_offer.dart';
 
 abstract class ExecutorRepository {
+  Future<Either<Failure, DriverTopUpSettings>> fetchTopUpSettings();
+
   Future<Either<Failure, DriverBonusProgress>> fetchBonusProgress();
 
   Future<Either<Failure, ExecutorProfile?>> fetchProfile();

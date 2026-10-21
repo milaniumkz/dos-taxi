@@ -4314,6 +4314,95 @@
         ]
       }
     },
+    "/api/v1/admin/settings/driver-topup": {
+      "get": {
+        "operationId": "AdminTopUpSettingsController_get",
+        "summary": "Get driver top-up button settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopUpSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminTopUpSettingsController_update",
+        "summary": "Switch driver top-up between manual requests, Kaspi link and disabled",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopUpSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopUpSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/executor/topup-settings": {
+      "get": {
+        "operationId": "ExecutorTopUpSettingsController_get",
+        "summary": "Get fresh driver top-up action before opening payment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopUpSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "executor"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "HealthController_health",
@@ -8279,6 +8368,27 @@
       "ExecutorDocumentEntity": {
         "type": "object",
         "properties": {}
+      },
+      "TopUpSettingsDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "kaspi_link",
+              "disabled"
+            ]
+          },
+          "kaspiUrl": {
+            "type": "string",
+            "description": "Kaspi HTTPS universal link; required in kaspi_link mode, otherwise may be empty"
+          }
+        },
+        "required": [
+          "mode",
+          "kaspiUrl"
+        ]
       },
       "SupportContactsDto": {
         "type": "object",

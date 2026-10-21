@@ -1,3 +1,4 @@
+import "../../domain/entities/driver_topup_settings.dart";
 import 'dart:async';
 
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -193,6 +194,14 @@ class ExecutorRemoteDataSource {
       ),
     );
     return ExecutorProfileModel.fromJson(response.data ?? <String, dynamic>{});
+  }
+
+  Future<DriverTopUpSettings> fetchTopUpSettings() async {
+    final response = await _apiClient.guard(
+      () =>
+          _apiClient.dio.get<Map<String, dynamic>>('/executor/topup-settings'),
+    );
+    return DriverTopUpSettings.fromJson(response.data ?? <String, dynamic>{});
   }
 
   Future<void> requestBalanceTopUp({

@@ -1,3 +1,4 @@
+import '../widgets/driver_topup_button.dart';
 import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_city_picker.dart';
 import '../../../ride_marketplace/presentation/ride_feed_screen.dart';
@@ -1257,11 +1258,9 @@ class _DriverProfileTab extends StatelessWidget {
                 subtitle: l10n.driverProfilePersonalSubtitle,
                 onTap: () => _showDriverProfileEditSheet(context),
               ),
-              _DriverProfileTile(
-                icon: Icons.account_balance_wallet_rounded,
-                title: l10n.driverBalanceTopUpTitle,
-                subtitle: l10n.driverBalanceTopUpSubtitle,
-                onTap: () => _showBalanceTopUpSheet(context),
+              DriverTopUpButton(
+                repository: serviceLocator<ExecutorRepository>(),
+                onManual: () => _showBalanceTopUpSheet(context),
               ),
               _DriverProfileTile(
                 icon: Icons.directions_car_rounded,
