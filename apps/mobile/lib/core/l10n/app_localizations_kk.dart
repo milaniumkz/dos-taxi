@@ -681,6 +681,22 @@ class AppLocalizationsKk extends AppLocalizations {
   String get profileDefaultName => 'Жолаушы';
 
   @override
+  String get driverLastNameLabel => 'Тегі';
+
+  @override
+  String get driverMiddleNameLabel => 'Әкесінің аты (бар болса)';
+
+  @override
+  String get driverIdentityRequired =>
+      'Тегіңіз бен атыңызды енгізіңіз. Әр өріс 100 таңбадан аспауы керек.';
+
+  @override
+  String get cityDetecting => 'Қала анықталуда…';
+
+  @override
+  String get cityNotDetected => 'Қала анықталмады';
+
+  @override
   String get profileNameLabel => 'Аты';
 
   @override
@@ -1612,4 +1628,35 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get ridePerOrder => 'Бүкіл тапсырыс бағасы';
+
+  @override
+  String get driverTopUpActionSubtitle => 'Толықтыру тәсілі';
+
+  @override
+  String get driverTopUpDisabled => 'Толықтыру уақытша өшірілген';
+
+  @override
+  String get driverTopUpUnavailable =>
+      'Толықтыруды ашу мүмкін болмады. Интернетті тексеріп, қайталап көріңіз.';
+
+  @override
+  String get driverTopUpLinkFailed =>
+      'Kaspi сілтемесін ашу мүмкін болмады. Қайталап көріңіз.';
+
+  @override
+  String get driverStatisticsPeriod => 'Барлық уақыт бойынша';
+
+  @override
+  String get driverStatisticsNoRatings => 'Әзірге бағалар жоқ';
+
+  @override
+  String get driverStatisticsUnavailable =>
+      'Көрсеткіштерді жүктеу мүмкін болмады';
+
+  @override
+  String get driverStatisticsRefresh => 'Көрсеткіштерді жаңарту';
+
+  @override
+  String get driverActivityDescription =>
+      'Орындалған және жүргізуші бас тартқан тапсырыстар ішіндегі орындалғандарының үлесі. Жолаушы мен жүйенің бас тартулары есептелмейді.';
 }

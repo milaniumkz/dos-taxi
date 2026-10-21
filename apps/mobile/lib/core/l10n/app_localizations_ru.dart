@@ -677,6 +677,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileDefaultName => 'Пассажир';
 
   @override
+  String get driverLastNameLabel => 'Фамилия';
+
+  @override
+  String get driverMiddleNameLabel => 'Отчество (если есть)';
+
+  @override
+  String get driverIdentityRequired =>
+      'Укажите фамилию и имя. Каждое поле — не более 100 символов.';
+
+  @override
+  String get cityDetecting => 'Определяем город…';
+
+  @override
+  String get cityNotDetected => 'Город не определён';
+
+  @override
   String get profileNameLabel => 'Имя';
 
   @override
@@ -1612,4 +1628,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ridePerOrder => 'Цена за весь заказ';
+
+  @override
+  String get driverTopUpActionSubtitle => 'Выберите способ пополнения';
+
+  @override
+  String get driverTopUpDisabled => 'Пополнение временно отключено';
+
+  @override
+  String get driverTopUpUnavailable =>
+      'Не удалось открыть пополнение. Проверьте интернет и попробуйте ещё раз.';
+
+  @override
+  String get driverTopUpLinkFailed =>
+      'Не удалось открыть ссылку Kaspi. Попробуйте ещё раз.';
+
+  @override
+  String get driverStatisticsPeriod => 'За всё время';
+
+  @override
+  String get driverStatisticsNoRatings => 'Оценок пока нет';
+
+  @override
+  String get driverStatisticsUnavailable => 'Не удалось загрузить показатели';
+
+  @override
+  String get driverStatisticsRefresh => 'Обновить показатели';
+
+  @override
+  String get driverActivityDescription =>
+      'Доля выполненных заказов среди выполненных и отменённых водителем. Отмены пассажира и системы не учитываются.';
 }
