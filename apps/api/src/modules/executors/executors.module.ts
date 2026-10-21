@@ -1,3 +1,4 @@
+import { TopUpSettingsModule } from "../topup-settings/topup-settings.module";
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
@@ -19,6 +20,7 @@ import { ExecutorsService } from "./executors.service";
 
 @Module({
   imports: [
+    TopUpSettingsModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CityEntity,

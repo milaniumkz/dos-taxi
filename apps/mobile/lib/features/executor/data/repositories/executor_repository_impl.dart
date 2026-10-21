@@ -1,3 +1,4 @@
+import "../../domain/entities/driver_topup_settings.dart";
 import 'package:dartz/dartz.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -23,6 +24,22 @@ class ExecutorRepositoryImpl implements ExecutorRepository {
   final AppConfig _config;
 
   bool get _allowsLocalFallback => _config.flavor != AppFlavor.prod;
+
+  @override
+  Future<Either<Failure, DriverTopUpSettings>> fetchTopUpSettings() async {
+    try {
+      return Right(await _remoteDataSource.fetchTopUpSettings());
+    } on Failure catch (failure) {
+      return Left(failure);
+    } catch (_) {
+      return const Left(
+        Failure(
+          code: 'TOPUP_SETTINGS_UNAVAILABLE',
+          message: 'TOPUP_SETTINGS_UNAVAILABLE',
+        ),
+      );
+    }
+  }
 
   @override
   Future<Either<Failure, DriverBonusProgress>> fetchBonusProgress() async {

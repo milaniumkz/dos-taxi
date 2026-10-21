@@ -671,5 +671,9 @@
   "supportContactsIntro": "Оператор ответит здесь. Также можно связаться с поддержкой:",
   "supportContactsUnavailable": "Не удалось загрузить контакты поддержки",
   "supportContactOpenFailed": "Не удалось открыть способ связи",
-  "ridePerOrder": "Цена за весь заказ"
+  "ridePerOrder": "Цена за весь заказ",
+  "driverTopUpActionSubtitle": "Выберите способ пополнения",
+  "driverTopUpDisabled": "Пополнение временно отключено",
+  "driverTopUpUnavailable": "Не удалось открыть пополнение. Проверьте интернет и попробуйте ещё раз.",
+  "driverTopUpLinkFailed": "Не удалось открыть ссылку Kaspi. Попробуйте ещё раз."
 }

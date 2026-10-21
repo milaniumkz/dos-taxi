@@ -1,3 +1,4 @@
+import { DriverTopUpSettings, topUpSettingsLabels } from "../lib/topup-settings-i18n";
 import { adminApiRequest } from "../lib/admin-api";
 import { SupportContacts, supportContactsLabels } from "../lib/support-contacts-i18n";
 import Link from "next/link";
@@ -6,6 +7,7 @@ import { FlashBanner } from "../components/flash-banner";
 import { SectionShell } from "../components/section-shell";
 import {
   updateSupportContactsAction,
+  updateDriverTopUpSettingsAction,
   updateDispatchSettingsAction,
   updateDriverBonusSettingsAction,
 } from "../lib/admin-actions";
@@ -47,6 +49,14 @@ export default async function SettingsPage({
     // Keep the form disabled rather than replacing unknown saved contacts.
   }
 
+  const topUpLabels = topUpSettingsLabels(locale);
+  let topUpSettings: DriverTopUpSettings | undefined;
+  try {
+    topUpSettings = await adminApiRequest<DriverTopUpSettings>("admin/settings/driver-topup", { cache: "no-store" });
+  } catch {
+    // Never overwrite unknown persisted settings with fallback form values.
+  }
+
   return (
     <AppFrame
       current="settings"
@@ -68,6 +78,31 @@ export default async function SettingsPage({
         </section>
 
         <Link className="action-button" href={`/settings/error-messages?lang=${locale}`}>{dictionary.settingsPage.errorMessagesTitle}</Link>
+
+
+        <SectionShell eyebrow={dictionary.settingsPage.title} title={topUpLabels.title} description={topUpLabels.description}>
+          {!topUpSettings && <p role="alert">{topUpLabels.loadError}</p>}
+          <form action={updateDriverTopUpSettingsAction} className="admin-form">
+            <input type="hidden" name="locale" value={locale} />
+            <fieldset disabled={!topUpSettings}>
+              <legend>{topUpLabels.title}</legend>
+              <div className="admin-form__grid">
+                <label className="field">
+                  <span>{topUpLabels.mode}</span>
+                  <select name="mode" defaultValue={topUpSettings?.mode ?? "manual"}>
+                    {(["manual", "kaspi_link", "disabled"] as const).map(mode => <option key={mode} value={mode}>{topUpLabels[mode]}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>{topUpLabels.url}</span>
+                  <input name="kaspiUrl" type="url" maxLength={2048} defaultValue={topUpSettings?.kaspiUrl ?? ""} />
+                </label>
+              </div>
+              <p className="empty-state">{topUpLabels.hint}</p>
+              <button type="submit" className="action-button">{dictionary.forms.save}</button>
+            </fieldset>
+          </form>
+        </SectionShell>
 
         <SectionShell
           eyebrow={dictionary.settingsPage.title}

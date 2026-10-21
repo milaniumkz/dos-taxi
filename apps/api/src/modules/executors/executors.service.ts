@@ -1,3 +1,4 @@
+import { TopUpSettingsService } from "../topup-settings/topup-settings.service";
 import { CourierVehicleType, ExecutorType } from "@dos/shared-types";
 import {
   BadRequestException,
@@ -38,6 +39,7 @@ export class ExecutorsService {
     private readonly citiesRepository: Repository<CityEntity>,
     private readonly redisStoreService: RedisStoreService,
     private readonly s3StorageService: S3StorageService,
+    private readonly topUpSettings: TopUpSettingsService,
   ) {}
 
   async getProfile(userId: string): Promise<ExecutorEntity> {
@@ -183,6 +185,7 @@ export class ExecutorsService {
     userId: string,
     dto: CreateBalanceTopUpDto,
   ): Promise<ExecutorBalanceTopUpEntity> {
+    await this.topUpSettings.assertManualEnabled();
     const executor = await this.getProfile(userId);
     const phone = dto.phone.trim();
     if (!phone) {

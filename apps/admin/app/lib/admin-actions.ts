@@ -1,6 +1,7 @@
 "use server";
 import { pushLabels } from "./push-notifications-i18n";
 
+import { topUpSettingsLabels } from "./topup-settings-i18n";
 import { supportContactsLabels } from "./support-contacts-i18n";
 
 import { randomUUID } from "node:crypto";
@@ -839,4 +840,19 @@ export async function sendPushNotificationAction(formData: FormData): Promise<vo
   }
   revalidateReturnPath(returnPath);
   redirectWithFlash(returnPath, "notice", pushLabels(locale).saved);
+}
+
+export async function updateDriverTopUpSettingsAction(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const returnPath = `/settings?lang=${locale}`;
+  try {
+    await adminApiRequest("admin/settings/driver-topup", {
+      method: "PATCH",
+      body: JSON.stringify({ mode: getString(formData, "mode"), kaspiUrl: getString(formData, "kaspiUrl") }),
+    });
+  } catch (error) {
+    redirectWithFlash(returnPath, "error", failureMessage(locale, error));
+  }
+  revalidateReturnPath(returnPath);
+  redirectWithFlash(returnPath, "notice", topUpSettingsLabels(locale).saved);
 }

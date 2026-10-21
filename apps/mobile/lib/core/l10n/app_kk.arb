@@ -671,5 +671,9 @@
   "supportContactsIntro": "Оператор осы жерде жауап береді. Қолдау қызметімен байланысуға да болады:",
   "supportContactsUnavailable": "Қолдау байланыстарын жүктеу мүмкін болмады",
   "supportContactOpenFailed": "Байланыс тәсілін ашу мүмкін болмады",
-  "ridePerOrder": "Бүкіл тапсырыс бағасы"
+  "ridePerOrder": "Бүкіл тапсырыс бағасы",
+  "driverTopUpActionSubtitle": "Толықтыру тәсілі",
+  "driverTopUpDisabled": "Толықтыру уақытша өшірілген",
+  "driverTopUpUnavailable": "Толықтыруды ашу мүмкін болмады. Интернетті тексеріп, қайталап көріңіз.",
+  "driverTopUpLinkFailed": "Kaspi сілтемесін ашу мүмкін болмады. Қайталап көріңіз."
 }
