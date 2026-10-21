@@ -1,3 +1,4 @@
+import "../../domain/entities/driver_statistics.dart";
 import "../../domain/entities/driver_topup_settings.dart";
 import 'dart:async';
 
@@ -194,6 +195,13 @@ class ExecutorRemoteDataSource {
       ),
     );
     return ExecutorProfileModel.fromJson(response.data ?? <String, dynamic>{});
+  }
+
+  Future<DriverStatistics> fetchStatistics() async {
+    final response = await _apiClient.guard(
+      () => _apiClient.dio.get<Map<String, dynamic>>('/executor/statistics'),
+    );
+    return DriverStatistics.fromJson(response.data ?? <String, dynamic>{});
   }
 
   Future<DriverTopUpSettings> fetchTopUpSettings() async {

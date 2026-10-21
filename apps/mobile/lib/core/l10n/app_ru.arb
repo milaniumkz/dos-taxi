@@ -675,5 +675,10 @@
   "driverTopUpActionSubtitle": "Выберите способ пополнения",
   "driverTopUpDisabled": "Пополнение временно отключено",
   "driverTopUpUnavailable": "Не удалось открыть пополнение. Проверьте интернет и попробуйте ещё раз.",
-  "driverTopUpLinkFailed": "Не удалось открыть ссылку Kaspi. Попробуйте ещё раз."
+  "driverTopUpLinkFailed": "Не удалось открыть ссылку Kaspi. Попробуйте ещё раз.",
+  "driverStatisticsPeriod": "За всё время",
+  "driverStatisticsNoRatings": "Оценок пока нет",
+  "driverStatisticsUnavailable": "Не удалось загрузить показатели",
+  "driverStatisticsRefresh": "Обновить показатели",
+  "driverActivityDescription": "Доля выполненных заказов среди выполненных и отменённых водителем. Отмены пассажира и системы не учитываются."
 }

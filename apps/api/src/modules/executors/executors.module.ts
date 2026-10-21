@@ -1,3 +1,5 @@
+import { DriverStatisticsController } from "./driver-statistics.controller";
+import { DriverStatisticsService } from "./driver-statistics.service";
 import { TopUpSettingsModule } from "../topup-settings/topup-settings.module";
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -33,9 +35,10 @@ import { ExecutorsService } from "./executors.service";
     ]),
     AuthModule,
   ],
-  controllers: [ExecutorsController],
+  controllers: [ExecutorsController, DriverStatisticsController],
   providers: [
     DriverBonusesService,
+    DriverStatisticsService,
     ExecutorsService,
     RedisStoreService,
     S3StorageService,

@@ -1,3 +1,4 @@
+import '../widgets/driver_profile_statistics.dart';
 import '../widgets/driver_topup_button.dart';
 import '../../../../shared/widgets/current_city_badge.dart';
 import '../../../ride_marketplace/presentation/ride_city_picker.dart';
@@ -1212,7 +1213,16 @@ class _DriverProfileTab extends StatelessWidget {
           borderColor: AppColors.primary,
           child: Column(
             children: [
-              const DosAvatar(initials: 'A', radius: 36),
+              DosAvatar(
+                initials: profile.name
+                    .trim()
+                    .split(RegExp(r'\s+'))
+                    .where((part) => part.isNotEmpty)
+                    .take(2)
+                    .map((part) => part.characters.first.toUpperCase())
+                    .join(),
+                radius: 36,
+              ),
               const SizedBox(height: AppSpacing.md),
               Text(name, style: Theme.of(context).textTheme.titleLarge),
               Text(
@@ -1222,27 +1232,9 @@ class _DriverProfileTab extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: AppColors.text),
               ),
               const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DriverStat(
-                      label: l10n.driverRatingLabel,
-                      value: '4.92',
-                    ),
-                  ),
-                  Expanded(
-                    child: _DriverStat(
-                      label: l10n.driverActivityLabel,
-                      value: '85%',
-                    ),
-                  ),
-                  Expanded(
-                    child: _DriverStat(
-                      label: l10n.driverTripsLabel,
-                      value: '120',
-                    ),
-                  ),
-                ],
+              DriverProfileStatistics(
+                key: ValueKey(profile.id),
+                repository: serviceLocator<ExecutorRepository>(),
               ),
             ],
           ),
@@ -2237,28 +2229,6 @@ class _DarkDropdownField<T> extends StatelessWidget {
       ),
       items: items,
       onChanged: onChanged,
-    );
-  }
-}
-
-class _DriverStat extends StatelessWidget {
-  const _DriverStat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: Theme.of(context).textTheme.titleMedium),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.text, fontSize: 11),
-        ),
-      ],
     );
   }
 }
