@@ -55,10 +55,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get passengerWelcomeSubtitle => 'Комфортные поездки по вашему городу';
 
   @override
-  String get driverWelcomeTitle => 'Станьте партнёром и зарабатывайте с нами';
+  String get driverWelcomeTitle => 'Заказы DOS Такси для водителей';
 
   @override
-  String get driverWelcomeSubtitle => 'Свободный график и стабильный доход';
+  String get driverWelcomeSubtitle =>
+      'Рабочее приложение сервиса ТОО «DOS Company 01»: принимайте заказы, стройте маршрут и следите за доходом. Для заказа поездки используйте пассажирское приложение DOS TAXI.';
 
   @override
   String get authOtpTitle => 'Подтверждение входа';

@@ -191,13 +191,13 @@ abstract class AppLocalizations {
   /// No description provided for @driverWelcomeTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Станьте партнёром и зарабатывайте с нами'**
+  /// **'Заказы DOS Такси для водителей'**
   String get driverWelcomeTitle;
 
   /// No description provided for @driverWelcomeSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Свободный график и стабильный доход'**
+  /// **'Рабочее приложение сервиса ТОО «DOS Company 01»: принимайте заказы, стройте маршрут и следите за доходом. Для заказа поездки используйте пассажирское приложение DOS TAXI.'**
   String get driverWelcomeSubtitle;
 
   /// No description provided for @authOtpTitle.

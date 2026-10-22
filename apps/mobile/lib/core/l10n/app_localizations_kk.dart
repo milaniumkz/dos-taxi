@@ -56,10 +56,12 @@ class AppLocalizationsKk extends AppLocalizations {
   String get passengerWelcomeSubtitle => 'Қалаңыздағы жайлы сапарлар';
 
   @override
-  String get driverWelcomeTitle => 'Серіктес болып, бізбен табыс табыңыз';
+  String get driverWelcomeTitle =>
+      'Жүргізушілерге арналған DOS Такси тапсырыстары';
 
   @override
-  String get driverWelcomeSubtitle => 'Еркін кесте және тұрақты табыс';
+  String get driverWelcomeSubtitle =>
+      '«DOS Company 01» ЖШС сервисінің жұмыс қолданбасы: тапсырыстарды қабылдаңыз, бағыт құрыңыз және табысты бақылаңыз. Сапарға тапсырыс беру үшін жолаушыларға арналған DOS TAXI қолданбасын пайдаланыңыз.';
 
   @override
   String get authOtpTitle => 'Кіруді растау';
