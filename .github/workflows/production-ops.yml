@@ -10,6 +10,8 @@ on:
         options:
           - health
           - logs
+          - sms-diagnostics
+          - configure-wappi
           - restart
           - rollback
           - seed-jetekshi-rides
@@ -62,7 +64,13 @@ jobs:
         with:
           persist-credentials: false
       - name: Install SSH tools
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
+        run: |
+          if command -v ssh >/dev/null && command -v scp >/dev/null; then
+            ssh -V
+          else
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update
+            sudo apt-get install -y openssh-client
+          fi
 
       - name: Configure SSH
         env:
@@ -83,6 +91,8 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
           OPERATION: ${{ inputs.operation }}
+          WAPPI_TOKEN: ${{ inputs.operation == 'configure-wappi' && secrets.WAPPI_TOKEN || '' }}
+          WAPPI_PROFILE_ID: ${{ inputs.operation == 'configure-wappi' && secrets.WAPPI_PROFILE_ID || '' }}
           PREVIEW_ORDER_ID: ${{ inputs.preview_order_id }}
           ROLLBACK_BACKUP: ${{ inputs.rollback_backup }}
           TOPUP_FX_ID: ${{ inputs.topup_id }}
@@ -92,10 +102,34 @@ jobs:
         run: |
           set -euo pipefail
           case "$OPERATION" in
-            health|logs|restart|rollback|https-status|https-ip|booking-diagnostics|correct-topup-fx|seed-jetekshi-rides|refresh-jetekshi-rides|clear-jetekshi-rides|passenger-offer-diagnostics|seed-passenger-offers|sync-push-worker) ;;
+            health|logs|sms-diagnostics|configure-wappi|restart|rollback|https-status|https-ip|booking-diagnostics|correct-topup-fx|seed-jetekshi-rides|refresh-jetekshi-rides|clear-jetekshi-rides|passenger-offer-diagnostics|seed-passenger-offers|sync-push-worker) ;;
             *) echo "Unsupported operation"; exit 1 ;;
           esac
-          if [[ "$OPERATION" == https-* ]]; then
+          if [[ "$OPERATION" == configure-wappi ]]; then
+            python3 - <<'PYWAPPI'
+          import json, os, shlex, subprocess
+          settings = {key: os.environ.get(key, "").strip() for key in ("WAPPI_TOKEN", "WAPPI_PROFILE_ID")}
+          print("WAPPI_SECRET_BINDINGS", json.dumps({key: bool(value) for key, value in settings.items()}), flush=True)
+          if not all(settings.values()):
+              raise SystemExit("Set WAPPI_TOKEN and WAPPI_PROFILE_ID in protected GitHub Actions secrets; runtime unchanged")
+          host = f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}'
+          port = os.environ.get("VPS_PORT") or "22"
+          script = f'/tmp/dos-configure-wappi-{os.environ["GITHUB_SHA"]}.py'
+          subprocess.run(["scp", "-P", port, "deploy/vps/scripts/configure-wappi.py", f"{host}:{script}"], check=True)
+          command = shlex.join(["python3", script, os.environ["VPS_PATH"] + "/deploy/vps"])
+          subprocess.run(["ssh", "-p", port, host, command], input=json.dumps(settings), text=True, check=True)
+          PYWAPPI
+          elif [[ "$OPERATION" == sms-diagnostics ]]; then
+            python3 - <<'PYDIAG'
+          import os, shlex, subprocess
+          host = f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}'
+          port = os.environ.get("VPS_PORT") or "22"
+          script = f'/tmp/dos-sms-diagnostics-{os.environ["GITHUB_SHA"]}.py'
+          subprocess.run(["scp", "-P", port, "deploy/vps/scripts/sms-diagnostics.py", f"{host}:{script}"], check=True)
+          command = "cd " + shlex.quote(os.environ["VPS_PATH"] + "/deploy/vps") + " && " + shlex.join(["python3", script])
+          subprocess.run(["ssh", "-p", port, host, command], check=True)
+          PYDIAG
+          elif [[ "$OPERATION" == https-* ]]; then
             python3 - <<'PY'
           import os, shlex, subprocess
           host = f'{os.environ["VPS_USER"]}@{os.environ["VPS_HOST"]}'
