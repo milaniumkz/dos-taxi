@@ -1,4 +1,5 @@
 import importlib.util
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -12,6 +13,18 @@ SETTINGS = {'WAPPI_TOKEN': 'dummy-token-for-tests-only', 'WAPPI_PROFILE_ID': 'te
 
 
 class ConfigureWappiTests(unittest.TestCase):
+    def test_http_errors_report_only_status_and_fixed_reason(self):
+        for body in [json.dumps({'error': 'Token error', 'detail': SETTINGS['WAPPI_TOKEN']}), SETTINGS['WAPPI_TOKEN']]:
+            failure = module.urllib.error.HTTPError('https://wappi.pro', 400, 'private reason', {}, io.BytesIO(body.encode()))
+            opener = MagicMock()
+            opener.open.side_effect = failure
+            with patch.object(module.urllib.request, 'build_opener', return_value=opener):
+                with self.assertRaisesRegex(ValueError, 'HTTP 400') as error:
+                    module.verify_profile(SETTINGS)
+            self.assertNotIn(SETTINGS['WAPPI_TOKEN'], str(error.exception))
+            self.assertNotIn('private reason', str(error.exception))
+            self.assertEqual('token rejected' in str(error.exception), body.startswith('{'))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
