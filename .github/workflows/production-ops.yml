@@ -63,7 +63,13 @@ jobs:
         with:
           persist-credentials: false
       - name: Install SSH tools
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
+        run: |
+          if command -v ssh >/dev/null && command -v scp >/dev/null; then
+            ssh -V
+          else
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update
+            sudo apt-get install -y openssh-client
+          fi
 
       - name: Configure SSH
         env:
