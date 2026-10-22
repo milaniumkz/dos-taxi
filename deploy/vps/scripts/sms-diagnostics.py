@@ -11,10 +11,20 @@ def summarize(text):
     statuses = collections.Counter()
     signals = collections.Counter()
     failures = 0
+    provider_terms = collections.Counter()
     for line in text.splitlines():
         if not re.search(r'OTP delivery failed|Wappi delivery failed|SMSC rejected|auth/send-otp.*(?:503|429)|OTP_RATE_LIMITED', line, re.I):
             continue
         failures += 1
+        if 'Wappi delivery failed with status' in line:
+            # A fixed vocabulary reveals validation failures without printing payloads,
+            # identifiers, arbitrary provider text, credentials, phone numbers or OTPs.
+            allowed = set('bot bapi id uuid invalid valid required missing not found exist exists profile recipient number format parameter parameters message body length empty subscription balance expired token authorized authenticated phone whatsapp limit exceeded status error bad request type disabled'.split())
+            response = line.split('Wappi delivery failed with status', 1)[1]
+            words = [word.lower() for word in re.findall(r'[A-Za-z]+', response)]
+            terms = ' '.join(word for word in words if word in allowed)
+            if terms:
+                provider_terms[terms] += 1
         status = re.search(r'Wappi delivery failed with status (\d{3})', line)
         if status:
             statuses[status.group(1)] += 1
@@ -30,7 +40,7 @@ def summarize(text):
         for key, pattern in patterns.items():
             if re.search(pattern, line, re.I):
                 signals[key] += 1
-    return {'matchedFailureLines': failures, 'wappiHttpStatuses': dict(statuses), 'reasonSignals': dict(signals)}
+    return {'matchedFailureLines': failures, 'wappiHttpStatuses': dict(statuses), 'reasonSignals': dict(signals), 'providerValidationTerms': dict(provider_terms)}
 
 
 def main():
