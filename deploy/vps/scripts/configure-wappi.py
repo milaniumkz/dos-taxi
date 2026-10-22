@@ -80,7 +80,7 @@ def recreate_api(directory):
 
 
 def wait_ready(directory):
-    code = "fetch('http://127.0.0.1:3000/api/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+    code = "fetch('http://127.0.0.1:3000/api/v1/health/ready',{signal:AbortSignal.timeout(5000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
     for _ in range(20):
         try:
             result = subprocess.run(COMPOSE + ['exec', '-T', 'api', 'node', '-e', code], cwd=directory, capture_output=True, timeout=15)
