@@ -54,6 +54,26 @@ def main():
       otpDebug:process.env.OTP_DEBUG_RESPONSE_ENABLED === "true"}));'''
     config = subprocess.run(COMPOSE + ['exec', '-T', 'api', 'node', '-e', code], capture_output=True, text=True, check=True)
     print('SMS_CONFIGURATION', json.dumps(json.loads(config.stdout)))
+    # Official read-only profile endpoint; no send/QR/login/logout endpoints.
+    probe = r"""(async () => {
+      const token = process.env.WAPPI_TOKEN, profile = process.env.WAPPI_PROFILE_ID;
+      const url = new URL('/api/profile/all/get', process.env.WAPPI_API_BASE_URL || 'https://wappi.pro');
+      if (!token || !profile || url.protocol !== 'https:' || url.hostname !== 'wappi.pro') {
+        console.log(JSON.stringify({skipped: true, reason: 'missing_configuration_or_nonstandard_target'})); return;
+      }
+      url.searchParams.set('profile_id', profile);
+      try {
+        const response = await fetch(url, {headers: {Authorization: token}, redirect: 'error', signal: AbortSignal.timeout(10000)});
+        const payload = await response.json().catch(() => ({}));
+        const values = [payload.error, payload.message, payload.detail].filter(value => typeof value === 'string');
+        console.log(JSON.stringify({httpStatus: response.status,
+          tokenError: values.some(value => /token[ _-]*error|invalid[ _-]*token/i.test(value)),
+          profilesReturned: Array.isArray(payload.profiles),
+          configuredProfilePresent: Array.isArray(payload.profiles) ? payload.profiles.some(item => item.profile_id === profile) : null}));
+      } catch { console.log(JSON.stringify({networkError: true})); }
+    })();"""
+    result = subprocess.run(COMPOSE + ['exec', '-T', 'api', 'node', '-e', probe], capture_output=True, text=True, check=True)
+    print('WAPPI_READ_ONLY_PROFILE_CHECK', json.dumps(json.loads(result.stdout)))
     logs = subprocess.run(COMPOSE + ['logs', '--no-color', '--since', '48h', '--tail=20000', 'api'], capture_output=True, text=True, check=True)
     print('OTP_FAILURE_SUMMARY_48H', json.dumps(summarize(logs.stdout + logs.stderr)))
 
