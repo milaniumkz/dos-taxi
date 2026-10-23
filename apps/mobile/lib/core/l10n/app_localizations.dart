@@ -191,13 +191,13 @@ abstract class AppLocalizations {
   /// No description provided for @driverWelcomeTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Станьте партнёром и зарабатывайте с нами'**
+  /// **'Заказы DOS Такси для водителей'**
   String get driverWelcomeTitle;
 
   /// No description provided for @driverWelcomeSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Свободный график и стабильный доход'**
+  /// **'Рабочее приложение сервиса ТОО «DOS Company 01»: принимайте заказы, стройте маршрут и следите за доходом. Для заказа поездки используйте пассажирское приложение DOS TAXI.'**
   String get driverWelcomeSubtitle;
 
   /// No description provided for @authOtpTitle.
@@ -1339,6 +1339,36 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Пассажир'**
   String get profileDefaultName;
+
+  /// No description provided for @driverLastNameLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фамилия'**
+  String get driverLastNameLabel;
+
+  /// No description provided for @driverMiddleNameLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчество (если есть)'**
+  String get driverMiddleNameLabel;
+
+  /// No description provided for @driverIdentityRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите фамилию и имя. Каждое поле — не более 100 символов.'**
+  String get driverIdentityRequired;
+
+  /// No description provided for @cityDetecting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Определяем город…'**
+  String get cityDetecting;
+
+  /// No description provided for @cityNotDetected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город не определён'**
+  String get cityNotDetected;
 
   /// No description provided for @profileNameLabel.
   ///
@@ -3079,6 +3109,60 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Цена за весь заказ'**
   String get ridePerOrder;
+
+  /// No description provided for @driverTopUpActionSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите способ пополнения'**
+  String get driverTopUpActionSubtitle;
+
+  /// No description provided for @driverTopUpDisabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пополнение временно отключено'**
+  String get driverTopUpDisabled;
+
+  /// No description provided for @driverTopUpUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть пополнение. Проверьте интернет и попробуйте ещё раз.'**
+  String get driverTopUpUnavailable;
+
+  /// No description provided for @driverTopUpLinkFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть ссылку Kaspi. Попробуйте ещё раз.'**
+  String get driverTopUpLinkFailed;
+
+  /// No description provided for @driverStatisticsPeriod.
+  ///
+  /// In ru, this message translates to:
+  /// **'За всё время'**
+  String get driverStatisticsPeriod;
+
+  /// No description provided for @driverStatisticsNoRatings.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оценок пока нет'**
+  String get driverStatisticsNoRatings;
+
+  /// No description provided for @driverStatisticsUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить показатели'**
+  String get driverStatisticsUnavailable;
+
+  /// No description provided for @driverStatisticsRefresh.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить показатели'**
+  String get driverStatisticsRefresh;
+
+  /// No description provided for @driverActivityDescription.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доля выполненных заказов среди выполненных и отменённых водителем. Отмены пассажира и системы не учитываются.'**
+  String get driverActivityDescription;
 }
 
 class _AppLocalizationsDelegate
