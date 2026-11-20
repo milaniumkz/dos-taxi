@@ -16,6 +16,8 @@ dependencies:
   go_router: ^14.8.1
   dio: ^5.8.0+1
   native_dio_adapter: ^1.8.0
+  # Version 3's native build hook also runs on unsupported Linux test hosts.
+  cupertino_http: ^2.3.0
   dio_cache_interceptor: ^3.5.1
   flutter_map: ^7.0.2
   flutter_secure_storage: ^9.2.4

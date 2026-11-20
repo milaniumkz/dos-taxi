@@ -21,19 +21,7 @@ class ApiClient {
     required RefreshTokenCallback onRefreshToken,
     required AuthSessionEvents authSessionEvents,
   }) {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: config.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-        sendTimeout: const Duration(seconds: 15),
-      ),
-    );
-
-    if (config.role == AppRole.driver) {
-      final adapter = createPlatformHttpAdapter();
-      if (adapter != null) dio.httpClientAdapter = adapter;
-    }
+    final dio = createTransport(config);
 
     dio.interceptors.addAll([
       AuthInterceptor(tokenStorage),
@@ -47,6 +35,22 @@ class ApiClient {
     ]);
 
     return ApiClient._(dio);
+  }
+
+  static Dio createTransport(AppConfig config) {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: config.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        sendTimeout: const Duration(seconds: 15),
+      ),
+    );
+    if (config.role == AppRole.driver && config.flavor == AppFlavor.prod) {
+      final adapter = createPlatformHttpAdapter();
+      if (adapter != null) dio.httpClientAdapter = adapter;
+    }
+    return dio;
   }
 
   final Dio dio;

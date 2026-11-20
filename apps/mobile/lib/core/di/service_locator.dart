@@ -81,11 +81,16 @@ Future<void> configureDependencies(AppConfig config) async {
           return null;
         }
 
-        final response = await Dio(BaseOptions(baseUrl: config.apiBaseUrl))
-            .post<Map<String, dynamic>>(
-              '/auth/refresh',
-              data: {'refreshToken': refreshToken},
-            );
+        final refreshClient = ApiClient.createTransport(config);
+        final Response<Map<String, dynamic>> response;
+        try {
+          response = await refreshClient.post<Map<String, dynamic>>(
+            '/auth/refresh',
+            data: {'refreshToken': refreshToken},
+          );
+        } finally {
+          refreshClient.close();
+        }
 
         final responseData = response.data ?? <String, dynamic>{};
         final accessToken =
