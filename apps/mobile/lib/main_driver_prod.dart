@@ -7,7 +7,7 @@ const _appName = String.fromEnvironment(
 );
 const _apiBaseUrl = String.fromEnvironment(
   'DOS_API_BASE_URL',
-  defaultValue: 'https://dos.89.126.200.51.sslip.io/api/v1',
+  defaultValue: 'https://89.126.200.51/api/v1',
 );
 const _wsBaseUrl = String.fromEnvironment(
   'DOS_WS_BASE_URL',

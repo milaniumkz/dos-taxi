@@ -1,5 +1,30 @@
 # DOS Driver: App Review login check
 
+## November 20, 2026: version 1.1.3 (36)
+
+Apple rejected 1.1.2 (35) under 2.1(a). Its iPad Air 11-inch (M3)
+screenshot shows a server timeout at the phone-to-OTP step; the button is visible.
+The reported OS is iPadOS 27.2.1. This is a different symptom from the older
+offscreen-button issue below.
+
+The driver production entry point now uses `https://89.126.200.51` for HTTP API
+connections, removing the `sslip.io` DNS dependency from login. iOS driver HTTP
+requests use URLSession through `native_dio_adapter` for system proxy and
+DNS64/NAT64 handling. The WebSocket hostname remains unchanged. TLS verification
+remains enabled. Both hostname and IP were reachable during investigation;
+the exact cause of Apple's earlier timeout has not been established.
+
+On November 20 the IP endpoint accepted the review account's OTP request and
+verification, returned a verified executor, and served profile, statistics,
+top-up settings, incoming orders, history and bonus progress. Refresh-token
+rotation also succeeded. The certificate was checked locally and through
+`DOS Production Ops` (`https-status`, run 44695689876); the server already has
+the IP-certificate renewal mechanism described in `cloud-operations.md`.
+
+Before submitting, test the production entry point on the iPad simulator and
+record the actual OS and tested screens. Do not describe simulator checks as
+testing Apple's iPadOS 27.2.1 or the TestFlight-installed App Store binary.
+
 Apple reported Guideline 2.1(a) for version 1.0 (30) on October 7, 2026:
 login could not be completed on iPad Air 11-inch (M3), iPadOS 27.0.1.
 The supplied screenshot shows the driver review phone entered without a visible

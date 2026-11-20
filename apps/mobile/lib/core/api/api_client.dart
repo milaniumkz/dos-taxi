@@ -7,6 +7,8 @@ import '../storage/token_storage.dart';
 import 'interceptors/auth_interceptor.dart';
 import 'interceptors/refresh_token_interceptor.dart';
 import 'interceptors/retry_interceptor.dart';
+import 'platform_http_adapter_stub.dart'
+    if (dart.library.io) 'platform_http_adapter_io.dart';
 
 typedef RefreshTokenCallback = Future<String?> Function();
 
@@ -27,6 +29,11 @@ class ApiClient {
         sendTimeout: const Duration(seconds: 15),
       ),
     );
+
+    if (config.role == AppRole.driver) {
+      final adapter = createPlatformHttpAdapter();
+      if (adapter != null) dio.httpClientAdapter = adapter;
+    }
 
     dio.interceptors.addAll([
       AuthInterceptor(tokenStorage),
