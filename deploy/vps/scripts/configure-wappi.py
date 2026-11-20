@@ -15,6 +15,7 @@ import tempfile
 import time
 import urllib.parse
 import urllib.request
+import urllib.error
 
 COMPOSE = ['docker', 'compose', '--env-file', '.env', '-f', 'docker-compose.yml']
 
@@ -42,6 +43,18 @@ def verify_profile(settings):
             payload = json.load(response)
         profiles = payload.get('profiles') if isinstance(payload, dict) else None
         profile = next((item for item in profiles if isinstance(item, dict) and item.get('profile_id') == settings['WAPPI_PROFILE_ID']), None) if isinstance(profiles, list) else None
+    except urllib.error.HTTPError as error:
+        # Never echo provider payloads: they may contain identifiers or secrets.
+        try:
+            payload = json.loads(error.read(16384))
+            values = [payload.get(key) for key in ('error', 'message', 'detail')] if isinstance(payload, dict) else []
+            token_error = any(isinstance(value, str) and re.search(r'token[ _-]*error|invalid[ _-]*token', value, re.I) for value in values)
+        except Exception:
+            token_error = False
+        reason = '; token rejected' if token_error else ''
+        raise ValueError(f'Wappi credential verification HTTP {int(error.code)}{reason}; runtime unchanged') from None
+    except urllib.error.URLError:
+        raise ValueError('Wappi credential verification network or TLS failure; runtime unchanged') from None
     except Exception:
         raise ValueError('Wappi credential verification failed; runtime unchanged') from None
     if not profile:
