@@ -7,6 +7,8 @@ import '../storage/token_storage.dart';
 import 'interceptors/auth_interceptor.dart';
 import 'interceptors/refresh_token_interceptor.dart';
 import 'interceptors/retry_interceptor.dart';
+import 'platform_http_adapter_stub.dart'
+    if (dart.library.io) 'platform_http_adapter_io.dart';
 
 typedef RefreshTokenCallback = Future<String?> Function();
 
@@ -19,14 +21,7 @@ class ApiClient {
     required RefreshTokenCallback onRefreshToken,
     required AuthSessionEvents authSessionEvents,
   }) {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: config.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-        sendTimeout: const Duration(seconds: 15),
-      ),
-    );
+    final dio = createTransport(config);
 
     dio.interceptors.addAll([
       AuthInterceptor(tokenStorage),
@@ -40,6 +35,22 @@ class ApiClient {
     ]);
 
     return ApiClient._(dio);
+  }
+
+  static Dio createTransport(AppConfig config) {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: config.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        sendTimeout: const Duration(seconds: 15),
+      ),
+    );
+    if (config.role == AppRole.driver && config.flavor == AppFlavor.prod) {
+      final adapter = createPlatformHttpAdapter();
+      if (adapter != null) dio.httpClientAdapter = adapter;
+    }
+    return dio;
   }
 
   final Dio dio;
